@@ -1157,6 +1157,12 @@ function abrirDetalheReal(s) {
 
 // ── CONFIRMAR PRESENÇA REAL ──
 async function confirmarPresenca(solId, btn) {
+  if (!usuarioAtual) {
+    fecharModal('modal-detalhe');
+    abrirModal('modal-auth');
+    toast('⚠️ Entre com sua conta Google para confirmar presença.');
+    return;
+  }
   if (!solId) solId = document.getElementById('btn-confirmar-presenca').dataset.solId;
   try {
     // Incrementa contador
@@ -1183,6 +1189,12 @@ async function confirmarPresenca(solId, btn) {
 
 // ── SALVAR SOLICITAÇÃO REAL ──
 async function submeterCadastroReal() {
+  if (!usuarioAtual) {
+    fecharModal('modal-atingido');
+    abrirModal('modal-auth');
+    toast('⚠️ Entre com sua conta Google para cadastrar.');
+    return;
+  }
   const nome     = document.querySelector('#modal-atingido input[placeholder*="Arthur"]')?.value?.trim();
   const cidade   = document.querySelector('#modal-atingido input[placeholder="Sinimbu"]')?.value?.trim();
   const estado   = document.querySelector('#modal-atingido input[placeholder="RS"]')?.value?.trim();
@@ -1253,6 +1265,12 @@ async function submeterCadastroReal() {
 
 // ── SALVAR VOLUNTÁRIO REAL ──
 async function submeterVoluntarioReal() {
+  if (!usuarioAtual) {
+    fecharModal('modal-voluntario');
+    abrirModal('modal-auth');
+    toast('⚠️ Entre com sua conta Google para se cadastrar.');
+    return;
+  }
   const nome     = document.querySelector('#modal-voluntario input[placeholder="Seu nome"]')?.value?.trim();
   const cpf      = document.querySelector('#modal-voluntario input[placeholder*="000.000"]')?.value?.trim();
   const whatsapp = document.querySelector('#modal-voluntario input[placeholder*="51"]')?.value?.trim();
@@ -1398,24 +1416,8 @@ function precisaLogin(acao) {
   return false;
 }
 
-// Intercepta botões que precisam de login
-const _submeterCadastroReal = submeterCadastroReal;
-async function submeterCadastroReal() {
-  if (precisaLogin('cadastrar uma solicitação')) return;
-  await _submeterCadastroReal();
-}
-
-const _submeterVoluntarioReal = submeterVoluntarioReal;
-async function submeterVoluntarioReal() {
-  if (precisaLogin('se cadastrar como voluntário')) return;
-  await _submeterVoluntarioReal();
-}
-
-const _confirmarPresenca = confirmarPresenca;
-async function confirmarPresenca(solId, btn) {
-  if (precisaLogin('confirmar presença')) return;
-  await _confirmarPresenca(solId, btn);
-}
+// Proteção de login — verificada dentro de cada função
+// (override removido para evitar recursão infinita)
 
 // Inicia verificação de sessão
 verificarSessao();
@@ -1532,8 +1534,7 @@ async function usarLocalizacaoAtual() {
 const _geocodificar = submeterCadastroReal;
 const __submeterOriginal = window._submeterCadastroReal || null;
 
-// Override geocoding to use selected coordinates when available
-const _geocodOriginal = submeterCadastroReal;
+// Coordenadas do GPS/autocomplete usadas em submeterCadastroReal
 </script>
 
 </body>
