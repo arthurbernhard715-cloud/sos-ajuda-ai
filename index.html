@@ -358,7 +358,7 @@ textarea.form-control { resize: vertical; min-height: 88px; }
       <div id="mapa-leaflet" style="height:460px;"></div>
     </div>
     <div class="mapa-sidebar">
-      <div class="mapa-lista-title">📋 Solicitações ativas agora</div>
+      <div id="mapaSidebar"><div class="mapa-lista-title">📋 Solicitações ativas agora</div></div>
       <div class="mapa-card" onclick="mapaFocarPonto(0)">
         <div class="mapa-card-head"><div class="pin-dot pin-urg"></div><div><div class="mapa-card-nome">Casa do Sr. Antônio</div><div class="mapa-card-local">📍 Sinimbu — 300m</div></div></div>
         <div class="mapa-card-tags"><span class="mapa-tag">🧹 Limpeza</span><span class="mapa-tag">📦 Móveis</span></div>
@@ -391,7 +391,7 @@ textarea.form-control { resize: vertical; min-height: 88px; }
       </div>
       <div class="urgentes-box">
         <div class="ub-icon">🚨</div>
-        <div class="ub-num">2 urgentes</div>
+        <div class="ub-num" id="contadorUrgentes">2 urgentes</div>
         <div class="ub-label">na sua região agora</div>
       </div>
     </div>
@@ -433,7 +433,7 @@ textarea.form-control { resize: vertical; min-height: 88px; }
       <button class="filtro" onclick="filtrar(this)">🚨 Urgente</button>
     </div>
   </div>
-  <div class="cards">
+  <div class="cards" id="cardsGrid">
     <div class="card" onclick="abrirDetalhe(0)">
       <div class="card-img">🏠<span class="badge-urgente">URGENTE</span></div>
       <div class="card-body">
@@ -757,8 +757,12 @@ function abrirDetalhe(i,expirado){
   abrirModal('modal-detalhe');
 }
 
-function confirmarAjuda(btn){btn.textContent='✅ Confirmado!';btn.style.background='#15803D';btn.disabled=true;toast('🎉 Presença confirmada!','ok');}
-function submeter(id,msg){fecharModal(id);toast(msg,'ok');}
+function confirmarAjuda(btn){confirmarPresenca(null,btn);}
+function submeter(id,msg){
+  if(id==='modal-atingido') { submeterCadastroReal(); return; }
+  if(id==='modal-voluntario') { submeterVoluntarioReal(); return; }
+  fecharModal(id); toast(msg,'ok');
+}
 function toggleChk(el){el.classList.toggle('ativo');}
 function selUrg(el,c){el.closest('.urgencia-sel').querySelectorAll('.urg').forEach(i=>i.classList.remove('ativo'));el.classList.add('ativo');}
 function filtrar(btn){document.querySelectorAll('.filtro').forEach(b=>b.classList.remove('ativo'));btn.classList.add('ativo');}
@@ -776,10 +780,7 @@ function selecionarDoacao(btn,val){
   document.getElementById('btnDoar').textContent=val==='outro valor'?'Contribuir com valor livre':'Contribuir com '+val;
 }
 
-function reativarSolicitacao(){
-  fecharModal('modal-detalhe');
-  toast('✅ Solicitação reativada por mais 24 horas! Você voltou ao mapa.','ok');
-}
+// reativarSolicitacao definida no bloco Supabase abaixo
 
 window.addEventListener('scroll',()=>{
   document.getElementById('navbar').classList.toggle('scrolled',window.scrollY>20);
@@ -860,6 +861,306 @@ const mapaObserver = new IntersectionObserver((entries) => {
 
 const mapaEl = document.getElementById('mapa-leaflet');
 if(mapaEl) mapaObserver.observe(mapaEl);
+</script>
+
+
+<script>
+// ═══════════════════════════════════════
+// SUPABASE — Integração real
+// ═══════════════════════════════════════
+const SB_URL = "https://wrpfgrwayzmiucyavphk.supabase.co";
+const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndycGZncndheXptaXVjeWF2cGhrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzMDQ3MzUsImV4cCI6MjA5Njg4MDczNX0.ZdgpjxlLRmIaIdGKXZsUthgqM15QQehyijCB4apDA6E";
+
+async function sbFetch(endpoint, options = {}) {
+  const res = await fetch(SB_URL + '/rest/v1/' + endpoint, {
+    headers: {
+      'apikey': SB_KEY,
+      'Authorization': 'Bearer ' + SB_KEY,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=representation',
+      ...options.headers
+    },
+    ...options
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(err);
+  }
+  return res.json();
+}
+
+// ── CARREGAR SOLICITAÇÕES DO BANCO ──
+async function carregarSolicitacoes() {
+  try {
+    const data = await sbFetch('solicitacoes?ativo=eq.true&order=criado_em.desc&select=*');
+    renderizarCards(data);
+    renderizarMapaPins(data);
+    atualizarContadorUrgentes(data);
+    console.log(`✅ ${data.length} solicitações carregadas`);
+  } catch(e) {
+    console.error('Erro ao carregar solicitações:', e);
+    toast('⚠️ Erro ao carregar solicitações. Tente novamente.','');
+  }
+}
+
+// ── RENDERIZAR CARDS DINAMICAMENTE ──
+function renderizarCards(solicitacoes) {
+  const grid = document.getElementById('cardsGrid');
+  if (!grid) return;
+
+  // Mantém o card de adicionar no final
+  const cardAdd = grid.querySelector('.card-add');
+  grid.innerHTML = '';
+
+  solicitacoes.forEach(s => {
+    const urgClass = s.urgencia === 'vermelho' ? 'expiry-dead' : s.urgencia === 'amarelo' ? 'expiry-warn' : 'expiry-ok';
+    const urgIcon  = s.urgencia === 'vermelho' ? '🔴' : s.urgencia === 'amarelo' ? '🟡' : '🟢';
+    const expiraEm = calcularExpiracao(s.expira_em);
+    const pct = Math.round((s.voluntarios_confirmados / s.limite_voluntarios) * 100);
+    const tipos = (s.tipos_ajuda || []).map(t => `<span class="tag">${t}</span>`).join('');
+
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.onclick = () => abrirDetalheReal(s);
+    card.innerHTML = `
+      <div class="card-img">🏠 ${s.urgencia === 'vermelho' ? '<span class="badge-urgente">URGENTE</span>' : ''}</div>
+      <div class="card-body">
+        <div class="card-nome">${s.nome}</div>
+        <div class="card-local">📍 ${s.cidade}, ${s.estado}</div>
+        <div class="card-desc">${s.descricao || ''}</div>
+        <div class="card-tags">${tipos}</div>
+        <div class="expiry-row">
+          <span class="expiry-badge ${urgClass}">${urgIcon} ${expiraEm}</span>
+        </div>
+        <div class="card-footer">
+          <div class="vol-bar">
+            <div class="vol-label">${s.voluntarios_confirmados} de ${s.limite_voluntarios} voluntários</div>
+            <div class="bar-bg"><div class="bar-fill" style="width:${pct}%"></div></div>
+          </div>
+          <button class="btn-ajudar" onclick="event.stopPropagation();confirmarPresenca('${s.id}',this)">Quero ajudar</button>
+        </div>
+      </div>`;
+    grid.appendChild(card);
+  });
+
+  if (cardAdd) grid.appendChild(cardAdd);
+}
+
+// ── RENDERIZAR PINS NO MAPA ──
+function renderizarMapaPins(solicitacoes) {
+  if (!mapaObj) return;
+  // Limpa pins antigos
+  marcadores.forEach(m => mapaObj.removeLayer(m));
+  marcadores = [];
+
+  const sidebar = document.getElementById('mapaSidebar');
+  if (sidebar) sidebar.innerHTML = '<div class="mapa-lista-title">📋 Solicitações ativas agora</div>';
+
+  solicitacoes.forEach((s, i) => {
+    if (!s.lat || !s.lng) return;
+    const cor = s.urgencia === 'vermelho' ? '#D92B2B' : '#1A3C8F';
+    const emoji = s.urgencia === 'vermelho' ? '🚨' : '🏠';
+    const icon = L.divIcon({
+      className: '',
+      html: `<div style="width:38px;height:38px;border-radius:50% 50% 50% 0;background:${cor};border:3px solid #fff;box-shadow:0 3px 10px rgba(0,0,0,0.3);transform:rotate(-45deg);display:flex;align-items:center;justify-content:center;"><span style="transform:rotate(45deg);font-size:15px">${emoji}</span></div>`,
+      iconSize:[38,38], iconAnchor:[19,38], popupAnchor:[0,-42]
+    });
+
+    const m = L.marker([s.lat, s.lng], {icon})
+      .addTo(mapaObj)
+      .bindPopup(`
+        <div style="font-family:'Inter',sans-serif;min-width:190px;">
+          <div style="font-weight:700;color:#1A3C8F;font-size:0.92rem;margin-bottom:4px;">${s.nome}</div>
+          <div style="font-size:0.78rem;color:#64748b;margin-bottom:4px;">📍 ${s.cidade}, ${s.estado}</div>
+          <div style="font-size:0.78rem;color:#64748b;margin-bottom:4px;">🏷️ ${(s.tipos_ajuda||[]).join(', ')}</div>
+          <div style="font-size:0.76rem;color:#64748b;margin-bottom:10px;">👥 ${s.voluntarios_confirmados}/${s.limite_voluntarios} voluntários</div>
+          <button onclick="abrirDetalheReal(${JSON.stringify(s).replace(/"/g,'&quot;')})" style="width:100%;background:#D92B2B;color:#fff;border:none;border-radius:8px;padding:8px;font-weight:700;font-size:0.8rem;cursor:pointer;font-family:'Montserrat',sans-serif;">Ver detalhes</button>
+        </div>
+      `);
+    marcadores.push(m);
+
+    // Add to sidebar
+    if (sidebar) {
+      const item = document.createElement('div');
+      item.className = 'mapa-card';
+      item.onclick = () => mapaFocarPonto(i);
+      const dot = s.urgencia === 'vermelho' ? 'pin-urg' : 'pin-ok';
+      item.innerHTML = `
+        <div class="mapa-card-head"><div class="pin-dot ${dot}"></div><div>
+          <div class="mapa-card-nome">${s.nome}</div>
+          <div class="mapa-card-local">📍 ${s.cidade}</div>
+        </div></div>
+        <div class="mapa-card-tags">${(s.tipos_ajuda||[]).map(t=>`<span class="mapa-tag">${t}</span>`).join('')}</div>
+        <div class="mapa-bar"><div class="mapa-bar-fill" style="width:${Math.round(s.voluntarios_confirmados/s.limite_voluntarios*100)}%"></div></div>
+        <div class="mapa-vol">${s.voluntarios_confirmados}/${s.limite_voluntarios} voluntários</div>`;
+      sidebar.appendChild(item);
+    }
+  });
+}
+
+function atualizarContadorUrgentes(solicitacoes) {
+  const urgentes = solicitacoes.filter(s => s.urgencia === 'vermelho').length;
+  const el = document.getElementById('contadorUrgentes');
+  if (el) el.textContent = urgentes + ' urgentes';
+}
+
+function calcularExpiracao(expiraEm) {
+  if (!expiraEm) return 'Expirado';
+  const diff = new Date(expiraEm) - new Date();
+  if (diff <= 0) return 'Expirado';
+  const h = Math.floor(diff / 3600000);
+  const m = Math.floor((diff % 3600000) / 60000);
+  if (h === 0) return `⏰ ${m}min restantes`;
+  return `⏰ ${h}h ${m}min restantes`;
+}
+
+// ── ABRIR DETALHE REAL ──
+function abrirDetalheReal(s) {
+  if (typeof s === 'string') s = JSON.parse(s);
+  document.getElementById('d-icon').textContent = '🏠';
+  document.getElementById('d-urgente').style.display = s.urgencia === 'vermelho' ? 'block' : 'none';
+  document.getElementById('d-nome').textContent = s.nome;
+  document.getElementById('d-local').textContent = '📍 ' + s.cidade + ', ' + s.estado + ' — ' + s.endereco;
+  document.getElementById('d-desc').textContent = s.descricao || '';
+  document.getElementById('d-tipo').textContent = (s.tipos_ajuda||[]).join(', ');
+  document.getElementById('d-vol').textContent = s.voluntarios_confirmados + '/' + s.limite_voluntarios;
+  document.getElementById('d-exp').textContent = calcularExpiracao(s.expira_em);
+  document.getElementById('d-urg').textContent = s.urgencia === 'vermelho' ? '🔴 Urgente' : s.urgencia === 'amarelo' ? '🟡 Preciso logo' : '🟢 Pode esperar';
+
+  // Guarda ID para confirmar presença
+  document.getElementById('btn-confirmar-presenca').dataset.solId = s.id;
+
+  const reativBlock = document.getElementById('bloco-reativar');
+  const confirmBtn  = document.getElementById('btn-confirmar-presenca');
+  const expirado = new Date(s.expira_em) < new Date();
+  reativBlock.style.display = expirado ? 'block' : 'none';
+  confirmBtn.style.display  = expirado ? 'none' : 'block';
+  if (expirado) reativBlock.dataset.solId = s.id;
+
+  abrirModal('modal-detalhe');
+}
+
+// ── CONFIRMAR PRESENÇA REAL ──
+async function confirmarPresenca(solId, btn) {
+  if (!solId) solId = document.getElementById('btn-confirmar-presenca').dataset.solId;
+  try {
+    // Incrementa contador
+    const atual = await sbFetch(`solicitacoes?id=eq.${solId}&select=voluntarios_confirmados,limite_voluntarios`);
+    if (!atual.length) throw new Error('Não encontrado');
+    const s = atual[0];
+    if (s.voluntarios_confirmados >= s.limite_voluntarios) {
+      toast('⚠️ Limite de voluntários já atingido para esta solicitação.');
+      return;
+    }
+    await sbFetch(`solicitacoes?id=eq.${solId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ voluntarios_confirmados: s.voluntarios_confirmados + 1 })
+    });
+    if (btn) { btn.textContent = '✅ Confirmado!'; btn.style.background = '#15803D'; btn.disabled = true; }
+    fecharModal('modal-detalhe');
+    toast('🎉 Presença confirmada! O solicitante foi notificado.', 'ok');
+    carregarSolicitacoes(); // Atualiza lista
+  } catch(e) {
+    toast('⚠️ Erro ao confirmar. Tente novamente.');
+    console.error(e);
+  }
+}
+
+// ── SALVAR SOLICITAÇÃO REAL ──
+async function submeterCadastroReal() {
+  const nome     = document.querySelector('#modal-atingido input[placeholder*="Arthur"]')?.value?.trim();
+  const cidade   = document.querySelector('#modal-atingido input[placeholder="Sinimbu"]')?.value?.trim();
+  const estado   = document.querySelector('#modal-atingido input[placeholder="RS"]')?.value?.trim();
+  const endereco = document.querySelector('#modal-atingido input[placeholder*="Rua"]')?.value?.trim();
+  const descricao = document.querySelector('#modal-atingido textarea')?.value?.trim();
+  const limite   = parseInt(document.querySelector('#modal-atingido input[type="number"]')?.value) || 15;
+
+  if (!nome || !cidade || !endereco) {
+    toast('⚠️ Preencha nome, cidade e endereço!');
+    return;
+  }
+
+  const tipos = [...document.querySelectorAll('#modal-atingido .chk.ativo')].map(el => el.textContent.replace(/^[^\w]+/,'').trim());
+  const urgEl = document.querySelector('#modal-atingido .urg.ativo');
+  const urgencia = urgEl?.classList.contains('vermelho') ? 'vermelho' : urgEl?.classList.contains('verde') ? 'verde' : 'amarelo';
+
+  try {
+    await sbFetch('solicitacoes', {
+      method: 'POST',
+      body: JSON.stringify({
+        nome, cidade, estado: estado||'RS', endereco, descricao,
+        tipos_ajuda: tipos, urgencia,
+        limite_voluntarios: limite,
+        ativo: true,
+        expira_em: new Date(Date.now() + 24*60*60*1000).toISOString()
+      })
+    });
+    fecharModal('modal-atingido');
+    toast('📍 Solicitação publicada! Voluntários já podem te encontrar.', 'ok');
+    carregarSolicitacoes();
+  } catch(e) {
+    toast('⚠️ Erro ao publicar. Tente novamente.');
+    console.error(e);
+  }
+}
+
+// ── SALVAR VOLUNTÁRIO REAL ──
+async function submeterVoluntarioReal() {
+  const nome     = document.querySelector('#modal-voluntario input[placeholder="Seu nome"]')?.value?.trim();
+  const cpf      = document.querySelector('#modal-voluntario input[placeholder*="000.000"]')?.value?.trim();
+  const whatsapp = document.querySelector('#modal-voluntario input[placeholder*="51"]')?.value?.trim();
+  const cidade   = document.querySelector('#modal-voluntario input[placeholder*="cidade"]')?.value?.trim();
+  const raio     = document.querySelector('#modal-voluntario select')?.value;
+
+  if (!nome || !cpf || !whatsapp) {
+    toast('⚠️ Preencha nome, CPF e WhatsApp!');
+    return;
+  }
+
+  const habilidades = [...document.querySelectorAll('#modal-voluntario .chk.ativo')].map(el => el.textContent.replace(/^[^\w]+/,'').trim());
+
+  try {
+    await sbFetch('voluntarios', {
+      method: 'POST',
+      body: JSON.stringify({ nome, cpf, whatsapp, cidade: cidade||'', estado:'RS', raio_atuacao: raio, habilidades })
+    });
+    fecharModal('modal-voluntario');
+    toast('🙋 Perfil criado! Comece a ajudar agora.', 'ok');
+  } catch(e) {
+    if (e.message.includes('unique') || e.message.includes('duplicate')) {
+      toast('⚠️ CPF já cadastrado.');
+    } else {
+      toast('⚠️ Erro ao criar perfil. Tente novamente.');
+    }
+    console.error(e);
+  }
+}
+
+// ── REATIVAR SOLICITAÇÃO ──
+async function reativarSolicitacao() {
+  const solId = document.getElementById('bloco-reativar').dataset.solId;
+  if (!solId) return;
+  try {
+    await sbFetch(`solicitacoes?id=eq.${solId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({
+        ativo: true,
+        expira_em: new Date(Date.now() + 24*60*60*1000).toISOString()
+      })
+    });
+    fecharModal('modal-detalhe');
+    toast('✅ Solicitação reativada por mais 24 horas!', 'ok');
+    carregarSolicitacoes();
+  } catch(e) {
+    toast('⚠️ Erro ao reativar. Tente novamente.');
+  }
+}
+
+// ── INICIALIZAR ──
+document.addEventListener('DOMContentLoaded', () => {
+  carregarSolicitacoes();
+  setInterval(carregarSolicitacoes, 60000); // Atualiza a cada 1 minuto
+});
 </script>
 
 </body>
