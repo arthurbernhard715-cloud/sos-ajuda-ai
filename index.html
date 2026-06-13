@@ -544,101 +544,8 @@ textarea.form-control { resize: vertical; min-height: 88px; }
     </div>
   </div>
   <div class="cards" id="cardsGrid">
-    <div class="card" onclick="abrirDetalhe(0)">
-      <div class="card-img">🏠<span class="badge-urgente">URGENTE</span></div>
-      <div class="card-body">
-        <div class="card-nome">Casa do Sr. Antônio</div>
-        <div class="card-local">📍 Sinimbu, RS — 300m de você</div>
-        <div class="card-desc">Enchente atingiu a casa inteira. Preciso de ajuda com limpeza, retirada de lama e móveis. Família com 4 pessoas.</div>
-        <div class="card-tags"><span class="tag">🧹 Limpeza</span><span class="tag">📦 Móveis</span><span class="tag">🪣 Lama</span></div>
-        <div class="expiry-row">
-          <span class="expiry-badge expiry-warn">⏰ Expira em 14h 35min</span>
-        </div>
-        <div class="card-footer">
-          <div class="vol-bar"><div class="vol-label">7 de 15 voluntários</div><div class="bar-bg"><div class="bar-fill" style="width:47%"></div></div></div>
-          <button class="btn-ajudar" onclick="event.stopPropagation();confirmarAjuda(this)">Quero ajudar</button>
-        </div>
-      </div>
-    </div>
-    <div class="card" onclick="abrirDetalhe(1)">
-      <div class="card-img">🏡</div>
-      <div class="card-body">
-        <div class="card-nome">Dona Maria Aparecida</div>
-        <div class="card-local">📍 Sinimbu, RS — 1.2km</div>
-        <div class="card-desc">Perdi tudo que tinha na cozinha. Preciso de mantimentos básicos e ajuda para limpar o quintal.</div>
-        <div class="card-tags"><span class="tag">🛒 Mantimentos</span><span class="tag">🧹 Limpeza</span></div>
-        <div class="expiry-row">
-          <span class="expiry-badge expiry-ok">✅ Expira em 8h 20min</span>
-        </div>
-        <div class="card-footer">
-          <div class="vol-bar"><div class="vol-label">5 de 15 voluntários</div><div class="bar-bg"><div class="bar-fill" style="width:33%"></div></div></div>
-          <button class="btn-ajudar" onclick="event.stopPropagation();confirmarAjuda(this)">Quero ajudar</button>
-        </div>
-      </div>
-    </div>
-    <div class="card" onclick="abrirDetalhe(2)">
-      <div class="card-img">🏘️<span class="badge-urgente">URGENTE</span></div>
-      <div class="card-body">
-        <div class="card-nome">Família Rodrigues</div>
-        <div class="card-local">📍 Vale do Sol, RS — 3.5km</div>
-        <div class="card-desc">Casa com 6 pessoas incluindo 2 crianças. Água invadiu até o teto. Retirada de móveis urgente.</div>
-        <div class="card-tags"><span class="tag">📦 Móveis</span><span class="tag">👶 Crianças</span></div>
-        <div class="expiry-row">
-          <span class="expiry-badge expiry-dead">🔴 Expira em 2h 10min</span>
-        </div>
-        <div class="card-footer">
-          <div class="vol-bar"><div class="vol-label">12 de 15 voluntários</div><div class="bar-bg"><div class="bar-fill" style="width:80%"></div></div></div>
-          <button class="btn-ajudar" onclick="event.stopPropagation();confirmarAjuda(this)">Quero ajudar</button>
-        </div>
-      </div>
-    </div>
-    <div class="card" onclick="abrirDetalhe(3)">
-      <div class="card-img">🏠</div>
-      <div class="card-body">
-        <div class="card-nome">Arthur Bernhard</div>
-        <div class="card-local">📍 Sinimbu, RS — 800m</div>
-        <div class="card-desc">Sequelas da enchente de 2024. Preciso de ajuda para reformar piso danificado e paredes com mofo.</div>
-        <div class="card-tags"><span class="tag">🔨 Reforma</span><span class="tag">🧹 Limpeza</span></div>
-        <div class="expiry-row">
-          <span class="expiry-badge expiry-ok">✅ Expira em 19h 45min</span>
-        </div>
-        <div class="card-footer">
-          <div class="vol-bar"><div class="vol-label">3 de 15 voluntários</div><div class="bar-bg"><div class="bar-fill" style="width:20%"></div></div></div>
-          <button class="btn-ajudar" onclick="event.stopPropagation();confirmarAjuda(this)">Quero ajudar</button>
-        </div>
-      </div>
-    </div>
-    <div class="card" onclick="abrirDetalhe(4)">
-      <div class="card-img">🏡</div>
-      <div class="card-body">
-        <div class="card-nome">Família Costa</div>
-        <div class="card-local">📍 Candelária, RS — 8km</div>
-        <div class="card-desc">Casal de idosos. Precisam de mantimentos, medicamentos e companhia. Acesso de carro disponível.</div>
-        <div class="card-tags"><span class="tag">🛒 Mantimentos</span><span class="tag">💊 Medicamentos</span><span class="tag">👴 Idosos</span></div>
-        <div class="expiry-row">
-          <span class="expiry-badge expiry-ok">✅ Expira em 22h 05min</span>
-        </div>
-        <div class="card-footer">
-          <div class="vol-bar"><div class="vol-label">1 de 10 voluntários</div><div class="bar-bg"><div class="bar-fill" style="width:10%"></div></div></div>
-          <button class="btn-ajudar" onclick="event.stopPropagation();confirmarAjuda(this)">Quero ajudar</button>
-        </div>
-      </div>
-    </div>
-    <!-- Card expirado — exemplo de como aparece para o dono -->
-    <div class="card" style="opacity:.7;border:1.5px dashed #FECACA;" onclick="abrirDetalhe(0,true)">
-      <div class="card-img" style="background:linear-gradient(135deg,#7f1d1d,#374151)">🏠
-        <span style="position:absolute;top:12px;right:12px;background:#64748b;color:#fff;font-size:.7rem;font-weight:700;padding:4px 10px;border-radius:6px;">EXPIRADO</span>
-      </div>
-      <div class="card-body">
-        <div class="card-nome">João Silva</div>
-        <div class="card-local">📍 Sinimbu, RS</div>
-        <div class="card-desc">Solicitação expirada após 24h. Clique para reativar.</div>
-        <div class="expiry-row"><span class="expiry-badge expiry-dead">⏰ Expirado — clique para reativar</span></div>
-        <div class="card-footer">
-          <div class="vol-bar"><div class="vol-label">0 de 15 voluntários</div><div class="bar-bg"><div class="bar-fill" style="width:0%"></div></div></div>
-        </div>
-      </div>
-    </div>
+  <!-- Cards carregados dinamicamente pelo Supabase -->
+
     <div class="card card-add" onclick="abrirModal('modal-atingido')">
       <div style="font-size:2.2rem;margin-bottom:12px">➕</div>
       <div style="font-family:'Montserrat',sans-serif;font-weight:700;color:var(--azul);margin-bottom:5px">Cadastrar minha necessidade</div>
@@ -1465,11 +1372,38 @@ async function buscarEndereco(valor) {
   }, 400);
 }
 
-function selecionarEndereco(rua, lat, lng) {
+async function selecionarEndereco(rua, lat, lng) {
   document.getElementById('enderecoInput').value = rua;
   document.getElementById('autocompleteList').style.display = 'none';
   latSelecionada = parseFloat(lat);
   lngSelecionada = parseFloat(lng);
+
+  // Busca cidade e estado pelo reverse geocoding
+  try {
+    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`);
+    const data = await res.json();
+    const addr = data.address || {};
+    const cidade = addr.city || addr.town || addr.village || addr.municipality || '';
+    const numero = addr.house_number || '';
+    const bairro = addr.suburb || addr.city_district || '';
+    const estado = addr.state_code || (addr.state ? addr.state.substring(0,2).toUpperCase() : '');
+
+    if (cidade) {
+      const cidadeInput = document.querySelector('#modal-atingido input[placeholder="Sinimbu"]');
+      if (cidadeInput) cidadeInput.value = cidade;
+    }
+    if (estado) {
+      const estadoInput = document.querySelector('#modal-atingido input[placeholder="RS"]');
+      if (estadoInput) estadoInput.value = estado.toUpperCase();
+    }
+    if (numero && !document.getElementById('numeroInput').value) {
+      document.getElementById('numeroInput').value = numero;
+    }
+    if (bairro && !document.getElementById('bairroInput').value) {
+      document.getElementById('bairroInput').value = bairro;
+    }
+  } catch(e) { console.warn('Reverse geocoding falhou:', e); }
+
   document.getElementById('numeroInput').focus();
 }
 
