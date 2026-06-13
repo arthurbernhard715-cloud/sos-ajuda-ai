@@ -280,6 +280,39 @@ textarea.form-control { resize: vertical; min-height: 88px; }
 }
 
 
+
+/* ── AUTOCOMPLETE ── */
+.endereco-wrap { position: relative; }
+.autocomplete-list {
+  position: absolute; top: 100%; left: 0; right: 0; z-index: 999;
+  background: #fff; border: 1.5px solid var(--azul-med);
+  border-top: none; border-radius: 0 0 10px 10px;
+  max-height: 220px; overflow-y: auto;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+}
+.autocomplete-item {
+  padding: 10px 14px; font-size: 0.85rem; cursor: pointer;
+  border-bottom: 1px solid var(--cinza-b); color: #1E293B;
+  display: flex; align-items: flex-start; gap: 8px;
+  transition: background .15s;
+}
+.autocomplete-item:hover { background: #EEF2FF; }
+.autocomplete-item:last-child { border-bottom: none; }
+.autocomplete-icon { font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
+.autocomplete-text { flex: 1; }
+.autocomplete-main { font-weight: 600; color: var(--azul); }
+.autocomplete-sub { font-size: 0.75rem; color: var(--cinza-t); margin-top: 1px; }
+.btn-localizacao {
+  width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;
+  background: #EEF2FF; color: var(--azul);
+  padding: 10px; border-radius: 10px; border: 1.5px solid var(--cinza-b);
+  cursor: pointer; font-size: 0.85rem; font-weight: 600;
+  transition: all .2s; margin-bottom: 10px;
+}
+.btn-localizacao:hover { background: #dbe4ff; border-color: var(--azul-med); }
+.btn-localizacao.loading { opacity: 0.7; cursor: wait; }
+.form-row-3 { display: grid; grid-template-columns: 1fr 80px; gap: 10px; }
+
 /* ── AUTH ── */
 .auth-bar {
   position: fixed; top: 70px; left: 0; right: 0; z-index: 199;
@@ -710,7 +743,20 @@ textarea.form-control { resize: vertical; min-height: 88px; }
       <div class="form-group"><label>Cidade</label><input class="form-control" placeholder="Sinimbu"></div>
       <div class="form-group"><label>Estado</label><input class="form-control" placeholder="RS"></div>
     </div>
-    <div class="form-group"><label>Endereço completo</label><input class="form-control" placeholder="Rua, número, bairro"></div>
+    <div class="form-group">
+      <label>Endereço</label>
+      <button type="button" class="btn-localizacao" id="btnLocalizacao" onclick="usarLocalizacaoAtual()">
+        📍 Usar minha localização atual (GPS)
+      </button>
+      <div class="form-row-3" style="margin-bottom:8px;">
+        <div class="endereco-wrap">
+          <input class="form-control" id="enderecoInput" placeholder="Digite a rua ou avenida..." autocomplete="off" oninput="buscarEndereco(this.value)" onblur="setTimeout(()=>fecharAutocomplete(),200)">
+          <div class="autocomplete-list" id="autocompleteList" style="display:none"></div>
+        </div>
+        <input class="form-control" id="numeroInput" placeholder="Nº" style="text-align:center;">
+      </div>
+      <input class="form-control" id="bairroInput" placeholder="Bairro (opcional)" style="margin-top:4px;">
+    </div>
     <div class="form-group"><label>O que você precisa?</label>
       <div class="checkbox-group">
         <div class="chk ativo" onclick="toggleChk(this)">🧹 Limpeza</div>
@@ -1140,7 +1186,10 @@ async function submeterCadastroReal() {
   const nome     = document.querySelector('#modal-atingido input[placeholder*="Arthur"]')?.value?.trim();
   const cidade   = document.querySelector('#modal-atingido input[placeholder="Sinimbu"]')?.value?.trim();
   const estado   = document.querySelector('#modal-atingido input[placeholder="RS"]')?.value?.trim();
-  const endereco = document.querySelector('#modal-atingido input[placeholder*="Rua"]')?.value?.trim();
+  const endRua    = document.getElementById('enderecoInput')?.value?.trim() || '';
+  const endNumero = document.getElementById('numeroInput')?.value?.trim() || '';
+  const endBairro = document.getElementById('bairroInput')?.value?.trim() || '';
+  const endereco  = [endRua, endNumero, endBairro].filter(Boolean).join(', ');
   const descricao = document.querySelector('#modal-atingido textarea')?.value?.trim();
   const limite   = parseInt(document.querySelector('#modal-atingido input[type="number"]')?.value) || 15;
 
@@ -1153,26 +1202,33 @@ async function submeterCadastroReal() {
   const urgEl = document.querySelector('#modal-atingido .urg.ativo');
   const urgencia = urgEl?.classList.contains('vermelho') ? 'vermelho' : urgEl?.classList.contains('verde') ? 'verde' : 'amarelo';
 
-  // Geocodificar endereço automaticamente
-  let lat = null, lng = null;
-  try {
-    const endCompleto = encodeURIComponent(`${endereco}, ${cidade}, ${estado||'RS'}, Brasil`);
-    const geo = await fetch(`https://nominatim.openstreetmap.org/search?q=${endCompleto}&format=json&limit=1`);
-    const geoData = await geo.json();
-    if (geoData.length > 0) {
-      lat = parseFloat(geoData[0].lat);
-      lng = parseFloat(geoData[0].lon);
-    } else {
-      // Fallback: geocodifica só a cidade
-      const cidadeEnc = encodeURIComponent(`${cidade}, ${estado||'RS'}, Brasil`);
-      const geo2 = await fetch(`https://nominatim.openstreetmap.org/search?q=${cidadeEnc}&format=json&limit=1`);
-      const geoData2 = await geo2.json();
-      if (geoData2.length > 0) {
-        lat = parseFloat(geoData2[0].lat);
-        lng = parseFloat(geoData2[0].lon);
+  // Usa coordenadas do autocomplete/GPS se disponíveis
+  let lat = window.latSelecionada || null;
+  let lng = window.lngSelecionada || null;
+
+  // Se não tem coordenadas, geocodifica
+  if (!lat || !lng) {
+    try {
+      const endCompleto = encodeURIComponent(`${endereco}, ${cidade}, ${estado||'RS'}, Brasil`);
+      const geo = await fetch(`https://nominatim.openstreetmap.org/search?q=${endCompleto}&format=json&limit=1`);
+      const geoData = await geo.json();
+      if (geoData.length > 0) {
+        lat = parseFloat(geoData[0].lat);
+        lng = parseFloat(geoData[0].lon);
+      } else {
+        const cidadeEnc = encodeURIComponent(`${cidade}, ${estado||'RS'}, Brasil`);
+        const geo2 = await fetch(`https://nominatim.openstreetmap.org/search?q=${cidadeEnc}&format=json&limit=1`);
+        const geoData2 = await geo2.json();
+        if (geoData2.length > 0) {
+          lat = parseFloat(geoData2[0].lat);
+          lng = parseFloat(geoData2[0].lon);
+        }
       }
-    }
-  } catch(e) { console.warn('Geocodificação falhou:', e); }
+    } catch(e) { console.warn('Geocodificação falhou:', e); }
+  }
+  // Reset coordenadas selecionadas
+  window.latSelecionada = null;
+  window.lngSelecionada = null;
 
   try {
     await sbFetch('solicitacoes', {
@@ -1363,6 +1419,121 @@ async function confirmarPresenca(solId, btn) {
 
 // Inicia verificação de sessão
 verificarSessao();
+</script>
+
+
+<script>
+// ═══════════════════════════════════════
+// AUTOCOMPLETE DE ENDEREÇO + GPS
+// ═══════════════════════════════════════
+let autocompleteTimer = null;
+let latSelecionada = null;
+let lngSelecionada = null;
+
+async function buscarEndereco(valor) {
+  clearTimeout(autocompleteTimer);
+  const lista = document.getElementById('autocompleteList');
+  if (!valor || valor.length < 3) { lista.style.display = 'none'; return; }
+
+  autocompleteTimer = setTimeout(async () => {
+    try {
+      const cidade = document.querySelector('#modal-atingido input[placeholder="Sinimbu"]')?.value || 'Sinimbu';
+      const estado = document.querySelector('#modal-atingido input[placeholder="RS"]')?.value || 'RS';
+      const q = encodeURIComponent(`${valor}, ${cidade}, ${estado}, Brasil`);
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=5&addressdetails=1`);
+      const data = await res.json();
+
+      if (!data.length) { lista.style.display = 'none'; return; }
+
+      lista.innerHTML = data.map(r => {
+        const addr = r.address || {};
+        const rua = addr.road || addr.pedestrian || addr.footway || r.display_name.split(',')[0];
+        const sub = [addr.suburb, addr.city_district, addr.city || addr.town || addr.village].filter(Boolean).join(', ');
+        return `<div class="autocomplete-item" onclick="selecionarEndereco('${rua.replace(/'/g,"\'")}', ${r.lat}, ${r.lon})">
+          <span class="autocomplete-icon">📍</span>
+          <div class="autocomplete-text">
+            <div class="autocomplete-main">${rua}</div>
+            <div class="autocomplete-sub">${sub}</div>
+          </div>
+        </div>`;
+      }).join('');
+
+      lista.style.display = 'block';
+    } catch(e) { console.warn('Autocomplete erro:', e); }
+  }, 400);
+}
+
+function selecionarEndereco(rua, lat, lng) {
+  document.getElementById('enderecoInput').value = rua;
+  document.getElementById('autocompleteList').style.display = 'none';
+  latSelecionada = parseFloat(lat);
+  lngSelecionada = parseFloat(lng);
+  document.getElementById('numeroInput').focus();
+}
+
+function fecharAutocomplete() {
+  const lista = document.getElementById('autocompleteList');
+  if (lista) lista.style.display = 'none';
+}
+
+async function usarLocalizacaoAtual() {
+  const btn = document.getElementById('btnLocalizacao');
+  if (!navigator.geolocation) {
+    toast('⚠️ Seu navegador não suporta GPS.');
+    return;
+  }
+  btn.textContent = '⏳ Obtendo localização...';
+  btn.classList.add('loading');
+
+  navigator.geolocation.getCurrentPosition(async (pos) => {
+    const { latitude, longitude } = pos.coords;
+    latSelecionada = latitude;
+    lngSelecionada = longitude;
+
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`);
+      const data = await res.json();
+      const addr = data.address || {};
+      const rua    = addr.road || addr.pedestrian || '';
+      const numero = addr.house_number || '';
+      const bairro = addr.suburb || addr.city_district || '';
+      const cidade = addr.city || addr.town || addr.village || '';
+      const estado = addr.state_code || addr.state || '';
+
+      if (document.getElementById('enderecoInput')) document.getElementById('enderecoInput').value = rua;
+      if (document.getElementById('numeroInput'))   document.getElementById('numeroInput').value = numero;
+      if (document.getElementById('bairroInput'))   document.getElementById('bairroInput').value = bairro;
+
+      // Preenche cidade e estado se estiverem vazios
+      const cidadeInput = document.querySelector('#modal-atingido input[placeholder="Sinimbu"]');
+      const estadoInput = document.querySelector('#modal-atingido input[placeholder="RS"]');
+      if (cidadeInput && !cidadeInput.value) cidadeInput.value = cidade;
+      if (estadoInput && !estadoInput.value) estadoInput.value = estado.toUpperCase();
+
+      btn.textContent = '✅ Localização obtida!';
+      btn.style.background = '#ECFDF5';
+      btn.style.color = '#15803D';
+      btn.style.borderColor = '#A7F3D0';
+      toast('📍 Localização preenchida automaticamente!', 'ok');
+    } catch(e) {
+      btn.textContent = '📍 Usar minha localização atual (GPS)';
+      btn.classList.remove('loading');
+      toast('⚠️ Não foi possível obter o endereço. Preencha manualmente.');
+    }
+  }, (err) => {
+    btn.textContent = '📍 Usar minha localização atual (GPS)';
+    btn.classList.remove('loading');
+    if (err.code === 1) toast('⚠️ Permissão de localização negada. Ative o GPS.');
+    else toast('⚠️ Erro ao obter localização. Preencha manualmente.');
+  }, { enableHighAccuracy: true, timeout: 10000 });
+}
+
+// Usa lat/lng selecionada do autocomplete ou GPS ao submeter
+const _geocodificar = submeterCadastroReal;
+const __submeterOriginal = window._submeterCadastroReal || null;
+
+// Override geocoding to use selected coordinates when available
+const _geocodOriginal = submeterCadastroReal;
 </script>
 
 </body>
