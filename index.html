@@ -468,40 +468,13 @@ textarea.form-control { resize: vertical; min-height: 88px; }
       <div id="mapa-leaflet" style="height:460px;"></div>
     </div>
     <div class="mapa-sidebar">
-      <div id="mapaSidebar"><div class="mapa-lista-title">📋 Solicitações ativas agora</div></div>
-      <div class="mapa-card" onclick="mapaFocarPonto(0)">
-        <div class="mapa-card-head"><div class="pin-dot pin-urg"></div><div><div class="mapa-card-nome">Casa do Sr. Antônio</div><div class="mapa-card-local">📍 Sinimbu — 300m</div></div></div>
-        <div class="mapa-card-tags"><span class="mapa-tag">🧹 Limpeza</span><span class="mapa-tag">📦 Móveis</span></div>
-        <div class="mapa-bar"><div class="mapa-bar-fill" style="width:47%"></div></div>
-        <div class="mapa-vol">7/15 voluntários · ⏰ 14h restantes</div>
-      </div>
-      <div class="mapa-card" onclick="mapaFocarPonto(1)">
-        <div class="mapa-card-head"><div class="pin-dot pin-ok"></div><div><div class="mapa-card-nome">Dona Maria Aparecida</div><div class="mapa-card-local">📍 Sinimbu — 1.2km</div></div></div>
-        <div class="mapa-card-tags"><span class="mapa-tag">🛒 Mantimentos</span></div>
-        <div class="mapa-bar"><div class="mapa-bar-fill" style="width:33%"></div></div>
-        <div class="mapa-vol">5/15 voluntários · ⏰ 8h restantes</div>
-      </div>
-      <div class="mapa-card" onclick="mapaFocarPonto(2)">
-        <div class="mapa-card-head"><div class="pin-dot pin-urg"></div><div><div class="mapa-card-nome">Família Rodrigues</div><div class="mapa-card-local">📍 Vale do Sol — 3.5km</div></div></div>
-        <div class="mapa-card-tags"><span class="mapa-tag">📦 Móveis</span><span class="mapa-tag">👶 Crianças</span></div>
-        <div class="mapa-bar"><div class="mapa-bar-fill" style="width:80%"></div></div>
-        <div class="mapa-vol">12/15 voluntários · ⏰ 2h restantes</div>
-      </div>
-      <div class="mapa-card" onclick="mapaFocarPonto(3)">
-        <div class="mapa-card-head"><div class="pin-dot pin-ok"></div><div><div class="mapa-card-nome">Arthur Bernhard</div><div class="mapa-card-local">📍 Sinimbu — 800m</div></div></div>
-        <div class="mapa-card-tags"><span class="mapa-tag">🔨 Reforma</span></div>
-        <div class="mapa-bar"><div class="mapa-bar-fill" style="width:20%"></div></div>
-        <div class="mapa-vol">3/15 voluntários · ⏰ 19h restantes</div>
-      </div>
-      <div class="mapa-card" onclick="mapaFocarPonto(4)">
-        <div class="mapa-card-head"><div class="pin-dot pin-ok"></div><div><div class="mapa-card-nome">Família Costa</div><div class="mapa-card-local">📍 Candelária — 8km</div></div></div>
-        <div class="mapa-card-tags"><span class="mapa-tag">🛒 Mantimentos</span><span class="mapa-tag">💊 Medicamentos</span></div>
-        <div class="mapa-bar"><div class="mapa-bar-fill" style="width:10%"></div></div>
-        <div class="mapa-vol">1/10 voluntários · ⏰ 22h restantes</div>
+      <div id="mapaSidebar">
+        <div class="mapa-lista-title">📋 Solicitações ativas agora</div>
+        <div style="padding:20px;text-align:center;color:var(--cinza-t);font-size:0.85rem;">⏳ Carregando...</div>
       </div>
       <div class="urgentes-box">
         <div class="ub-icon">🚨</div>
-        <div class="ub-num" id="contadorUrgentes">2 urgentes</div>
+        <div class="ub-num" id="contadorUrgentes">0 urgentes</div>
         <div class="ub-label">na sua região agora</div>
       </div>
     </div>
@@ -767,13 +740,7 @@ textarea.form-control { resize: vertical; min-height: 88px; }
 // Simula uma solicitação expirada para demonstração
 const dadosExpirado = {nome:'João Silva (EXPIRADO)',local:'Sinimbu, RS',desc:'Enchente atingiu o porão. Precisa de limpeza urgente.',tipo:'Limpeza',vol:'0/15',exp:'Expirado',urg:'🔴 Urgente',icon:'🏠',urgente:true,expirado:true};
 
-const dados = [
-  {nome:'Casa do Sr. Antônio',local:'Sinimbu, RS — Bairro Centro',desc:'Enchente atingiu a casa inteira. Limpeza, móveis e lama. Família com 4 pessoas.',tipo:'Limpeza, Móveis, Lama',vol:'7/15',exp:'14h 35min',urg:'🔴 Urgente',icon:'🏠',urgente:true},
-  {nome:'Dona Maria Aparecida',local:'Sinimbu, RS — Vila Nova',desc:'Perdeu tudo na cozinha. Mantimentos e limpeza do quintal. Mora sozinha.',tipo:'Mantimentos, Limpeza',vol:'5/15',exp:'8h 20min',urg:'🟡 Preciso logo',icon:'🏡',urgente:false},
-  {nome:'Família Rodrigues',local:'Vale do Sol, RS',desc:'6 pessoas com 2 crianças. Água até o teto. Retirada de móveis urgente.',tipo:'Retirada de móveis',vol:'12/15',exp:'2h 10min',urg:'🔴 Urgente',icon:'🏘️',urgente:true},
-  {nome:'Arthur Bernhard',local:'Sinimbu, RS',desc:'Sequelas da enchente de 2024. Reforma de piso e paredes com mofo.',tipo:'Reforma, Limpeza',vol:'3/15',exp:'3 dias',urg:'🟢 Pode esperar',icon:'🏠',urgente:false},
-  {nome:'Família Costa',local:'Candelária, RS',desc:'Idosos sozinhos. Mantimentos, medicamentos e companhia.',tipo:'Mantimentos, Medicamentos',vol:'1/10',exp:'5 dias',urg:'🟡 Preciso logo',icon:'🏡',urgente:false}
-];
+const dados = []; // Dados carregados do Supabase
 
 function abrirModal(id){document.getElementById(id).classList.add('open');document.body.style.overflow='hidden';}
 function fecharModal(id){document.getElementById(id).classList.remove('open');document.body.style.overflow='';}
