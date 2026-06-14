@@ -582,10 +582,18 @@ function filtrarTabela(tipo, valor) {
 // ── AÇÕES ──
 async function reativarSol(id) {
   try {
-    await sbFetch(`solicitacoes?id=eq.${id}`, {
+    const token = usuarioAtual?.access_token || SB_KEY;
+    const patchRes = await fetch(`${SB_URL}/rest/v1/solicitacoes?id=eq.${id}`, {
       method: 'PATCH',
+      headers: {
+        'apikey': SB_KEY,
+        'Authorization': 'Bearer ' + token,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
       body: JSON.stringify({ ativo: true, expira_em: new Date(Date.now() + 24*60*60*1000).toISOString() })
     });
+    if (!patchRes.ok) throw new Error(await patchRes.text());
     toast('✅ Solicitação reativada por 24h!', 'ok');
     await carregarDados();
   } catch(e) { toast('Erro: ' + e.message, 'err'); }
@@ -597,14 +605,20 @@ function confirmarDelete(tipo, id, nome) {
   deleteCallback = async () => {
     try {
       const tabela = tipo === 'sol' ? 'solicitacoes' : 'voluntarios';
-      await sbFetch(`${tabela}?id=eq.${id}`, { 
-        method: 'DELETE', 
+      const token = usuarioAtual?.access_token || SB_KEY;
+      const delRes = await fetch(`${SB_URL}/rest/v1/${tabela}?id=eq.${id}`, {
+        method: 'DELETE',
         headers: {
-          'Prefer': 'return=minimal',
           'apikey': SB_KEY,
-          'Authorization': 'Bearer ' + (usuarioAtual?.access_token || SB_KEY)
+          'Authorization': 'Bearer ' + token,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal'
         }
       });
+      if (!delRes.ok && delRes.status !== 204) {
+        const errText = await delRes.text();
+        throw new Error(errText);
+      }
       toast('🗑️ Excluído com sucesso!', 'ok');
       fecharConfirm();
       await carregarDados();
