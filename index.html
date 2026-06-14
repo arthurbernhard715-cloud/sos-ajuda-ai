@@ -443,7 +443,7 @@ textarea.form-control { resize: vertical; min-height: 88px; }
   <div class="hero-panel">
     <img class="panel-logo" src="logo.png" alt="SOS Ajuda Aí">
     <p class="panel-slogan">"Conectando quem precisa,<br>com quem quer <strong>ajudar!</strong>"</p>
-    <button class="btn-verm" onclick="abrirModal('modal-atingido')">🏠 Fui atingido — preciso de ajuda</button>
+    <button class="btn-verm" onclick="limparLocalizacao();abrirModal('modal-atingido')">🏠 Fui atingido — preciso de ajuda</button>
     <button class="btn-azul" onclick="abrirModal('modal-voluntario')">🤝 Quero ser voluntário</button>
     <div class="panel-divider"></div>
     <div class="stats">
@@ -625,12 +625,15 @@ textarea.form-control { resize: vertical; min-height: 88px; }
     </div>
     <div class="form-group">
       <label>Endereço</label>
+      <div id="localizacaoConfirmada" style="display:none;background:#ECFDF5;border:1.5px solid #A7F3D0;border-radius:10px;padding:10px 14px;margin-bottom:10px;font-size:0.83rem;color:#15803D;display:none;align-items:center;gap:8px;">
+        ✅ <span id="localizacaoTexto">Localização confirmada!</span>
+      </div>
       <button type="button" class="btn-localizacao" id="btnLocalizacao" onclick="usarLocalizacaoAtual()">
         📍 Usar minha localização atual (GPS)
       </button>
       <div class="form-row-3" style="margin-bottom:8px;">
         <div class="endereco-wrap">
-          <input class="form-control" id="enderecoInput" placeholder="Digite a rua ou avenida..." autocomplete="off" oninput="buscarEndereco(this.value)" onblur="setTimeout(()=>fecharAutocomplete(),200)">
+          <input class="form-control" id="enderecoInput" placeholder="Digite a rua ou avenida..." autocomplete="off" oninput="limparLocalizacao();buscarEndereco(this.value)" onblur="setTimeout(()=>fecharAutocomplete(),200)">
           <div class="autocomplete-list" id="autocompleteList" style="display:none"></div>
         </div>
         <input class="form-control" id="numeroInput" placeholder="Nº" style="text-align:center;">
@@ -1085,6 +1088,24 @@ async function submeterCadastroReal() {
     return;
   }
 
+  // Valida se tem localização confirmada
+  if (!window.latSelecionada || !window.lngSelecionada) {
+    // Tenta geocodificar cidade como fallback mínimo
+    try {
+      const cidadeEnc = encodeURIComponent(`${cidade}, ${estado||'RS'}, Brasil`);
+      const geo = await fetch(`https://nominatim.openstreetmap.org/search?q=${cidadeEnc}&format=json&limit=1`);
+      const geoData = await geo.json();
+      if (!geoData.length) {
+        toast('⚠️ Confirme sua localização pelo GPS ou selecione um endereço na lista de sugestões!');
+        document.getElementById('enderecoInput')?.focus();
+        return;
+      }
+    } catch(e) {
+      toast('⚠️ Confirme sua localização pelo GPS ou selecione um endereço na lista de sugestões!');
+      return;
+    }
+  }
+
   const tipos = [...document.querySelectorAll('#modal-atingido .chk.ativo')].map(el => el.textContent.replace(/^[^a-zA-Z]+/,'').trim());
   const urgEl = document.querySelector('#modal-atingido .urg.ativo');
   const urgencia = urgEl?.classList.contains('vermelho') ? 'vermelho' : urgEl?.classList.contains('verde') ? 'verde' : 'amarelo';
@@ -1354,8 +1375,9 @@ async function buscarEndereco(valor) {
 async function selecionarEndereco(rua, lat, lng) {
   document.getElementById('enderecoInput').value = rua;
   document.getElementById('autocompleteList').style.display = 'none';
-  latSelecionada = parseFloat(lat);
-  lngSelecionada = parseFloat(lng);
+  window.latSelecionada = parseFloat(lat);
+  window.lngSelecionada = parseFloat(lng);
+  confirmarLocalizacaoVisual(rua);
 
   // Busca cidade e estado pelo reverse geocoding
   try {
@@ -1384,6 +1406,22 @@ async function selecionarEndereco(rua, lat, lng) {
   } catch(e) { console.warn('Reverse geocoding falhou:', e); }
 
   document.getElementById('numeroInput').focus();
+}
+
+function confirmarLocalizacaoVisual(endereco) {
+  const box = document.getElementById('localizacaoConfirmada');
+  const txt = document.getElementById('localizacaoTexto');
+  if (box && txt) {
+    txt.textContent = '📍 ' + endereco;
+    box.style.display = 'flex';
+  }
+}
+
+function limparLocalizacao() {
+  window.latSelecionada = null;
+  window.lngSelecionada = null;
+  const box = document.getElementById('localizacaoConfirmada');
+  if (box) box.style.display = 'none';
 }
 
 function fecharAutocomplete() {
@@ -1429,6 +1467,7 @@ async function usarLocalizacaoAtual() {
       btn.style.background = '#ECFDF5';
       btn.style.color = '#15803D';
       btn.style.borderColor = '#A7F3D0';
+      confirmarLocalizacaoVisual(rua || 'GPS detectado');
       toast('📍 Localização preenchida automaticamente!', 'ok');
     } catch(e) {
       btn.textContent = '📍 Usar minha localização atual (GPS)';
