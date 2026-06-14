@@ -619,13 +619,55 @@ textarea.form-control { resize: vertical; min-height: 88px; }
     <h2>Preciso de ajuda</h2>
     <p class="modal-sub">Preencha os dados. Voluntários vão te encontrar no mapa.</p>
     <div class="form-group"><label>Nome completo</label><input class="form-control" placeholder="Ex: Arthur Bernhard"></div>
-    <div class="form-row">
-      <div class="form-group"><label>Cidade</label><input class="form-control" id="cidadeInput" placeholder="Ex: Sinimbu"></div>
-      <div class="form-group"><label>Estado</label><input class="form-control" id="estadoInput" placeholder="Ex: RS" maxlength="2" style="text-transform:uppercase;"></div>
-    </div>
+    <!-- PASSO 1: Estado -->
     <div class="form-group">
-      <label>Endereço</label>
-      <div id="localizacaoConfirmada" style="display:none;background:#ECFDF5;border:1.5px solid #A7F3D0;border-radius:10px;padding:10px 14px;margin-bottom:10px;font-size:0.83rem;color:#15803D;display:none;align-items:center;gap:8px;">
+      <label>1️⃣ Estado <span style="color:#D92B2B;font-size:0.75rem;">*obrigatório primeiro</span></label>
+      <select class="form-control" id="estadoInput" onchange="onEstadoChange(this.value)">
+        <option value="">— Selecione seu estado —</option>
+        <option value="AC">AC — Acre</option>
+        <option value="AL">AL — Alagoas</option>
+        <option value="AP">AP — Amapá</option>
+        <option value="AM">AM — Amazonas</option>
+        <option value="BA">BA — Bahia</option>
+        <option value="CE">CE — Ceará</option>
+        <option value="DF">DF — Distrito Federal</option>
+        <option value="ES">ES — Espírito Santo</option>
+        <option value="GO">GO — Goiás</option>
+        <option value="MA">MA — Maranhão</option>
+        <option value="MT">MT — Mato Grosso</option>
+        <option value="MS">MS — Mato Grosso do Sul</option>
+        <option value="MG">MG — Minas Gerais</option>
+        <option value="PA">PA — Pará</option>
+        <option value="PB">PB — Paraíba</option>
+        <option value="PR">PR — Paraná</option>
+        <option value="PE">PE — Pernambuco</option>
+        <option value="PI">PI — Piauí</option>
+        <option value="RJ">RJ — Rio de Janeiro</option>
+        <option value="RN">RN — Rio Grande do Norte</option>
+        <option value="RS">RS — Rio Grande do Sul</option>
+        <option value="RO">RO — Rondônia</option>
+        <option value="RR">RR — Roraima</option>
+        <option value="SC">SC — Santa Catarina</option>
+        <option value="SP">SP — São Paulo</option>
+        <option value="SE">SE — Sergipe</option>
+        <option value="TO">TO — Tocantins</option>
+      </select>
+    </div>
+
+    <!-- PASSO 2: Cidade (liberado após estado) -->
+    <div class="form-group" id="grupoCidade" style="opacity:0.4;pointer-events:none;">
+      <label>2️⃣ Cidade <span style="color:#64748b;font-size:0.75rem;">*selecione o estado primeiro</span></label>
+      <div class="endereco-wrap">
+        <input class="form-control" id="cidadeInput" placeholder="Digite sua cidade..." autocomplete="off"
+          oninput="buscarCidade(this.value)" onblur="setTimeout(()=>fecharAutocompleteCidade(),200)">
+        <div class="autocomplete-list" id="autocompleteListCidade" style="display:none"></div>
+      </div>
+    </div>
+
+    <!-- PASSO 3: Endereço (liberado após cidade) -->
+    <div class="form-group" id="grupoEndereco" style="opacity:0.4;pointer-events:none;">
+      <label>3️⃣ Endereço <span style="color:#64748b;font-size:0.75rem;">*selecione a cidade primeiro</span></label>
+      <div id="localizacaoConfirmada" style="display:none;background:#ECFDF5;border:1.5px solid #A7F3D0;border-radius:10px;padding:10px 14px;margin-bottom:10px;font-size:0.83rem;color:#15803D;align-items:center;gap:8px;">
         ✅ <span id="localizacaoTexto">Localização confirmada!</span>
       </div>
       <button type="button" class="btn-localizacao" id="btnLocalizacao" onclick="usarLocalizacaoAtual()">
@@ -633,7 +675,8 @@ textarea.form-control { resize: vertical; min-height: 88px; }
       </button>
       <div class="form-row-3" style="margin-bottom:8px;">
         <div class="endereco-wrap">
-          <input class="form-control" id="enderecoInput" placeholder="Digite a rua ou avenida..." autocomplete="off" oninput="limparLocalizacao();buscarEndereco(this.value)" onblur="setTimeout(()=>fecharAutocomplete(),200)">
+          <input class="form-control" id="enderecoInput" placeholder="Digite a rua ou avenida..." autocomplete="off"
+            oninput="limparLocalizacao();buscarEndereco(this.value)" onblur="setTimeout(()=>fecharAutocomplete(),200)">
           <div class="autocomplete-list" id="autocompleteList" style="display:none"></div>
         </div>
         <input class="form-control" id="numeroInput" placeholder="Nº" style="text-align:center;">
@@ -1075,7 +1118,7 @@ async function submeterCadastroReal() {
   }
   const nome     = document.querySelector('#modal-atingido input[placeholder*="Arthur"]')?.value?.trim();
   const cidade   = document.getElementById('cidadeInput')?.value?.trim();
-  const estado   = document.getElementById('estadoInput')?.value?.trim();
+  const estadoEl = document.getElementById('estadoInput'); const estado = estadoEl?.value?.trim() || estadoEl?.options?.[estadoEl.selectedIndex]?.value || '';
   const endRua    = document.getElementById('enderecoInput')?.value?.trim() || '';
   const endNumero = document.getElementById('numeroInput')?.value?.trim() || '';
   const endBairro = document.getElementById('bairroInput')?.value?.trim() || '';
@@ -1088,8 +1131,13 @@ async function submeterCadastroReal() {
     return;
   }
   if (!cidade) {
-    toast('⚠️ Cidade não detectada. Use o GPS ou selecione um endereço na lista!');
-    document.getElementById('enderecoInput')?.focus();
+    toast('⚠️ Use o GPS ou selecione um endereço na lista para preencher a cidade!');
+    document.getElementById('btnLocalizacao')?.scrollIntoView({behavior:'smooth'});
+    return;
+  }
+  if (!estado) {
+    toast('⚠️ Selecione o estado!');
+    document.getElementById('estadoInput')?.focus();
     return;
   }
 
@@ -1116,8 +1164,8 @@ async function submeterCadastroReal() {
   const urgencia = urgEl?.classList.contains('vermelho') ? 'vermelho' : urgEl?.classList.contains('verde') ? 'verde' : 'amarelo';
 
   // Usa coordenadas do autocomplete/GPS se disponíveis
-  let lat = window.latSelecionada || null;
-  let lng = window.lngSelecionada || null;
+  let lat = window.latSelecionada || window._cidadeLat || null;
+  let lng = window.lngSelecionada || window._cidadeLng || null;
 
   // Se não tem coordenadas, geocodifica
   if (!lat || !lng) {
@@ -1351,8 +1399,8 @@ async function buscarEndereco(valor) {
 
   autocompleteTimer = setTimeout(async () => {
     try {
-      const cidade = document.querySelector('#modal-atingido input[placeholder="Sinimbu"]')?.value || 'Sinimbu';
-      const estado = document.querySelector('#modal-atingido input[placeholder="RS"]')?.value || 'RS';
+      const cidade = document.getElementById('cidadeInput')?.value || '';
+      const estado = document.getElementById('estadoInput')?.value || 'RS';
       const q = encodeURIComponent(`${valor}, ${cidade}, ${estado}, Brasil`);
       const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=5&addressdetails=1`);
       const data = await res.json();
@@ -1380,8 +1428,8 @@ async function buscarEndereco(valor) {
 async function selecionarEndereco(rua, lat, lng) {
   document.getElementById('enderecoInput').value = rua;
   document.getElementById('autocompleteList').style.display = 'none';
-  window.latSelecionada = parseFloat(lat);
-  window.lngSelecionada = parseFloat(lng);
+  window.latSelecionada = parseFloat(lat) || window._cidadeLat;
+  window.lngSelecionada = parseFloat(lng) || window._cidadeLng;
   confirmarLocalizacaoVisual(rua);
 
   // Busca cidade e estado pelo reverse geocoding
@@ -1412,7 +1460,12 @@ async function selecionarEndereco(rua, lat, lng) {
     }
     if (estado) {
       const estadoInput = document.getElementById('estadoInput');
-      if (estadoInput) estadoInput.value = estado;
+      if (estadoInput) {
+        // Set select value
+        for (let opt of estadoInput.options) {
+          if (opt.value === estado) { opt.selected = true; break; }
+        }
+      }
     }
     if (numero && !document.getElementById('numeroInput').value) {
       document.getElementById('numeroInput').value = numero;
@@ -1432,6 +1485,12 @@ function confirmarLocalizacaoVisual(endereco) {
     txt.textContent = '📍 ' + endereco;
     box.style.display = 'flex';
   }
+  // Unlock cidade field after GPS/autocomplete fills it
+  const cidadeEl = document.getElementById('cidadeInput');
+  if (cidadeEl) {
+    cidadeEl.style.background = '#f0fdf4';
+    cidadeEl.style.borderColor = '#A7F3D0';
+  }
 }
 
 function limparLocalizacao() {
@@ -1439,6 +1498,83 @@ function limparLocalizacao() {
   window.lngSelecionada = null;
   const box = document.getElementById('localizacaoConfirmada');
   if (box) box.style.display = 'none';
+}
+
+// ── FLUXO ESTADO → CIDADE → ENDEREÇO ──
+function onEstadoChange(estado) {
+  const grupoCidade = document.getElementById('grupoCidade');
+  const grupoEndereco = document.getElementById('grupoEndereco');
+  if (estado) {
+    grupoCidade.style.opacity = '1';
+    grupoCidade.style.pointerEvents = 'auto';
+    grupoCidade.querySelector('label').innerHTML = '2️⃣ Cidade';
+    // Reset cidade e endereço
+    document.getElementById('cidadeInput').value = '';
+    document.getElementById('enderecoInput').value = '';
+    document.getElementById('numeroInput').value = '';
+    document.getElementById('bairroInput').value = '';
+    grupoEndereco.style.opacity = '0.4';
+    grupoEndereco.style.pointerEvents = 'none';
+    window.latSelecionada = null;
+    window.lngSelecionada = null;
+  } else {
+    grupoCidade.style.opacity = '0.4';
+    grupoCidade.style.pointerEvents = 'none';
+    grupoEndereco.style.opacity = '0.4';
+    grupoEndereco.style.pointerEvents = 'none';
+  }
+}
+
+function onCidadeConfirmada(cidade) {
+  const grupoEndereco = document.getElementById('grupoEndereco');
+  grupoEndereco.style.opacity = '1';
+  grupoEndereco.style.pointerEvents = 'auto';
+  grupoEndereco.querySelector('label').innerHTML = '3️⃣ Endereço';
+}
+
+// Autocomplete de CIDADE
+let cidadeTimer = null;
+async function buscarCidade(valor) {
+  clearTimeout(cidadeTimer);
+  const lista = document.getElementById('autocompleteListCidade');
+  if (!valor || valor.length < 2) { lista.style.display = 'none'; return; }
+  const estado = document.getElementById('estadoInput')?.value || '';
+
+  cidadeTimer = setTimeout(async () => {
+    try {
+      const q = encodeURIComponent(`${valor}, ${estado}, Brasil`);
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=5&addressdetails=1&featureType=city`);
+      const data = await res.json();
+      if (!data.length) { lista.style.display = 'none'; return; }
+
+      lista.innerHTML = data.map(r => {
+        const addr = r.address || {};
+        const cidade = addr.city || addr.town || addr.village || addr.municipality || r.display_name.split(',')[0];
+        return `<div class="autocomplete-item" onclick="selecionarCidade('${cidade.replace(/'/g,"\'")}', ${r.lat}, ${r.lon})">
+          <span class="autocomplete-icon">🏙️</span>
+          <div class="autocomplete-text">
+            <div class="autocomplete-main">${cidade}</div>
+            <div class="autocomplete-sub">${addr.state || ''}</div>
+          </div>
+        </div>`;
+      }).join('');
+      lista.style.display = 'block';
+    } catch(e) { console.warn('Cidade autocomplete erro:', e); }
+  }, 350);
+}
+
+function selecionarCidade(cidade, lat, lng) {
+  document.getElementById('cidadeInput').value = cidade;
+  document.getElementById('autocompleteListCidade').style.display = 'none';
+  // Guarda coords aproximadas da cidade como fallback
+  window._cidadeLat = parseFloat(lat);
+  window._cidadeLng = parseFloat(lng);
+  onCidadeConfirmada(cidade);
+}
+
+function fecharAutocompleteCidade() {
+  const lista = document.getElementById('autocompleteListCidade');
+  if (lista) lista.style.display = 'none';
 }
 
 function fecharAutocomplete() {
@@ -1484,6 +1620,16 @@ async function usarLocalizacaoAtual() {
       btn.style.background = '#ECFDF5';
       btn.style.color = '#15803D';
       btn.style.borderColor = '#A7F3D0';
+      // Unlock cidade e endereco via GPS
+      if (cidade) {
+        const estadoInp = document.getElementById('estadoInput');
+        if (estadoInp && estado) {
+          for (let opt of estadoInp.options) { if (opt.value === estado) { opt.selected = true; break; } }
+          onEstadoChange(estado);
+        }
+        document.getElementById('cidadeInput').value = cidade;
+        onCidadeConfirmada(cidade);
+      }
       confirmarLocalizacaoVisual(rua || 'GPS detectado');
       toast('📍 Localização preenchida automaticamente!', 'ok');
     } catch(e) {
