@@ -620,8 +620,8 @@ textarea.form-control { resize: vertical; min-height: 88px; }
     <p class="modal-sub">Preencha os dados. Voluntários vão te encontrar no mapa.</p>
     <div class="form-group"><label>Nome completo</label><input class="form-control" placeholder="Ex: Arthur Bernhard"></div>
     <div class="form-row">
-      <div class="form-group"><label>Cidade</label><input class="form-control" placeholder="Sinimbu"></div>
-      <div class="form-group"><label>Estado</label><input class="form-control" placeholder="RS"></div>
+      <div class="form-group"><label>Cidade <span style="color:var(--verm);font-size:0.75rem;">*preenchido automaticamente</span></label><input class="form-control" id="cidadeInput" placeholder="Selecione pelo GPS ou endereço" readonly style="background:#F4F6FA;cursor:not-allowed;"></div>
+      <div class="form-group"><label>Estado <span style="color:var(--verm);font-size:0.75rem;">*auto</span></label><input class="form-control" id="estadoInput" placeholder="Auto" readonly style="background:#F4F6FA;cursor:not-allowed;"></div>
     </div>
     <div class="form-group">
       <label>Endereço</label>
@@ -1074,8 +1074,8 @@ async function submeterCadastroReal() {
     return;
   }
   const nome     = document.querySelector('#modal-atingido input[placeholder*="Arthur"]')?.value?.trim();
-  const cidade   = document.querySelector('#modal-atingido input[placeholder="Sinimbu"]')?.value?.trim();
-  const estado   = document.querySelector('#modal-atingido input[placeholder="RS"]')?.value?.trim();
+  const cidade   = document.getElementById('cidadeInput')?.value?.trim();
+  const estado   = document.getElementById('estadoInput')?.value?.trim();
   const endRua    = document.getElementById('enderecoInput')?.value?.trim() || '';
   const endNumero = document.getElementById('numeroInput')?.value?.trim() || '';
   const endBairro = document.getElementById('bairroInput')?.value?.trim() || '';
@@ -1083,8 +1083,13 @@ async function submeterCadastroReal() {
   const descricao = document.querySelector('#modal-atingido textarea')?.value?.trim();
   const limite   = parseInt(document.querySelector('#modal-atingido input[type="number"]')?.value) || 15;
 
-  if (!nome || !cidade || !endereco) {
-    toast('⚠️ Preencha nome, cidade e endereço!');
+  if (!nome || !endereco) {
+    toast('⚠️ Preencha seu nome e use o GPS ou autocomplete para definir o endereço!');
+    return;
+  }
+  if (!cidade) {
+    toast('⚠️ Cidade não detectada. Use o GPS ou selecione um endereço na lista!');
+    document.getElementById('enderecoInput')?.focus();
     return;
   }
 
@@ -1387,15 +1392,27 @@ async function selecionarEndereco(rua, lat, lng) {
     const cidade = addr.city || addr.town || addr.village || addr.municipality || '';
     const numero = addr.house_number || '';
     const bairro = addr.suburb || addr.city_district || '';
-    const estado = addr.state_code || (addr.state ? addr.state.substring(0,2).toUpperCase() : '');
+    // Detecta estado correto do Brasil
+    const estadoBruto = addr.state || '';
+    const mapaEstados = {
+      'Rio Grande do Sul': 'RS', 'Santa Catarina': 'SC', 'Paraná': 'PR',
+      'São Paulo': 'SP', 'Rio de Janeiro': 'RJ', 'Minas Gerais': 'MG',
+      'Bahia': 'BA', 'Pernambuco': 'PE', 'Ceará': 'CE', 'Goiás': 'GO',
+      'Mato Grosso': 'MT', 'Mato Grosso do Sul': 'MS', 'Pará': 'PA',
+      'Maranhão': 'MA', 'Amazonas': 'AM', 'Espírito Santo': 'ES',
+      'Alagoas': 'AL', 'Piauí': 'PI', 'Rio Grande do Norte': 'RN',
+      'Paraíba': 'PB', 'Sergipe': 'SE', 'Rondônia': 'RO', 'Tocantins': 'TO',
+      'Acre': 'AC', 'Amapá': 'AP', 'Roraima': 'RR', 'Distrito Federal': 'DF'
+    };
+    const estado = mapaEstados[estadoBruto] || addr.state_code || estadoBruto.substring(0,2).toUpperCase() || '';
 
     if (cidade) {
-      const cidadeInput = document.querySelector('#modal-atingido input[placeholder="Sinimbu"]');
+      const cidadeInput = document.getElementById('cidadeInput');
       if (cidadeInput) cidadeInput.value = cidade;
     }
     if (estado) {
-      const estadoInput = document.querySelector('#modal-atingido input[placeholder="RS"]');
-      if (estadoInput) estadoInput.value = estado.toUpperCase();
+      const estadoInput = document.getElementById('estadoInput');
+      if (estadoInput) estadoInput.value = estado;
     }
     if (numero && !document.getElementById('numeroInput').value) {
       document.getElementById('numeroInput').value = numero;
