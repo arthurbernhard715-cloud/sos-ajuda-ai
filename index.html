@@ -983,6 +983,12 @@ textarea.form-control { resize: vertical; min-height: 88px; }
     <div id="bloco-concluir" style="display:none;margin-bottom:8px;">
       <button class="btn-concluir" onclick="marcarConcluido()">✅ Marcar como concluído</button>
     </div>
+    <!-- Botão cancelar presença (aparece quando já confirmou) -->
+    <button id="btn-cancelar-presenca" style="display:none;width:100%;padding:12px;border-radius:12px;border:2px solid #D92B2B;background:transparent;color:#D92B2B;font-family:'Montserrat',sans-serif;font-weight:700;font-size:0.9rem;cursor:pointer;margin-bottom:10px;transition:all .2s;"
+      onmouseover="this.style.background='#FEF2F2'" onmouseout="this.style.background='transparent'"
+      onclick="cancelarPresenca(this)">
+      ❌ Cancelar minha confirmação
+    </button>
     <div class="modal-footer">
       <button class="btn-cancel" onclick="fecharModal('modal-detalhe')">Fechar</button>
       <button class="btn-submit" id="btn-confirmar-presenca" onclick="confirmarPresenca(null,this)">🙋 Confirmar presença</button>
@@ -1295,26 +1301,67 @@ async function confirmarPresenca(solId, btn) {
     return;
   }
   if (!solId) solId = document.getElementById('btn-confirmar-presenca').dataset.solId;
+
+  // Desabilita botão imediatamente para evitar cliques duplos
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Confirmando...'; }
+
   try {
-    // Incrementa contador
+    // 1. Verifica se já confirmou presença nesta solicitação
+    const userId = usuarioAtual.user?.id;
+    const jaConfirmou = await sbFetch(`confirmacoes?solicitacao_id=eq.${solId}&voluntario_id=eq.${userId}&select=id`);
+    if (jaConfirmou.length > 0) {
+      toast('⚠️ Você já confirmou presença nesta solicitação!');
+      if (btn) { btn.textContent = '✅ Já confirmado'; btn.style.background = '#15803D'; }
+      return;
+    }
+
+    // 2. Verifica limite de voluntários
     const atual = await sbFetch(`solicitacoes?id=eq.${solId}&select=voluntarios_confirmados,limite_voluntarios`);
-    if (!atual.length) throw new Error('Não encontrado');
+    if (!atual.length) throw new Error('Solicitação não encontrada');
     const s = atual[0];
     if (s.voluntarios_confirmados >= s.limite_voluntarios) {
       toast('⚠️ Limite de voluntários já atingido para esta solicitação.');
+      if (btn) { btn.disabled = false; btn.textContent = 'Quero ajudar'; }
       return;
     }
+
+    // 3. Registra confirmação
+    await sbFetch('confirmacoes', {
+      method: 'POST',
+      body: JSON.stringify({
+        solicitacao_id: solId,
+        voluntario_id: userId,
+        status: 'confirmado'
+      })
+    });
+
+    // 4. Incrementa contador
     await sbFetch(`solicitacoes?id=eq.${solId}`, {
       method: 'PATCH',
       body: JSON.stringify({ voluntarios_confirmados: s.voluntarios_confirmados + 1 })
     });
-    if (btn) { btn.textContent = '✅ Confirmado!'; btn.style.background = '#15803D'; btn.disabled = true; }
+
+    if (btn) { btn.style.display = 'none'; }
+    // Mostra botão cancelar
+    const btnCancelar = document.getElementById('btn-cancelar-presenca');
+    if (btnCancelar && conf?.length) {
+      btnCancelar.style.display = 'block';
+      btnCancelar.dataset.solId = solId;
+    }
     fecharModal('modal-detalhe');
     toast('🎉 Presença confirmada! O solicitante foi notificado.', 'ok');
-    carregarSolicitacoes(); // Atualiza lista
+    carregarSolicitacoes();
+
   } catch(e) {
-    toast('⚠️ Erro ao confirmar. Tente novamente.');
-    console.error(e);
+    // Se erro de duplicata (já confirmou)
+    if (e.message?.includes('unique') || e.message?.includes('duplicate')) {
+      toast('⚠️ Você já confirmou presença nesta solicitação!');
+      if (btn) { btn.textContent = '✅ Já confirmado'; btn.style.background = '#15803D'; }
+    } else {
+      toast('⚠️ Erro ao confirmar. Tente novamente.');
+      if (btn) { btn.disabled = false; btn.textContent = 'Quero ajudar'; }
+      console.error(e);
+    }
   }
 }
 
@@ -2140,6 +2187,34 @@ let _estrelaSelecionada = 0;
 let _solAtualId = null;
 
 // Mostra botão "Concluir" se for o dono da solicitação
+async function verificarJaConfirmou(solId) {
+  try {
+    const userId = usuarioAtual?.user?.id;
+    if (!userId) return;
+    const confs = await sbFetch(`confirmacoes?solicitacao_id=eq.${solId}&voluntario_id=eq.${userId}&select=id`);
+    const btn = document.getElementById('btn-confirmar-presenca');
+    const btnCancelar = document.getElementById('btn-cancelar-presenca');
+    if (confs.length > 0) {
+      // Já confirmou — mostra botão de cancelar
+      if (btn) { btn.style.display = 'none'; }
+      if (btnCancelar) {
+        btnCancelar.style.display = 'block';
+        btnCancelar.dataset.confId = confs[0].id;
+        btnCancelar.dataset.solId = solId;
+      }
+    } else {
+      // Não confirmou — mostra botão de confirmar
+      if (btn) {
+        btn.textContent = '🙋 Confirmar presença';
+        btn.style.background = '';
+        btn.disabled = false;
+        btn.style.display = 'block';
+      }
+      if (btnCancelar) btnCancelar.style.display = 'none';
+    }
+  } catch(e) { console.warn('Erro ao verificar confirmação:', e); }
+}
+
 function verificarDono(solicitacao) {
   const bloco = document.getElementById('bloco-concluir');
   const btnConfirmar = document.getElementById('btn-confirmar-presenca');
@@ -2166,6 +2241,52 @@ function verificarDono(solicitacao) {
     bloco.style.display = 'none';
     btnConfirmar.style.display = 'block';
     _solAtualId = solicitacao.id;
+  }
+}
+
+async function cancelarPresenca(btn) {
+  const confId = btn.dataset.confId;
+  const solId  = btn.dataset.solId;
+  if (!confId || !solId) return;
+
+  // Confirma antes de cancelar
+  if (!confirm('Tem certeza que deseja cancelar sua confirmação de presença?')) return;
+
+  try {
+    btn.disabled = true;
+    btn.textContent = '⏳ Cancelando...';
+
+    // Remove confirmação
+    const token = usuarioAtual?.access_token || SB_KEY;
+    const res = await fetch(`${SB_URL}/rest/v1/confirmacoes?id=eq.${confId}`, {
+      method: 'DELETE',
+      headers: {
+        'apikey': SB_KEY,
+        'Authorization': 'Bearer ' + token,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      }
+    });
+
+    // Decrementa contador
+    const atual = await sbFetch(`solicitacoes?id=eq.${solId}&select=voluntarios_confirmados`);
+    if (atual.length) {
+      const novoTotal = Math.max(0, (atual[0].voluntarios_confirmados || 1) - 1);
+      await sbFetch(`solicitacoes?id=eq.${solId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ voluntarios_confirmados: novoTotal })
+      });
+    }
+
+    fecharModal('modal-detalhe');
+    toast('↩️ Confirmação cancelada.', '');
+    carregarSolicitacoes();
+
+  } catch(e) {
+    toast('⚠️ Erro ao cancelar. Tente novamente.');
+    btn.disabled = false;
+    btn.textContent = '❌ Cancelar minha confirmação';
+    console.error(e);
   }
 }
 
@@ -2400,6 +2521,55 @@ async function abrirPainelVoluntario() {
   await carregarDadosVoluntario();
 }
 
+async function cancelarPresencaPainel(confId, solId) {
+  if (!confirm('Tem certeza que deseja cancelar sua confirmação de presença?')) return;
+
+  const itemEl = document.getElementById(`conf-item-${confId}`);
+  if (itemEl) {
+    itemEl.style.opacity = '0.5';
+    itemEl.style.pointerEvents = 'none';
+  }
+
+  try {
+    const token = usuarioAtual?.access_token || SB_KEY;
+
+    // Remove confirmação
+    await fetch(`${SB_URL}/rest/v1/confirmacoes?id=eq.${confId}`, {
+      method: 'DELETE',
+      headers: {
+        'apikey': SB_KEY,
+        'Authorization': 'Bearer ' + token,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      }
+    });
+
+    // Decrementa contador na solicitação
+    if (solId) {
+      const atual = await sbFetch(`solicitacoes?id=eq.${solId}&select=voluntarios_confirmados`);
+      if (atual.length) {
+        const novoTotal = Math.max(0, (atual[0].voluntarios_confirmados || 1) - 1);
+        await sbFetch(`solicitacoes?id=eq.${solId}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ voluntarios_confirmados: novoTotal })
+        });
+      }
+    }
+
+    toast('↩️ Confirmação cancelada.', '');
+    // Remove o card da lista
+    if (itemEl) itemEl.remove();
+    // Atualiza stats
+    await carregarDadosVoluntario();
+    carregarSolicitacoes();
+
+  } catch(e) {
+    toast('⚠️ Erro ao cancelar. Tente novamente.');
+    if (itemEl) { itemEl.style.opacity = '1'; itemEl.style.pointerEvents = 'auto'; }
+    console.error(e);
+  }
+}
+
 function fecharPainelVoluntario() {
   document.getElementById('volPanel').classList.remove('open');
   document.getElementById('volPanelOverlay').classList.remove('open');
@@ -2474,14 +2644,24 @@ function renderListaConfirmadas(confs) {
   el.innerHTML = confs.map(c => {
     const s = c.solicitacoes || {};
     const exp = calcularExpiracao(s.expira_em);
-    return `<div class="vol-item">
-      <div class="vol-item-nome">${s.nome || '—'}</div>
+    const urg = s.urgencia === 'vermelho' ? '🔴' : s.urgencia === 'amarelo' ? '🟡' : '🟢';
+    return `<div class="vol-item" id="conf-item-${c.id}">
+      <div class="vol-item-nome">${s.nome || '—'} ${urg}</div>
       <div class="vol-item-local">📍 ${s.cidade || ''}, ${s.estado || ''}</div>
+      <div style="font-size:0.78rem;color:#475569;margin-bottom:8px;">${s.endereco || ''}</div>
       <div class="vol-item-tags">${(s.tipos_ajuda||[]).map(t=>`<span class="tag">${t}</span>`).join('')}</div>
-      <div class="vol-item-footer">
+      <div class="vol-item-footer" style="margin-top:10px;">
         <span class="vol-status vs-confirmado">✅ Confirmado</span>
         <span style="font-size:0.75rem;color:#64748b;">⏰ ${exp}</span>
       </div>
+      <button onclick="cancelarPresencaPainel('${c.id}','${s.id || ''}')"
+        style="width:100%;margin-top:10px;padding:9px;border-radius:9px;
+        border:1.5px solid #FECACA;background:transparent;color:#D92B2B;
+        font-size:0.8rem;font-weight:700;cursor:pointer;transition:all .2s;font-family:'Montserrat',sans-serif;"
+        onmouseover="this.style.background='#FEF2F2'" 
+        onmouseout="this.style.background='transparent'">
+        ❌ Cancelar confirmação
+      </button>
     </div>`;
   }).join('');
 }
