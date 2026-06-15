@@ -857,7 +857,50 @@ textarea.form-control { resize: vertical; min-height: 88px; }
       <!-- WhatsApp -->
       <div class="form-group">
         <label>WhatsApp</label>
-        <input class="form-control" id="vol-whatsapp" placeholder="(xx) 9xxxx-xxxx" type="tel">
+        <div style="display:flex;gap:8px;">
+          <div style="position:relative;">
+            <select id="vol-ddi" class="form-control" style="width:110px;padding-right:8px;cursor:pointer;" onchange="atualizarDDI(this.value)">
+              <option value="+55" data-flag="🇧🇷">🇧🇷 +55</option>
+              <option value="+1" data-flag="🇺🇸">🇺🇸 +1</option>
+              <option value="+44" data-flag="🇬🇧">🇬🇧 +44</option>
+              <option value="+351" data-flag="🇵🇹">🇵🇹 +351</option>
+              <option value="+34" data-flag="🇪🇸">🇪🇸 +34</option>
+              <option value="+33" data-flag="🇫🇷">🇫🇷 +33</option>
+              <option value="+49" data-flag="🇩🇪">🇩🇪 +49</option>
+              <option value="+39" data-flag="🇮🇹">🇮🇹 +39</option>
+              <option value="+54" data-flag="🇦🇷">🇦🇷 +54</option>
+              <option value="+56" data-flag="🇨🇱">🇨🇱 +56</option>
+              <option value="+57" data-flag="🇨🇴">🇨🇴 +57</option>
+              <option value="+598" data-flag="🇺🇾">🇺🇾 +598</option>
+              <option value="+595" data-flag="🇵🇾">🇵🇾 +595</option>
+              <option value="+51" data-flag="🇵🇪">🇵🇪 +51</option>
+              <option value="+58" data-flag="🇻🇪">🇻🇪 +58</option>
+              <option value="+52" data-flag="🇲🇽">🇲🇽 +52</option>
+              <option value="+81" data-flag="🇯🇵">🇯🇵 +81</option>
+              <option value="+86" data-flag="🇨🇳">🇨🇳 +86</option>
+              <option value="+91" data-flag="🇮🇳">🇮🇳 +91</option>
+              <option value="+27" data-flag="🇿🇦">🇿🇦 +27</option>
+              <option value="+61" data-flag="🇦🇺">🇦🇺 +61</option>
+              <option value="+64" data-flag="🇳🇿">🇳🇿 +64</option>
+              <option value="+7" data-flag="🇷🇺">🇷🇺 +7</option>
+              <option value="+82" data-flag="🇰🇷">🇰🇷 +82</option>
+              <option value="+31" data-flag="🇳🇱">🇳🇱 +31</option>
+              <option value="+32" data-flag="🇧🇪">🇧🇪 +32</option>
+              <option value="+41" data-flag="🇨🇭">🇨🇭 +41</option>
+              <option value="+43" data-flag="🇦🇹">🇦🇹 +43</option>
+              <option value="+48" data-flag="🇵🇱">🇵🇱 +48</option>
+              <option value="+46" data-flag="🇸🇪">🇸🇪 +46</option>
+              <option value="+47" data-flag="🇳🇴">🇳🇴 +47</option>
+              <option value="+45" data-flag="🇩🇰">🇩🇰 +45</option>
+              <option value="+358" data-flag="🇫🇮">🇫🇮 +358</option>
+              <option value="+20" data-flag="🇪🇬">🇪🇬 +20</option>
+              <option value="+234" data-flag="🇳🇬">🇳🇬 +234</option>
+              <option value="+212" data-flag="🇲🇦">🇲🇦 +212</option>
+            </select>
+          </div>
+          <input class="form-control" id="vol-whatsapp" placeholder="9xxxx-xxxx" type="tel" style="flex:1;">
+        </div>
+        <div style="font-size:0.72rem;color:#94a3b8;margin-top:4px;">O código do país é selecionado automaticamente</div>
       </div>
 
       <!-- PASSO 1: País -->
@@ -1356,7 +1399,9 @@ async function submeterVoluntarioReal() {
     return;
   }
   const nome     = document.getElementById('vol-nome')?.value?.trim();
-  const whatsapp = document.getElementById('vol-whatsapp')?.value?.trim();
+  const ddi = document.getElementById('vol-ddi')?.value || '+55';
+  const wNum = document.getElementById('vol-whatsapp')?.value?.trim() || '';
+  const whatsapp = wNum ? ddi + ' ' + wNum : '';
   const pais     = document.getElementById('vol-pais')?.value?.trim();
   const estado   = document.getElementById('vol-estado')?.value?.trim();
   const cidade   = document.getElementById('vol-cidade')?.value?.trim();
@@ -1364,7 +1409,7 @@ async function submeterVoluntarioReal() {
   const habs     = [...document.querySelectorAll('#vol-habilidades .chk.ativo')].map(e => e.textContent.replace(/^[^a-zA-ZÀ-ú]+/,'').trim());
 
   if (!nome)     { toast('⚠️ Preencha seu nome!'); return; }
-  if (!whatsapp) { toast('⚠️ Preencha seu WhatsApp!'); return; }
+  if (!wNum) { toast('⚠️ Preencha seu WhatsApp!'); return; }
   if (!pais)     { toast('⚠️ Selecione seu país!'); return; }
   if (!estado)   { toast('⚠️ Selecione seu estado!'); return; }
   if (!cidade)   { toast('⚠️ Selecione sua cidade!'); return; }
@@ -1584,6 +1629,31 @@ async function buscarPaisVol(valor) {
     } catch(e) {}
   }, 350);
 }
+// Mapa de países para DDI
+const DDI_MAP = {
+  'Brasil': '+55', 'United States': '+1', 'USA': '+1', 'Estados Unidos': '+1',
+  'United Kingdom': '+44', 'Reino Unido': '+44', 'Portugal': '+351',
+  'Spain': '+34', 'Espanha': '+34', 'France': '+33', 'França': '+33',
+  'Germany': '+49', 'Alemanha': '+49', 'Italy': '+39', 'Itália': '+39',
+  'Argentina': '+54', 'Chile': '+56', 'Colombia': '+57', 'Colômbia': '+57',
+  'Uruguay': '+598', 'Uruguai': '+598', 'Paraguay': '+595', 'Paraguai': '+595',
+  'Peru': '+51', 'Venezuela': '+58', 'Mexico': '+52', 'México': '+52',
+  'Japan': '+81', 'Japão': '+81', 'China': '+86', 'India': '+91', 'Índia': '+91',
+  'South Africa': '+27', 'África do Sul': '+27', 'Australia': '+61', 'Austrália': '+61',
+  'New Zealand': '+64', 'Nova Zelândia': '+64', 'Russia': '+7', 'Rússia': '+7',
+  'South Korea': '+82', 'Coreia do Sul': '+82', 'Netherlands': '+31', 'Países Baixos': '+31',
+  'Belgium': '+32', 'Bélgica': '+32', 'Switzerland': '+41', 'Suíça': '+41',
+  'Austria': '+43', 'Áustria': '+43', 'Poland': '+48', 'Polônia': '+48',
+  'Sweden': '+46', 'Suécia': '+46', 'Norway': '+47', 'Noruega': '+47',
+  'Denmark': '+45', 'Dinamarca': '+45', 'Finland': '+358', 'Finlândia': '+358',
+  'Egypt': '+20', 'Egito': '+20', 'Nigeria': '+234', 'Nigéria': '+234',
+  'Morocco': '+212', 'Marrocos': '+212'
+};
+
+function atualizarDDI(val) {
+  // Chamado quando usuário muda manualmente o DDI
+}
+
 function selecionarPaisVol(nome) {
   _volPaisSel = nome;
   document.getElementById('vol-pais').value = nome;
@@ -1595,6 +1665,12 @@ function selecionarPaisVol(nome) {
   document.getElementById('vol-cidade').value='';
   document.getElementById('vol-grupoCidade').style.opacity='0.35';
   document.getElementById('vol-grupoCidade').style.pointerEvents='none';
+  // Auto-seleciona DDI
+  const ddi = DDI_MAP[nome];
+  if (ddi) {
+    const sel = document.getElementById('vol-ddi');
+    if (sel) sel.value = ddi;
+  }
 }
 function fecharListaPaisVol() { const el=document.getElementById('listaPaisVol'); if(el) el.style.display='none'; }
 
