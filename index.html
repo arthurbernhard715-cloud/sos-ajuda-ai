@@ -281,6 +281,32 @@ textarea.form-control { resize: vertical; min-height: 88px; }
 
 
 
+
+/* ── AVALIAÇÃO ── */
+.stars-input { display:flex; gap:6px; margin:8px 0; }
+.star-btn {
+  font-size:2rem; cursor:pointer; color:#e2e8f0;
+  transition:all .15s; background:none; border:none; padding:0;
+}
+.star-btn.ativo { color:#F59E0B; }
+.star-btn:hover { transform:scale(1.2); }
+.avaliacao-card {
+  background:#F4F6FA; border-radius:12px; padding:20px;
+  border:1.5px solid #E2E8F0; margin-bottom:12px;
+}
+.avaliacao-card h4 { font-family:'Montserrat',sans-serif; font-weight:700; font-size:0.95rem; color:var(--azul); margin-bottom:4px; }
+.avaliacao-card .stars-display { color:#F59E0B; font-size:1.1rem; letter-spacing:2px; }
+.avaliacao-card .comentario { font-size:0.83rem; color:#64748b; margin-top:6px; font-style:italic; }
+.btn-concluir {
+  width:100%; padding:13px; border-radius:12px; border:none;
+  background:linear-gradient(135deg,#15803D,#16a34a);
+  color:#fff; font-family:'Montserrat',sans-serif; font-weight:700;
+  font-size:0.93rem; cursor:pointer; transition:all .2s;
+  box-shadow:0 4px 14px rgba(21,128,61,0.3); margin-bottom:10px;
+}
+.btn-concluir:hover { transform:translateY(-1px); box-shadow:0 6px 20px rgba(21,128,61,0.4); }
+.media-estrelas { display:inline-flex; align-items:center; gap:4px; font-size:0.82rem; color:#F59E0B; font-weight:700; }
+
 /* ── AUTOCOMPLETE ── */
 .endereco-wrap { position: relative; }
 .autocomplete-list {
@@ -752,6 +778,43 @@ textarea.form-control { resize: vertical; min-height: 88px; }
   </div>
 </div>
 
+
+<!-- MODAL: AVALIAÇÃO -->
+<div class="modal-overlay" id="modal-avaliacao">
+  <div class="modal">
+    <button class="modal-close" onclick="fecharModal('modal-avaliacao')">✕</button>
+    <h2>⭐ Avaliar</h2>
+    <p class="modal-sub" id="avaliacao-sub">Como foi a experiência?</p>
+
+    <div class="avaliacao-card" style="background:#EEF2FF;">
+      <h4 id="avaliacao-nome">—</h4>
+      <div style="font-size:0.82rem;color:#64748b;" id="avaliacao-tipo-txt">—</div>
+    </div>
+
+    <div class="form-group">
+      <label>Sua nota</label>
+      <div class="stars-input" id="starsInput">
+        <button class="star-btn" onclick="selecionarEstrela(1)" data-val="1">★</button>
+        <button class="star-btn" onclick="selecionarEstrela(2)" data-val="2">★</button>
+        <button class="star-btn" onclick="selecionarEstrela(3)" data-val="3">★</button>
+        <button class="star-btn" onclick="selecionarEstrela(4)" data-val="4">★</button>
+        <button class="star-btn" onclick="selecionarEstrela(5)" data-val="5">★</button>
+      </div>
+      <div id="estrela-label" style="font-size:0.82rem;color:#64748b;margin-top:4px;">Clique nas estrelas para avaliar</div>
+    </div>
+
+    <div class="form-group">
+      <label>Comentário <span style="color:#94a3b8;font-weight:400;">(opcional)</span></label>
+      <textarea class="form-control" id="avaliacaoComentario" placeholder="Conte como foi a experiência..." style="min-height:80px;"></textarea>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="fecharModal('modal-avaliacao')">Agora não</button>
+      <button class="btn-submit" onclick="enviarAvaliacao()">⭐ Enviar avaliação</button>
+    </div>
+  </div>
+</div>
+
 <!-- DETALHE CARD -->
 <div class="modal-overlay" id="modal-detalhe">
   <div class="modal">
@@ -777,9 +840,13 @@ textarea.form-control { resize: vertical; min-height: 88px; }
       </div>
       <button class="btn-reativar" onclick="reativarSolicitacao()">🔁 Reativar minha solicitação</button>
     </div>
+    <!-- Botão concluir (só aparece para o dono da solicitação) -->
+    <div id="bloco-concluir" style="display:none;margin-bottom:8px;">
+      <button class="btn-concluir" onclick="marcarConcluido()">✅ Marcar como concluído</button>
+    </div>
     <div class="modal-footer">
       <button class="btn-cancel" onclick="fecharModal('modal-detalhe')">Fechar</button>
-      <button class="btn-submit" id="btn-confirmar-presenca" onclick="fecharModal('modal-detalhe');toast('🎉 Presença confirmada! O solicitante foi notificado.','ok')">🙋 Confirmar presença</button>
+      <button class="btn-submit" id="btn-confirmar-presenca" onclick="confirmarPresenca(null,this)">🙋 Confirmar presença</button>
     </div>
   </div>
 </div>
@@ -1732,6 +1799,159 @@ const _geocodificar = submeterCadastroReal;
 const __submeterOriginal = window._submeterCadastroReal || null;
 
 // Coordenadas do GPS/autocomplete usadas em submeterCadastroReal
+</script>
+
+
+<script>
+// ═══════════════════════════════════════
+// SISTEMA DE AVALIAÇÃO
+// ═══════════════════════════════════════
+let _avaliacaoData = {};
+let _estrelaSelecionada = 0;
+let _solAtualId = null;
+
+// Mostra botão "Concluir" se for o dono da solicitação
+function verificarDono(solicitacao) {
+  const bloco = document.getElementById('bloco-concluir');
+  const btnConfirmar = document.getElementById('btn-confirmar-presenca');
+  if (!bloco) return;
+
+  // Verifica se usuário logado é o dono (pelo nome ou email)
+  const nomeUsuario = usuarioAtual?.user?.user_metadata?.full_name || '';
+  const emailUsuario = usuarioAtual?.user?.email || '';
+  const ehDono = solicitacao.nome && (
+    nomeUsuario.toLowerCase().includes(solicitacao.nome.split(' ')[0].toLowerCase()) ||
+    solicitacao.email_dono === emailUsuario
+  );
+
+  if (ehDono && !solicitacao.concluido) {
+    bloco.style.display = 'block';
+    btnConfirmar.style.display = 'none';
+    _solAtualId = solicitacao.id;
+  } else if (solicitacao.concluido) {
+    bloco.style.display = 'none';
+    btnConfirmar.style.display = 'none';
+    // Mostra que está concluído
+    document.getElementById('btn-confirmar-presenca').textContent = '✅ Ajuda concluída';
+  } else {
+    bloco.style.display = 'none';
+    btnConfirmar.style.display = 'block';
+    _solAtualId = solicitacao.id;
+  }
+}
+
+async function marcarConcluido() {
+  if (!_solAtualId) return;
+  try {
+    await sbFetch(`solicitacoes?id=eq.${_solAtualId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ ativo: false })
+    });
+    fecharModal('modal-detalhe');
+    toast('✅ Ajuda marcada como concluída!', 'ok');
+    carregarSolicitacoes();
+
+    // Abre modal de avaliação após 1 segundo
+    setTimeout(() => {
+      abrirAvaliacaoVoluntario(_solAtualId);
+    }, 1000);
+  } catch(e) {
+    toast('⚠️ Erro ao concluir. Tente novamente.');
+  }
+}
+
+async function abrirAvaliacaoVoluntario(solId) {
+  // Busca confirmações desta solicitação
+  try {
+    const confs = await sbFetch(`confirmacoes?solicitacao_id=eq.${solId}&select=*`);
+    if (!confs.length) return;
+
+    // Para simplificar, avalia o primeiro voluntário confirmado
+    const conf = confs[0];
+    _avaliacaoData = {
+      confirmacao_id: conf.id,
+      avaliador_id: usuarioAtual?.user?.id,
+      avaliado_id: conf.voluntario_id,
+      tipo: 'atingido_avalia_voluntario'
+    };
+
+    document.getElementById('avaliacao-nome').textContent = 'Voluntário que te ajudou';
+    document.getElementById('avaliacao-tipo-txt').textContent = 'Como foi a ajuda que você recebeu?';
+    document.getElementById('avaliacao-sub').textContent = 'Avalie o voluntário que te ajudou';
+    _estrelaSelecionada = 0;
+    document.querySelectorAll('.star-btn').forEach(s => s.classList.remove('ativo'));
+    document.getElementById('avaliacaoComentario').value = '';
+    document.getElementById('estrela-label').textContent = 'Clique nas estrelas para avaliar';
+    abrirModal('modal-avaliacao');
+  } catch(e) { console.warn('Erro ao abrir avaliação:', e); }
+}
+
+function selecionarEstrela(val) {
+  _estrelaSelecionada = val;
+  const labels = ['', 'Muito ruim 😞', 'Ruim 😕', 'Regular 😐', 'Bom 😊', 'Excelente! 🌟'];
+  document.getElementById('estrela-label').textContent = labels[val];
+  document.querySelectorAll('.star-btn').forEach(s => {
+    s.classList.toggle('ativo', parseInt(s.dataset.val) <= val);
+  });
+}
+
+async function enviarAvaliacao() {
+  if (!_estrelaSelecionada) {
+    toast('⚠️ Selecione uma nota de 1 a 5 estrelas!');
+    return;
+  }
+  const comentario = document.getElementById('avaliacaoComentario')?.value?.trim();
+  try {
+    await sbFetch('avaliacoes', {
+      method: 'POST',
+      body: JSON.stringify({
+        ..._avaliacaoData,
+        estrelas: _estrelaSelecionada,
+        comentario: comentario || null
+      })
+    });
+
+    // Atualiza média do voluntário
+    if (_avaliacaoData.avaliado_id) {
+      atualizarMediaVoluntario(_avaliacaoData.avaliado_id);
+    }
+
+    fecharModal('modal-avaliacao');
+    toast('⭐ Avaliação enviada! Obrigado pelo feedback.', 'ok');
+
+    // Convida voluntário a avaliar de volta (simulado por ora)
+    setTimeout(() => {
+      toast('📨 O voluntário também receberá um convite para te avaliar.', '');
+    }, 2000);
+
+  } catch(e) {
+    toast('⚠️ Erro ao enviar avaliação. Tente novamente.');
+    console.error(e);
+  }
+}
+
+async function atualizarMediaVoluntario(volId) {
+  try {
+    const avals = await sbFetch(`avaliacoes?avaliado_id=eq.${volId}&select=estrelas`);
+    if (!avals.length) return;
+    const media = avals.reduce((s,a) => s + a.estrelas, 0) / avals.length;
+    await sbFetch(`voluntarios?id=eq.${volId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({
+        media_estrelas: Math.round(media * 100) / 100,
+        total_avaliacoes: avals.length
+      })
+    });
+  } catch(e) { console.warn('Erro ao atualizar média:', e); }
+}
+
+// Mostra estrelas no card de detalhe
+function exibirEstrelasDetalhe(media, total) {
+  if (!media || !total) return '';
+  const cheias = Math.round(media);
+  const stars = '★'.repeat(cheias) + '☆'.repeat(5-cheias);
+  return `<div class="media-estrelas" style="margin-top:8px;">${stars} ${media.toFixed(1)} <span style="color:#94a3b8;font-weight:400;">(${total} aval.)</span></div>`;
+}
 </script>
 
 </body>
