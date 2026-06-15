@@ -625,54 +625,39 @@ textarea.form-control { resize: vertical; min-height: 88px; }
       <input class="form-control" id="nomeInput" placeholder="Ex: Arthur Bernhard">
     </div>
 
-    <!-- PASSO 1: Estado -->
+    <!-- PASSO 1: País -->
     <div class="form-group">
-      <label>1️⃣ Estado</label>
-      <select class="form-control" id="estadoInput" onchange="passoEstado(this.value)">
-        <option value="">— Selecione seu estado —</option>
-        <option value="AC">AC — Acre</option>
-        <option value="AL">AL — Alagoas</option>
-        <option value="AP">AP — Amapá</option>
-        <option value="AM">AM — Amazonas</option>
-        <option value="BA">BA — Bahia</option>
-        <option value="CE">CE — Ceará</option>
-        <option value="DF">DF — Distrito Federal</option>
-        <option value="ES">ES — Espírito Santo</option>
-        <option value="GO">GO — Goiás</option>
-        <option value="MA">MA — Maranhão</option>
-        <option value="MT">MT — Mato Grosso</option>
-        <option value="MS">MS — Mato Grosso do Sul</option>
-        <option value="MG">MG — Minas Gerais</option>
-        <option value="PA">PA — Pará</option>
-        <option value="PB">PB — Paraíba</option>
-        <option value="PR">PR — Paraná</option>
-        <option value="PE">PE — Pernambuco</option>
-        <option value="PI">PI — Piauí</option>
-        <option value="RJ">RJ — Rio de Janeiro</option>
-        <option value="RN">RN — Rio Grande do Norte</option>
-        <option value="RS">RS — Rio Grande do Sul</option>
-        <option value="RO">RO — Rondônia</option>
-        <option value="RR">RR — Roraima</option>
-        <option value="SC">SC — Santa Catarina</option>
-        <option value="SP">SP — São Paulo</option>
-        <option value="SE">SE — Sergipe</option>
-        <option value="TO">TO — Tocantins</option>
-      </select>
-    </div>
-
-    <!-- PASSO 2: Cidade -->
-    <div class="form-group" id="grupoCidade" style="opacity:0.35;pointer-events:none;">
-      <label>2️⃣ Cidade <small style="color:#94a3b8;font-weight:400;">— selecione o estado primeiro</small></label>
+      <label>1️⃣ País</label>
       <div style="position:relative;">
-        <input class="form-control" id="cidadeInput" placeholder="Digite o nome da cidade..." autocomplete="off"
-          oninput="buscarCidade(this.value)" onblur="setTimeout(fecharListaCidade,250)">
-        <div id="listaCidade" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:999;background:#fff;border:1.5px solid var(--azul-med);border-top:none;border-radius:0 0 10px 10px;max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.12);"></div>
+        <input class="form-control" id="paisInput" placeholder="🔍 Digite o nome do país..." autocomplete="off"
+          oninput="buscarPais(this.value)" onblur="setTimeout(fecharListaPais,250)">
+        <div id="listaPais" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:999;background:#fff;border:1.5px solid var(--azul-med);border-top:none;border-radius:0 0 10px 10px;max-height:220px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.12);"></div>
       </div>
     </div>
 
-    <!-- PASSO 3: Endereço -->
+    <!-- PASSO 2: Estado -->
+    <div class="form-group" id="grupoEstado" style="opacity:0.35;pointer-events:none;">
+      <label>2️⃣ Estado / Província <small style="color:#94a3b8;font-weight:400;">— selecione o país primeiro</small></label>
+      <div style="position:relative;">
+        <input class="form-control" id="estadoInputText" placeholder="Digite o estado ou província..." autocomplete="off"
+          oninput="buscarEstado(this.value)" onblur="setTimeout(fecharListaEstado,250)">
+        <div id="listaEstado" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:999;background:#fff;border:1.5px solid var(--azul-med);border-top:none;border-radius:0 0 10px 10px;max-height:220px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.12);"></div>
+      </div>
+    </div>
+
+    <!-- PASSO 3: Cidade -->
+    <div class="form-group" id="grupoCidade" style="opacity:0.35;pointer-events:none;">
+      <label>3️⃣ Cidade <small style="color:#94a3b8;font-weight:400;">— selecione o estado primeiro</small></label>
+      <div style="position:relative;">
+        <input class="form-control" id="cidadeInput" placeholder="Digite o nome da cidade..." autocomplete="off"
+          oninput="buscarCidade(this.value)" onblur="setTimeout(fecharListaCidade,250)">
+        <div id="listaCidade" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:999;background:#fff;border:1.5px solid var(--azul-med);border-top:none;border-radius:0 0 10px 10px;max-height:220px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.12);"></div>
+      </div>
+    </div>
+
+    <!-- PASSO 4: Endereço -->
     <div class="form-group" id="grupoEndereco" style="opacity:0.35;pointer-events:none;">
-      <label>3️⃣ Endereço <small style="color:#94a3b8;font-weight:400;">— selecione a cidade primeiro</small></label>
+      <label>4️⃣ Endereço <small style="color:#94a3b8;font-weight:400;">— selecione a cidade primeiro</small></label>
       <button type="button" class="btn-localizacao" id="btnLocalizacao" onclick="usarLocalizacaoAtual()">
         📍 Usar minha localização atual (GPS)
       </button>
@@ -1137,7 +1122,8 @@ async function submeterCadastroReal() {
   }
 
   const nome     = document.getElementById('nomeInput')?.value?.trim();
-  const estado   = document.getElementById('estadoInput')?.value?.trim();
+  const pais     = document.getElementById('paisInput')?.value?.trim();
+  const estado   = document.getElementById('estadoInputText')?.value?.trim();
   const cidade   = document.getElementById('cidadeInput')?.value?.trim();
   const endRua   = document.getElementById('enderecoInput')?.value?.trim() || '';
   const endNum   = document.getElementById('numeroInput')?.value?.trim() || '';
@@ -1147,7 +1133,8 @@ async function submeterCadastroReal() {
   const limite   = parseInt(document.getElementById('limiteInput')?.value) || 15;
 
   if (!nome) { toast('⚠️ Preencha seu nome!'); return; }
-  if (!estado) { toast('⚠️ Selecione o estado!'); return; }
+  if (!pais) { toast('⚠️ Selecione o país!'); return; }
+  if (!estado) { toast('⚠️ Selecione o estado ou província!'); return; }
   if (!cidade) { toast('⚠️ Selecione a cidade!'); return; }
   if (!endRua) { toast('⚠️ Preencha o endereço ou use o GPS!'); return; }
 
@@ -1181,7 +1168,7 @@ async function submeterCadastroReal() {
     await sbFetch('solicitacoes', {
       method: 'POST',
       body: JSON.stringify({
-        nome, cidade, estado, endereco, descricao,
+        nome, pais: pais||'Brasil', cidade, estado, endereco, descricao,
         tipos_ajuda: tipos, urgencia,
         limite_voluntarios: limite,
         ativo: true, lat, lng,
@@ -1485,129 +1472,99 @@ function limparLocalizacao() {
   if (box) box.style.display = 'none';
 }
 
-// ── FLUXO ESTADO → CIDADE → ENDEREÇO ──
-function onEstadoChange(estado) {
-  const grupoCidade = document.getElementById('grupoCidade');
-  const grupoEndereco = document.getElementById('grupoEndereco');
-  if (estado) {
-    grupoCidade.style.opacity = '1';
-    grupoCidade.style.pointerEvents = 'auto';
-    grupoCidade.querySelector('label').innerHTML = '2️⃣ Cidade';
-    // Reset cidade e endereço
-    document.getElementById('cidadeInput').value = '';
-    document.getElementById('enderecoInput').value = '';
-    document.getElementById('numeroInput').value = '';
-    document.getElementById('bairroInput').value = '';
-    grupoEndereco.style.opacity = '0.4';
-    grupoEndereco.style.pointerEvents = 'none';
-    window.latSelecionada = null;
-    window.lngSelecionada = null;
-  } else {
-    grupoCidade.style.opacity = '0.4';
-    grupoCidade.style.pointerEvents = 'none';
-    grupoEndereco.style.opacity = '0.4';
-    grupoEndereco.style.pointerEvents = 'none';
-  }
-}
+// ── FLUXO PAÍS → ESTADO → CIDADE → ENDEREÇO ──
+let _paisSelecionado = '';
+let _estadoSelecionado = '';
+let _cidadeSelecionada = '';
 
-function onCidadeConfirmada(cidade) {
-  const grupoEndereco = document.getElementById('grupoEndereco');
-  grupoEndereco.style.opacity = '1';
-  grupoEndereco.style.pointerEvents = 'auto';
-  grupoEndereco.querySelector('label').innerHTML = '3️⃣ Endereço';
-}
-
-// Autocomplete de CIDADE
-let cidadeTimer = null;
-async function buscarCidade(valor) {
-  clearTimeout(cidadeTimer);
-  const lista = document.getElementById('autocompleteListCidade');
+// ── PAÍS ──
+let _paisTimer = null;
+async function buscarPais(valor) {
+  clearTimeout(_paisTimer);
+  const lista = document.getElementById('listaPais');
   if (!valor || valor.length < 2) { lista.style.display = 'none'; return; }
-  const estado = document.getElementById('estadoInput')?.value || '';
-
-  cidadeTimer = setTimeout(async () => {
+  _paisTimer = setTimeout(async () => {
     try {
-      const q = encodeURIComponent(`${valor}, ${estado}, Brasil`);
-      const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=5&addressdetails=1&featureType=city`);
+      const q = encodeURIComponent(valor);
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=6&addressdetails=1&featureType=country`);
       const data = await res.json();
-      if (!data.length) { lista.style.display = 'none'; return; }
+      // Filtra só países
+      const paises = data.filter(r => r.type === 'administrative' || r.addresstype === 'country' || r.address?.country);
+      // Remove duplicatas por nome de país
+      const vistos = new Set();
+      const unicos = paises.filter(r => {
+        const nome = r.address?.country || r.display_name.split(',').pop().trim();
+        if (vistos.has(nome)) return false;
+        vistos.add(nome);
+        return true;
+      }).slice(0,6);
 
-      lista.innerHTML = data.map(r => {
-        const addr = r.address || {};
-        const cidade = addr.city || addr.town || addr.village || addr.municipality || r.display_name.split(',')[0];
-        return `<div class="autocomplete-item" onclick="selecionarCidade('${cidade.replace(/'/g,"\'")}', ${r.lat}, ${r.lon})">
-          <span class="autocomplete-icon">🏙️</span>
-          <div class="autocomplete-text">
-            <div class="autocomplete-main">${cidade}</div>
-            <div class="autocomplete-sub">${addr.state || ''}</div>
-          </div>
+      if (!unicos.length) { lista.style.display='none'; return; }
+      lista.innerHTML = unicos.map(r => {
+        const nome = r.address?.country || r.display_name.split(',').pop().trim();
+        const code = r.address?.country_code?.toUpperCase() || '';
+        return `<div onclick="selecionarPais('${nome.replace(/'/g,"\'")}','${code}')"
+          style="padding:10px 14px;cursor:pointer;font-size:0.85rem;border-bottom:1px solid #f1f5f9;display:flex;gap:8px;align-items:center;"
+          onmouseover="this.style.background='#EEF2FF'" onmouseout="this.style.background='#fff'">
+          🌍 <strong>${nome}</strong> <span style="color:#94a3b8;margin-left:auto;font-size:0.75rem;">${code}</span>
         </div>`;
       }).join('');
       lista.style.display = 'block';
-    } catch(e) { console.warn('Cidade autocomplete erro:', e); }
+    } catch(e) { console.warn('País busca erro:', e); }
   }, 350);
 }
 
-function selecionarCidade(cidade, lat, lng) {
-  document.getElementById('cidadeInput').value = cidade;
-  document.getElementById('autocompleteListCidade').style.display = 'none';
-  // Guarda coords aproximadas da cidade como fallback
-  window._cidadeLat = parseFloat(lat);
-  window._cidadeLng = parseFloat(lng);
-  onCidadeConfirmada(cidade);
-}
-
-function fecharAutocompleteCidade() {
-  const lista = document.getElementById('autocompleteListCidade');
-  if (lista) lista.style.display = 'none';
-}
-
-// ── FLUXO ESTADO → CIDADE → ENDEREÇO ──
-function passoEstado(estado) {
-  const gc = document.getElementById('grupoCidade');
-  const ge = document.getElementById('grupoEndereco');
-  if (estado) {
-    gc.style.opacity = '1'; gc.style.pointerEvents = 'auto';
-    gc.querySelector('small').textContent = '';
-  } else {
-    gc.style.opacity = '0.35'; gc.style.pointerEvents = 'none';
-  }
-  // Reset cidade e endereço
+function selecionarPais(nome, code) {
+  _paisSelecionado = nome;
+  document.getElementById('paisInput').value = nome;
+  document.getElementById('listaPais').style.display = 'none';
+  // Libera estado
+  const ge = document.getElementById('grupoEstado');
+  ge.style.opacity = '1'; ge.style.pointerEvents = 'auto';
+  ge.querySelector('small').textContent = '';
+  // Reset passos seguintes
+  document.getElementById('estadoInputText').value = '';
   document.getElementById('cidadeInput').value = '';
   document.getElementById('enderecoInput').value = '';
   document.getElementById('numeroInput').value = '';
   document.getElementById('bairroInput').value = '';
-  ge.style.opacity = '0.35'; ge.style.pointerEvents = 'none';
+  document.getElementById('grupoCidade').style.opacity = '0.35';
+  document.getElementById('grupoCidade').style.pointerEvents = 'none';
+  document.getElementById('grupoEndereco').style.opacity = '0.35';
+  document.getElementById('grupoEndereco').style.pointerEvents = 'none';
   window.latSelecionada = null; window.lngSelecionada = null;
   window._cidadeLat = null; window._cidadeLng = null;
 }
 
-function passoCidade() {
-  const ge = document.getElementById('grupoEndereco');
-  ge.style.opacity = '1'; ge.style.pointerEvents = 'auto';
-  ge.querySelector('small').textContent = '';
+function fecharListaPais() {
+  const el = document.getElementById('listaPais');
+  if (el) el.style.display = 'none';
 }
 
-// Autocomplete cidade
-let _cidadeTimer = null;
-async function buscarCidade(valor) {
-  clearTimeout(_cidadeTimer);
-  const lista = document.getElementById('listaCidade');
+// ── ESTADO ──
+let _estadoTimer = null;
+async function buscarEstado(valor) {
+  clearTimeout(_estadoTimer);
+  const lista = document.getElementById('listaEstado');
   if (!valor || valor.length < 2) { lista.style.display = 'none'; return; }
-  const estado = document.getElementById('estadoInput')?.value || '';
-  _cidadeTimer = setTimeout(async () => {
+  _estadoTimer = setTimeout(async () => {
     try {
-      const q = encodeURIComponent(`${valor}, ${estado}, Brasil`);
+      const q = encodeURIComponent(`${valor}, ${_paisSelecionado}`);
       const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=6&addressdetails=1`);
       const data = await res.json();
-      if (!data.length) { lista.style.display = 'none'; return; }
-      lista.innerHTML = data.map(r => {
-        const addr = r.address || {};
-        const cid = addr.city || addr.town || addr.village || addr.municipality || r.display_name.split(',')[0];
-        return `<div onclick="selecionarCidade('${cid.replace(/'/g,"\'")}',${r.lat},${r.lon})"
+      const vistos = new Set();
+      const estados = data.filter(r => {
+        const s = r.address?.state || r.display_name.split(',')[0];
+        if (vistos.has(s)) return false;
+        vistos.add(s); return true;
+      }).slice(0,6);
+      if (!estados.length) { lista.style.display='none'; return; }
+      lista.innerHTML = estados.map(r => {
+        const nome = r.address?.state || r.display_name.split(',')[0];
+        return `<div onclick="selecionarEstado('${nome.replace(/'/g,"\'")}',${r.lat},${r.lon})"
           style="padding:10px 14px;cursor:pointer;font-size:0.85rem;border-bottom:1px solid #f1f5f9;display:flex;gap:8px;align-items:center;"
           onmouseover="this.style.background='#EEF2FF'" onmouseout="this.style.background='#fff'">
-          🏙️ <span><strong>${cid}</strong><br><small style="color:#64748b">${addr.state||''}</small></span>
+          📍 <span><strong>${nome}</strong><br><small style="color:#64748b">${_paisSelecionado}</small></span>
         </div>`;
       }).join('');
       lista.style.display = 'block';
@@ -1615,18 +1572,78 @@ async function buscarCidade(valor) {
   }, 350);
 }
 
-function selecionarCidade(cidade, lat, lng) {
-  document.getElementById('cidadeInput').value = cidade;
+function selecionarEstado(nome, lat, lng) {
+  _estadoSelecionado = nome;
+  document.getElementById('estadoInputText').value = nome;
+  document.getElementById('listaEstado').style.display = 'none';
+  // Libera cidade
+  const gc = document.getElementById('grupoCidade');
+  gc.style.opacity = '1'; gc.style.pointerEvents = 'auto';
+  gc.querySelector('small').textContent = '';
+  // Reset cidade e endereço
+  document.getElementById('cidadeInput').value = '';
+  document.getElementById('enderecoInput').value = '';
+  document.getElementById('grupoEndereco').style.opacity = '0.35';
+  document.getElementById('grupoEndereco').style.pointerEvents = 'none';
+  window._estadoLat = parseFloat(lat);
+  window._estadoLng = parseFloat(lng);
+}
+
+function fecharListaEstado() {
+  const el = document.getElementById('listaEstado');
+  if (el) el.style.display = 'none';
+}
+
+// ── CIDADE ──
+let _cidadeTimer = null;
+async function buscarCidade(valor) {
+  clearTimeout(_cidadeTimer);
+  const lista = document.getElementById('listaCidade');
+  if (!valor || valor.length < 2) { lista.style.display = 'none'; return; }
+  _cidadeTimer = setTimeout(async () => {
+    try {
+      const q = encodeURIComponent(`${valor}, ${_estadoSelecionado}, ${_paisSelecionado}`);
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=6&addressdetails=1`);
+      const data = await res.json();
+      const vistos = new Set();
+      const cidades = data.filter(r => {
+        const c = r.address?.city || r.address?.town || r.address?.village || r.display_name.split(',')[0];
+        if (vistos.has(c)) return false;
+        vistos.add(c); return true;
+      }).slice(0,6);
+      if (!cidades.length) { lista.style.display='none'; return; }
+      lista.innerHTML = cidades.map(r => {
+        const nome = r.address?.city || r.address?.town || r.address?.village || r.display_name.split(',')[0];
+        return `<div onclick="selecionarCidade('${nome.replace(/'/g,"\'")}',${r.lat},${r.lon})"
+          style="padding:10px 14px;cursor:pointer;font-size:0.85rem;border-bottom:1px solid #f1f5f9;display:flex;gap:8px;align-items:center;"
+          onmouseover="this.style.background='#EEF2FF'" onmouseout="this.style.background='#fff'">
+          🏙️ <span><strong>${nome}</strong><br><small style="color:#64748b">${_estadoSelecionado}, ${_paisSelecionado}</small></span>
+        </div>`;
+      }).join('');
+      lista.style.display = 'block';
+    } catch(e) {}
+  }, 350);
+}
+
+function selecionarCidade(nome, lat, lng) {
+  _cidadeSelecionada = nome;
+  document.getElementById('cidadeInput').value = nome;
   document.getElementById('listaCidade').style.display = 'none';
   window._cidadeLat = parseFloat(lat);
   window._cidadeLng = parseFloat(lng);
-  passoCidade();
+  // Libera endereço
+  const ge = document.getElementById('grupoEndereco');
+  ge.style.opacity = '1'; ge.style.pointerEvents = 'auto';
+  ge.querySelector('small').textContent = '';
 }
 
 function fecharListaCidade() {
   const el = document.getElementById('listaCidade');
   if (el) el.style.display = 'none';
 }
+
+// Mantém compatibilidade com passoEstado (chamado pelo GPS)
+function passoEstado(estado) {}
 
 function fecharAutocomplete() {
   const lista = document.getElementById('autocompleteList');
@@ -1671,17 +1688,29 @@ async function usarLocalizacaoAtual() {
       btn.style.background = '#ECFDF5';
       btn.style.color = '#15803D';
       btn.style.borderColor = '#A7F3D0';
-      // GPS preenche tudo e desbloqueia passos
-      if (estado) {
-        const estadoInp = document.getElementById('estadoInput');
-        if (estadoInp) {
-          for (let opt of estadoInp.options) { if (opt.value === estado) { opt.selected = true; break; } }
-          passoEstado(estado);
-        }
+      // GPS preenche tudo e desbloqueia todos os passos
+      const gpsData = data.address || {};
+      const gpsPais = gpsData.country || 'Brasil';
+      const gpsEstado = gpsData.state || estado || '';
+      const gpsCidade = gpsData.city || gpsData.town || gpsData.village || cidade || '';
+
+      if (gpsPais) {
+        document.getElementById('paisInput').value = gpsPais;
+        _paisSelecionado = gpsPais;
+        document.getElementById('grupoEstado').style.opacity = '1';
+        document.getElementById('grupoEstado').style.pointerEvents = 'auto';
       }
-      if (cidade) {
-        document.getElementById('cidadeInput').value = cidade;
-        passoCidade();
+      if (gpsEstado) {
+        document.getElementById('estadoInputText').value = gpsEstado;
+        _estadoSelecionado = gpsEstado;
+        document.getElementById('grupoCidade').style.opacity = '1';
+        document.getElementById('grupoCidade').style.pointerEvents = 'auto';
+      }
+      if (gpsCidade) {
+        document.getElementById('cidadeInput').value = gpsCidade;
+        _cidadeSelecionada = gpsCidade;
+        document.getElementById('grupoEndereco').style.opacity = '1';
+        document.getElementById('grupoEndereco').style.pointerEvents = 'auto';
       }
       confirmarLocalizacaoVisual(rua || 'GPS detectado');
       toast('📍 Localização preenchida automaticamente!', 'ok');
