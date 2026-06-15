@@ -1616,6 +1616,27 @@ function precisaLogin(acao) {
 // Inicia verificação de sessão
 verificarSessao();
 
+// Renova sessão automaticamente a cada 50 minutos
+setInterval(async () => {
+  if (!usuarioAtual?.user) return;
+  try {
+    const saved = localStorage.getItem('sb_session');
+    if (!saved) return;
+    const session = JSON.parse(saved);
+    if (!session.refresh_token) return;
+    const res = await fetch(`${SB_URL}/auth/v1/token?grant_type=refresh_token`, {
+      method: 'POST',
+      headers: { 'apikey': SB_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh_token: session.refresh_token })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      usuarioAtual = { ...usuarioAtual, access_token: data.access_token, refresh_token: data.refresh_token };
+      localStorage.setItem('sb_session', JSON.stringify(usuarioAtual));
+    }
+  } catch(e) { console.warn('Erro ao renovar sessão:', e); }
+}, 50 * 60 * 1000);
+
 // ═══════════════════════════════════════
 // MODAL VOLUNTÁRIO — FLUXO
 // ═══════════════════════════════════════
