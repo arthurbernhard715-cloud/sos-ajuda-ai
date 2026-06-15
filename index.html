@@ -890,18 +890,6 @@ textarea.form-control { resize: vertical; min-height: 88px; }
         </div>
       </div>
 
-      <!-- Raio -->
-      <div class="form-group">
-        <label>Raio de atuação</label>
-        <select class="form-control" id="vol-raio">
-          <option>Até 10km</option>
-          <option>Até 50km</option>
-          <option selected>Até 100km</option>
-          <option>Todo o estado</option>
-          <option>Qualquer lugar</option>
-        </select>
-      </div>
-
       <!-- Habilidades -->
       <div class="form-group">
         <label>O que posso oferecer</label>
@@ -1372,7 +1360,7 @@ async function submeterVoluntarioReal() {
   const pais     = document.getElementById('vol-pais')?.value?.trim();
   const estado   = document.getElementById('vol-estado')?.value?.trim();
   const cidade   = document.getElementById('vol-cidade')?.value?.trim();
-  const raio     = document.getElementById('vol-raio')?.value;
+  const raio = 'Qualquer lugar';
   const habs     = [...document.querySelectorAll('#vol-habilidades .chk.ativo')].map(e => e.textContent.replace(/^[^a-zA-ZÀ-ú]+/,'').trim());
 
   if (!nome)     { toast('⚠️ Preencha seu nome!'); return; }
