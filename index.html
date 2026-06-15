@@ -545,7 +545,7 @@ textarea.form-control { resize: vertical; min-height: 88px; }
     <img class="panel-logo" src="logo.png" alt="SOS Ajuda Aí">
     <p class="panel-slogan">"Conectando quem precisa,<br>com quem quer <strong>ajudar!</strong>"</p>
     <button class="btn-verm" onclick="limparLocalizacao();abrirModal('modal-atingido')">🏠 Fui atingido — preciso de ajuda</button>
-    <button class="btn-azul" onclick="abrirModal('modal-voluntario')">🤝 Quero ser voluntário</button>
+    <button class="btn-azul" onclick="abrirModalVoluntario()">🤝 Quero ser voluntário</button>
     <div class="panel-divider"></div>
     <div class="stats">
       <div class="stat"><div class="stat-n">2.4<em>mil</em></div><div class="stat-l">Pessoas ajudadas</div></div>
@@ -641,7 +641,7 @@ textarea.form-control { resize: vertical; min-height: 88px; }
     <div class="rank-card"><div class="rank-pos bronze">🥉</div><div style="font-size:1.3rem">👩</div><div class="rank-info"><div class="rank-nome">Fernanda Müller</div><div class="rank-cidade">Lajeado, RS</div><div class="rank-badges">💪🏠✅</div></div><div class="rank-pts"><div class="rank-pts-n">1.970</div><div class="rank-pts-l">pontos</div></div></div>
     <div class="rank-card"><div class="rank-pos normal">4</div><div style="font-size:1.3rem">🧑</div><div class="rank-info"><div class="rank-nome">Rafael Borges</div><div class="rank-cidade">Venâncio Aires, RS</div><div class="rank-badges">🤝⭐</div></div><div class="rank-pts"><div class="rank-pts-n">1.450</div><div class="rank-pts-l">pontos</div></div></div>
     <div class="rank-card"><div class="rank-pos normal">5</div><div style="font-size:1.3rem">👩</div><div class="rank-info"><div class="rank-nome">Aline Teixeira</div><div class="rank-cidade">Rio Pardo, RS</div><div class="rank-badges">💧🏠</div></div><div class="rank-pts"><div class="rank-pts-n">1.120</div><div class="rank-pts-l">pontos</div></div></div>
-    <div class="rank-card" style="cursor:pointer;justify-content:center" onclick="abrirModal('modal-voluntario')">
+    <div class="rank-card" style="cursor:pointer;justify-content:center" onclick="abrirModalVoluntario()">
       <div style="text-align:center;width:100%"><div style="font-size:1.6rem;margin-bottom:8px">🙋</div><div style="font-family:'Montserrat',sans-serif;font-weight:700;color:var(--azul);font-size:.9rem">Seja o próximo destaque</div><div style="font-size:.8rem;color:var(--cinza-t);margin-top:4px">Cadastre-se como voluntário</div></div>
     </div>
   </div>
@@ -823,69 +823,102 @@ textarea.form-control { resize: vertical; min-height: 88px; }
 <div class="modal-overlay" id="modal-voluntario">
   <div class="modal">
     <button class="modal-close" onclick="fecharModal('modal-voluntario')">✕</button>
-    <h2>Quero ser voluntário</h2>
+    <h2>🙋 Quero ser voluntário</h2>
     <p class="modal-sub">Crie seu perfil e comece a ajudar agora.</p>
-    <div class="form-group"><label>Nome completo</label><input class="form-control" placeholder="Seu nome"></div>
-    <div class="form-row">
-      <div class="form-group"><label>CPF</label><input class="form-control" placeholder="000.000.000-00"></div>
-      <div class="form-group"><label>WhatsApp</label><input class="form-control" placeholder="(51) 9xxxx-xxxx"></div>
+
+    <!-- Se não logado: mostra botão Google -->
+    <div id="vol-sem-login" style="display:none;text-align:center;padding:20px 0;">
+      <div style="font-size:2.5rem;margin-bottom:12px;">🙋</div>
+      <p style="font-size:0.9rem;color:#64748b;margin-bottom:20px;">Entre com sua conta Google para criar seu perfil de voluntário.</p>
+      <button class="btn-google-big" onclick="entrarComGoogleVoluntario()">
+        <svg viewBox="0 0 24 24" width="22" height="22"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+        Continuar com Google
+      </button>
     </div>
-    <div class="form-row">
-      <div class="form-group"><label>Cidade</label><input class="form-control" placeholder="Sua cidade"></div>
-      <div class="form-group"><label>Raio de atuação</label>
-        <select class="form-control"><option>Até 10km</option><option>Até 50km</option><option>Até 100km</option><option>Todo o RS</option><option>Qualquer estado</option></select>
+
+    <!-- Se logado: mostra formulário -->
+    <div id="vol-form" style="display:none;">
+
+      <!-- Info do usuário logado -->
+      <div style="background:#EEF2FF;border-radius:10px;padding:12px 14px;margin-bottom:18px;display:flex;align-items:center;gap:10px;">
+        <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#1A3C8F,#D92B2B);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:0.9rem;" id="vol-google-inicial">A</div>
+        <div>
+          <div style="font-weight:700;font-size:0.88rem;color:#1A3C8F;" id="vol-google-nome">—</div>
+          <div style="font-size:0.75rem;color:#64748b;" id="vol-google-email">—</div>
+        </div>
       </div>
-    </div>
-    <div class="form-group"><label>O que posso oferecer</label>
-      <div class="checkbox-group">
-        <div class="chk ativo" onclick="toggleChk(this)">💪 Trabalho braçal</div>
-        <div class="chk" onclick="toggleChk(this)">🚗 Tenho veículo</div>
-        <div class="chk" onclick="toggleChk(this)">🏥 Saúde</div>
-        <div class="chk" onclick="toggleChk(this)">🔨 Construção</div>
-        <div class="chk" onclick="toggleChk(this)">👩‍🍳 Cozinha</div>
-        <div class="chk" onclick="toggleChk(this)">📦 Logística</div>
+
+      <!-- Nome -->
+      <div class="form-group">
+        <label>Nome completo</label>
+        <input class="form-control" id="vol-nome" placeholder="Seu nome completo">
       </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn-cancel" onclick="fecharModal('modal-voluntario')">Cancelar</button>
-      <button class="btn-submit" onclick="submeter('modal-voluntario','🙋 Perfil criado! Comece a ajudar agora.')">🙋 Criar meu perfil</button>
-    </div>
-  </div>
-</div>
 
-
-<!-- MODAL: AVALIAÇÃO -->
-<div class="modal-overlay" id="modal-avaliacao">
-  <div class="modal">
-    <button class="modal-close" onclick="fecharModal('modal-avaliacao')">✕</button>
-    <h2>⭐ Avaliar</h2>
-    <p class="modal-sub" id="avaliacao-sub">Como foi a experiência?</p>
-
-    <div class="avaliacao-card" style="background:#EEF2FF;">
-      <h4 id="avaliacao-nome">—</h4>
-      <div style="font-size:0.82rem;color:#64748b;" id="avaliacao-tipo-txt">—</div>
-    </div>
-
-    <div class="form-group">
-      <label>Sua nota</label>
-      <div class="stars-input" id="starsInput">
-        <button class="star-btn" onclick="selecionarEstrela(1)" data-val="1">★</button>
-        <button class="star-btn" onclick="selecionarEstrela(2)" data-val="2">★</button>
-        <button class="star-btn" onclick="selecionarEstrela(3)" data-val="3">★</button>
-        <button class="star-btn" onclick="selecionarEstrela(4)" data-val="4">★</button>
-        <button class="star-btn" onclick="selecionarEstrela(5)" data-val="5">★</button>
+      <!-- WhatsApp -->
+      <div class="form-group">
+        <label>WhatsApp</label>
+        <input class="form-control" id="vol-whatsapp" placeholder="(xx) 9xxxx-xxxx" type="tel">
       </div>
-      <div id="estrela-label" style="font-size:0.82rem;color:#64748b;margin-top:4px;">Clique nas estrelas para avaliar</div>
-    </div>
 
-    <div class="form-group">
-      <label>Comentário <span style="color:#94a3b8;font-weight:400;">(opcional)</span></label>
-      <textarea class="form-control" id="avaliacaoComentario" placeholder="Conte como foi a experiência..." style="min-height:80px;"></textarea>
-    </div>
+      <!-- PASSO 1: País -->
+      <div class="form-group">
+        <label>1️⃣ País</label>
+        <div style="position:relative;">
+          <input class="form-control" id="vol-pais" placeholder="🔍 Digite o nome do país..." autocomplete="off"
+            oninput="buscarPaisVol(this.value)" onblur="setTimeout(fecharListaPaisVol,250)">
+          <div id="listaPaisVol" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:999;background:#fff;border:1.5px solid var(--azul-med);border-top:none;border-radius:0 0 10px 10px;max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.12);"></div>
+        </div>
+      </div>
 
-    <div class="modal-footer">
-      <button class="btn-cancel" onclick="fecharModal('modal-avaliacao')">Agora não</button>
-      <button class="btn-submit" onclick="enviarAvaliacao()">⭐ Enviar avaliação</button>
+      <!-- PASSO 2: Estado -->
+      <div class="form-group" id="vol-grupoEstado" style="opacity:0.35;pointer-events:none;">
+        <label>2️⃣ Estado / Província <small style="color:#94a3b8;font-weight:400;">— selecione o país primeiro</small></label>
+        <div style="position:relative;">
+          <input class="form-control" id="vol-estado" placeholder="Digite o estado..." autocomplete="off"
+            oninput="buscarEstadoVol(this.value)" onblur="setTimeout(fecharListaEstadoVol,250)">
+          <div id="listaEstadoVol" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:999;background:#fff;border:1.5px solid var(--azul-med);border-top:none;border-radius:0 0 10px 10px;max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.12);"></div>
+        </div>
+      </div>
+
+      <!-- PASSO 3: Cidade -->
+      <div class="form-group" id="vol-grupoCidade" style="opacity:0.35;pointer-events:none;">
+        <label>3️⃣ Cidade <small style="color:#94a3b8;font-weight:400;">— selecione o estado primeiro</small></label>
+        <div style="position:relative;">
+          <input class="form-control" id="vol-cidade" placeholder="Digite sua cidade..." autocomplete="off"
+            oninput="buscarCidadeVol(this.value)" onblur="setTimeout(fecharListaCidadeVol,250)">
+          <div id="listaCidadeVol" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:999;background:#fff;border:1.5px solid var(--azul-med);border-top:none;border-radius:0 0 10px 10px;max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.12);"></div>
+        </div>
+      </div>
+
+      <!-- Raio -->
+      <div class="form-group">
+        <label>Raio de atuação</label>
+        <select class="form-control" id="vol-raio">
+          <option>Até 10km</option>
+          <option>Até 50km</option>
+          <option selected>Até 100km</option>
+          <option>Todo o estado</option>
+          <option>Qualquer lugar</option>
+        </select>
+      </div>
+
+      <!-- Habilidades -->
+      <div class="form-group">
+        <label>O que posso oferecer</label>
+        <div class="checkbox-group" id="vol-habilidades">
+          <div class="chk ativo" onclick="toggleChk(this)">💪 Trabalho braçal</div>
+          <div class="chk" onclick="toggleChk(this)">🚗 Tenho veículo</div>
+          <div class="chk" onclick="toggleChk(this)">🏥 Saúde</div>
+          <div class="chk" onclick="toggleChk(this)">🔨 Construção</div>
+          <div class="chk" onclick="toggleChk(this)">👩‍🍳 Cozinha</div>
+          <div class="chk" onclick="toggleChk(this)">📦 Logística</div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-cancel" onclick="fecharModal('modal-voluntario')">Cancelar</button>
+        <button class="btn-submit" onclick="submeter('modal-voluntario','')">🙋 Criar meu perfil</button>
+      </div>
     </div>
   </div>
 </div>
@@ -1334,29 +1367,31 @@ async function submeterVoluntarioReal() {
     toast('⚠️ Entre com sua conta Google para se cadastrar.');
     return;
   }
-  const nome     = document.querySelector('#modal-voluntario input[placeholder="Seu nome"]')?.value?.trim();
-  const cpf      = document.querySelector('#modal-voluntario input[placeholder*="000.000"]')?.value?.trim();
-  const whatsapp = document.querySelector('#modal-voluntario input[placeholder*="51"]')?.value?.trim();
-  const cidade   = document.querySelector('#modal-voluntario input[placeholder*="cidade"]')?.value?.trim();
-  const raio     = document.querySelector('#modal-voluntario select')?.value;
+  const nome     = document.getElementById('vol-nome')?.value?.trim();
+  const whatsapp = document.getElementById('vol-whatsapp')?.value?.trim();
+  const pais     = document.getElementById('vol-pais')?.value?.trim();
+  const estado   = document.getElementById('vol-estado')?.value?.trim();
+  const cidade   = document.getElementById('vol-cidade')?.value?.trim();
+  const raio     = document.getElementById('vol-raio')?.value;
+  const habs     = [...document.querySelectorAll('#vol-habilidades .chk.ativo')].map(e => e.textContent.replace(/^[^a-zA-ZÀ-ú]+/,'').trim());
 
-  if (!nome || !cpf || !whatsapp) {
-    toast('⚠️ Preencha nome, CPF e WhatsApp!');
-    return;
-  }
-
-  const habilidades = [...document.querySelectorAll('#modal-voluntario .chk.ativo')].map(el => el.textContent.replace(/^[^\w]+/,'').trim());
+  if (!nome)     { toast('⚠️ Preencha seu nome!'); return; }
+  if (!whatsapp) { toast('⚠️ Preencha seu WhatsApp!'); return; }
+  if (!pais)     { toast('⚠️ Selecione seu país!'); return; }
+  if (!estado)   { toast('⚠️ Selecione seu estado!'); return; }
+  if (!cidade)   { toast('⚠️ Selecione sua cidade!'); return; }
 
   try {
     await sbFetch('voluntarios', {
       method: 'POST',
-      body: JSON.stringify({ nome, cpf, whatsapp, cidade: cidade||'', estado:'RS', raio_atuacao: raio, habilidades })
+      body: JSON.stringify({ nome, whatsapp, pais: pais||'Brasil', estado, cidade, raio_atuacao: raio, habilidades: habs })
     });
     fecharModal('modal-voluntario');
     toast('🙋 Perfil criado! Comece a ajudar agora.', 'ok');
+    carregarSolicitacoes();
   } catch(e) {
-    if (e.message.includes('unique') || e.message.includes('duplicate')) {
-      toast('⚠️ CPF já cadastrado.');
+    if (e.message?.includes('unique') || e.message?.includes('duplicate')) {
+      toast('⚠️ Você já tem um perfil cadastrado.');
     } else {
       toast('⚠️ Erro ao criar perfil. Tente novamente.');
     }
@@ -1467,6 +1502,11 @@ async function verificarSessao() {
       atualizarUIAuth(usuarioAtual);
       window.history.replaceState(null, '', window.location.pathname);
       toast('👋 Bem-vindo, ' + (user.user_metadata?.full_name || user.email) + '!', 'ok');
+    // Se veio do modal voluntário, reabre
+    if (localStorage.getItem('_reabrir_vol')) {
+      localStorage.removeItem('_reabrir_vol');
+      setTimeout(() => abrirModalVoluntario(), 800);
+    }
       return;
     }
   }
@@ -1495,6 +1535,156 @@ function precisaLogin(acao) {
 
 // Inicia verificação de sessão
 verificarSessao();
+
+// ═══════════════════════════════════════
+// MODAL VOLUNTÁRIO — FLUXO
+// ═══════════════════════════════════════
+let _volPaisSel = '', _volEstadoSel = '', _volCidadeSel = '';
+
+function abrirModalVoluntario() {
+  // Verifica login
+  const semLogin = document.getElementById('vol-sem-login');
+  const volForm  = document.getElementById('vol-form');
+  if (!usuarioAtual) {
+    semLogin.style.display = 'block';
+    volForm.style.display  = 'none';
+  } else {
+    semLogin.style.display = 'none';
+    volForm.style.display  = 'block';
+    const u = usuarioAtual.user;
+    const nome = u.user_metadata?.full_name || '';
+    document.getElementById('vol-google-nome').textContent = nome || u.email;
+    document.getElementById('vol-google-email').textContent = u.email;
+    document.getElementById('vol-google-inicial').textContent = (nome || u.email || 'V')[0].toUpperCase();
+    if (nome && !document.getElementById('vol-nome').value) {
+      document.getElementById('vol-nome').value = nome;
+    }
+  }
+  abrirModal('modal-voluntario');
+}
+
+function entrarComGoogleVoluntario() {
+  localStorage.setItem('_reabrir_vol', '1');
+  fecharModal('modal-voluntario');
+  entrarComGoogle();
+}
+
+// Autocomplete País
+let _vPaisTimer = null;
+async function buscarPaisVol(valor) {
+  clearTimeout(_vPaisTimer);
+  const lista = document.getElementById('listaPaisVol');
+  if (!valor || valor.length < 2) { lista.style.display='none'; return; }
+  _vPaisTimer = setTimeout(async () => {
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(valor)}&format=json&limit=5&addressdetails=1`);
+      const data = await res.json();
+      const vistos = new Set();
+      const paises = data.filter(r => {
+        const p = r.address?.country || r.display_name.split(',').pop().trim();
+        if (vistos.has(p)) return false; vistos.add(p); return true;
+      }).slice(0,5);
+      if (!paises.length) { lista.style.display='none'; return; }
+      lista.innerHTML = paises.map(r => {
+        const nome = r.address?.country || r.display_name.split(',').pop().trim();
+        return `<div onclick="selecionarPaisVol('${nome.replace(/'/g,"\'")}')"
+          style="padding:10px 14px;cursor:pointer;font-size:0.85rem;border-bottom:1px solid #f1f5f9;"
+          onmouseover="this.style.background='#EEF2FF'" onmouseout="this.style.background='#fff'">
+          🌍 <strong>${nome}</strong></div>`;
+      }).join('');
+      lista.style.display = 'block';
+    } catch(e) {}
+  }, 350);
+}
+function selecionarPaisVol(nome) {
+  _volPaisSel = nome;
+  document.getElementById('vol-pais').value = nome;
+  document.getElementById('listaPaisVol').style.display = 'none';
+  const ge = document.getElementById('vol-grupoEstado');
+  ge.style.opacity='1'; ge.style.pointerEvents='auto';
+  ge.querySelector('small').textContent='';
+  document.getElementById('vol-estado').value='';
+  document.getElementById('vol-cidade').value='';
+  document.getElementById('vol-grupoCidade').style.opacity='0.35';
+  document.getElementById('vol-grupoCidade').style.pointerEvents='none';
+}
+function fecharListaPaisVol() { const el=document.getElementById('listaPaisVol'); if(el) el.style.display='none'; }
+
+// Autocomplete Estado
+let _vEstadoTimer = null;
+async function buscarEstadoVol(valor) {
+  clearTimeout(_vEstadoTimer);
+  const lista = document.getElementById('listaEstadoVol');
+  if (!valor || valor.length < 2) { lista.style.display='none'; return; }
+  _vEstadoTimer = setTimeout(async () => {
+    try {
+      const q = encodeURIComponent(`${valor}, ${_volPaisSel}`);
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=5&addressdetails=1`);
+      const data = await res.json();
+      const vistos = new Set();
+      const estados = data.filter(r => {
+        const s = r.address?.state || r.display_name.split(',')[0];
+        if (vistos.has(s)) return false; vistos.add(s); return true;
+      }).slice(0,5);
+      if (!estados.length) { lista.style.display='none'; return; }
+      lista.innerHTML = estados.map(r => {
+        const nome = r.address?.state || r.display_name.split(',')[0];
+        return `<div onclick="selecionarEstadoVol('${nome.replace(/'/g,"\'")}')"
+          style="padding:10px 14px;cursor:pointer;font-size:0.85rem;border-bottom:1px solid #f1f5f9;"
+          onmouseover="this.style.background='#EEF2FF'" onmouseout="this.style.background='#fff'">
+          📍 <strong>${nome}</strong></div>`;
+      }).join('');
+      lista.style.display = 'block';
+    } catch(e) {}
+  }, 350);
+}
+function selecionarEstadoVol(nome) {
+  _volEstadoSel = nome;
+  document.getElementById('vol-estado').value = nome;
+  document.getElementById('listaEstadoVol').style.display='none';
+  const gc = document.getElementById('vol-grupoCidade');
+  gc.style.opacity='1'; gc.style.pointerEvents='auto';
+  gc.querySelector('small').textContent='';
+  document.getElementById('vol-cidade').value='';
+}
+function fecharListaEstadoVol() { const el=document.getElementById('listaEstadoVol'); if(el) el.style.display='none'; }
+
+// Autocomplete Cidade
+let _vCidadeTimer = null;
+async function buscarCidadeVol(valor) {
+  clearTimeout(_vCidadeTimer);
+  const lista = document.getElementById('listaCidadeVol');
+  if (!valor || valor.length < 2) { lista.style.display='none'; return; }
+  _vCidadeTimer = setTimeout(async () => {
+    try {
+      const q = encodeURIComponent(`${valor}, ${_volEstadoSel}, ${_volPaisSel}`);
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=5&addressdetails=1`);
+      const data = await res.json();
+      const vistos = new Set();
+      const cidades = data.filter(r => {
+        const c = r.address?.city||r.address?.town||r.address?.village||r.display_name.split(',')[0];
+        if (vistos.has(c)) return false; vistos.add(c); return true;
+      }).slice(0,5);
+      if (!cidades.length) { lista.style.display='none'; return; }
+      lista.innerHTML = cidades.map(r => {
+        const nome = r.address?.city||r.address?.town||r.address?.village||r.display_name.split(',')[0];
+        return `<div onclick="selecionarCidadeVol('${nome.replace(/'/g,"\'")}')"
+          style="padding:10px 14px;cursor:pointer;font-size:0.85rem;border-bottom:1px solid #f1f5f9;"
+          onmouseover="this.style.background='#EEF2FF'" onmouseout="this.style.background='#fff'">
+          🏙️ <strong>${nome}</strong> <small style="color:#64748b;">${_volEstadoSel}</small></div>`;
+      }).join('');
+      lista.style.display='block';
+    } catch(e) {}
+  }, 350);
+}
+function selecionarCidadeVol(nome) {
+  _volCidadeSel = nome;
+  document.getElementById('vol-cidade').value = nome;
+  document.getElementById('listaCidadeVol').style.display='none';
+}
+function fecharListaCidadeVol() { const el=document.getElementById('listaCidadeVol'); if(el) el.style.display='none'; }
+
+
 </script>
 
 
