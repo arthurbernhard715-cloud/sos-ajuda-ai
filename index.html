@@ -282,6 +282,119 @@ textarea.form-control { resize: vertical; min-height: 88px; }
 
 
 
+
+/* ── PAINEL VOLUNTÁRIO ── */
+.vol-panel-overlay {
+  display:none; position:fixed; inset:0;
+  background:rgba(0,0,0,0.4); backdrop-filter:blur(4px);
+  z-index:500;
+}
+.vol-panel-overlay.open { display:block; }
+.vol-panel {
+  position:fixed; top:0; right:-420px; bottom:0;
+  width:420px; max-width:95vw;
+  background:#fff; z-index:501;
+  box-shadow:-8px 0 40px rgba(0,0,0,0.15);
+  display:flex; flex-direction:column;
+  transition:right .3s cubic-bezier(.4,0,.2,1);
+}
+.vol-panel.open { right:0; }
+.vol-panel-header {
+  background:linear-gradient(135deg,var(--azul),var(--azul-esc));
+  padding:24px 20px 20px;
+  display:flex; align-items:center; gap:14px;
+  flex-shrink:0;
+}
+.vol-avatar-big {
+  width:54px; height:54px; border-radius:50%;
+  background:linear-gradient(135deg,#D92B2B,#b91c1c);
+  display:flex; align-items:center; justify-content:center;
+  font-size:1.4rem; font-weight:900; color:#fff;
+  flex-shrink:0; border:3px solid rgba(255,255,255,0.3);
+}
+.vol-header-info { flex:1; }
+.vol-header-nome { font-family:'Montserrat',sans-serif; font-weight:900; font-size:1rem; color:#fff; }
+.vol-header-email { font-size:0.75rem; color:#93C5FD; margin-top:2px; }
+.vol-header-pts { display:flex; align-items:center; gap:6px; margin-top:6px; }
+.vol-pts-badge {
+  background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.2);
+  border-radius:99px; padding:3px 10px;
+  font-size:0.75rem; font-weight:700; color:#fff;
+}
+.vol-panel-close {
+  position:absolute; top:16px; right:16px;
+  width:30px; height:30px; border-radius:50%;
+  background:rgba(255,255,255,0.15); border:none;
+  color:#fff; cursor:pointer; font-size:1rem;
+  display:flex; align-items:center; justify-content:center;
+  transition:background .2s;
+}
+.vol-panel-close:hover { background:rgba(255,255,255,0.25); }
+
+/* Tabs */
+.vol-tabs {
+  display:flex; border-bottom:1px solid #e2e8f0;
+  flex-shrink:0; background:#fff;
+}
+.vol-tab {
+  flex:1; padding:12px 4px; text-align:center;
+  font-size:0.78rem; font-weight:600; color:#64748b;
+  cursor:pointer; border-bottom:2px solid transparent;
+  transition:all .2s;
+}
+.vol-tab.active { color:var(--azul); border-bottom-color:var(--azul); }
+.vol-tab:hover:not(.active) { color:#1e293b; background:#f8faff; }
+
+/* Content */
+.vol-panel-body { flex:1; overflow-y:auto; padding:20px; }
+.vol-tab-content { display:none; }
+.vol-tab-content.active { display:block; }
+
+/* Items */
+.vol-item {
+  background:#F4F6FA; border-radius:12px; padding:14px;
+  border:1.5px solid #e2e8f0; margin-bottom:10px;
+  transition:box-shadow .2s;
+}
+.vol-item:hover { box-shadow:0 4px 12px rgba(26,60,143,0.08); }
+.vol-item-nome { font-family:'Montserrat',sans-serif; font-weight:700; font-size:0.9rem; color:var(--azul); margin-bottom:3px; }
+.vol-item-local { font-size:0.78rem; color:#64748b; margin-bottom:6px; }
+.vol-item-tags { display:flex; gap:5px; flex-wrap:wrap; margin-bottom:8px; }
+.vol-item-footer { display:flex; align-items:center; justify-content:space-between; }
+.vol-status { font-size:0.72rem; font-weight:700; padding:3px 10px; border-radius:99px; }
+.vs-confirmado { background:#EEF2FF; color:var(--azul); }
+.vs-concluido  { background:#ECFDF5; color:#15803D; }
+
+/* Avaliações */
+.aval-item { background:#fffbeb; border:1.5px solid #FDE68A; border-radius:12px; padding:14px; margin-bottom:10px; }
+.aval-stars { color:#F59E0B; font-size:1.1rem; letter-spacing:2px; margin-bottom:6px; }
+.aval-comentario { font-size:0.83rem; color:#64748b; font-style:italic; }
+.aval-data { font-size:0.72rem; color:#94a3b8; margin-top:6px; }
+
+/* Stats row */
+.vol-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:20px; }
+.vol-stat-card { background:#F4F6FA; border-radius:12px; padding:14px; text-align:center; border:1.5px solid #e2e8f0; }
+.vol-stat-n { font-family:'Montserrat',sans-serif; font-weight:900; font-size:1.6rem; color:var(--azul); }
+.vol-stat-n.red { color:var(--verm); }
+.vol-stat-n.gold { color:#D97706; }
+.vol-stat-l { font-size:0.68rem; color:#94a3b8; margin-top:2px; text-transform:uppercase; letter-spacing:.03em; }
+
+/* Perfil */
+.vol-perfil-section { margin-bottom:20px; }
+.vol-perfil-section h4 { font-family:'Montserrat',sans-serif; font-weight:700; font-size:0.88rem; color:var(--azul); margin-bottom:10px; }
+.btn-salvar-perfil {
+  width:100%; padding:12px; border-radius:10px; border:none;
+  background:var(--azul); color:#fff; font-family:'Montserrat',sans-serif;
+  font-weight:700; font-size:0.9rem; cursor:pointer; transition:all .2s;
+  margin-top:12px;
+}
+.btn-salvar-perfil:hover { background:var(--azul-med); }
+
+/* Empty state */
+.vol-empty { text-align:center; padding:40px 20px; color:#94a3b8; }
+.vol-empty .ve-icon { font-size:2.5rem; margin-bottom:10px; }
+.vol-empty p { font-size:0.87rem; }
+
 /* ── AVALIAÇÃO ── */
 .stars-input { display:flex; gap:6px; margin:8px 0; }
 .star-btn {
@@ -450,7 +563,7 @@ textarea.form-control { resize: vertical; min-height: 88px; }
   </div>
   <!-- Logado -->
   <div id="authLogin" style="display:none;align-items:center;gap:12px;">
-    <div class="auth-user">
+    <div class="auth-user" onclick="abrirPainelVoluntario()" style="cursor:pointer;" title="Ver meu painel">
       <div class="auth-avatar" id="authAvatar">A</div>
       <div>
         <div class="auth-name" id="authNome">Usuário</div>
@@ -1951,6 +2064,304 @@ function exibirEstrelasDetalhe(media, total) {
   const cheias = Math.round(media);
   const stars = '★'.repeat(cheias) + '☆'.repeat(5-cheias);
   return `<div class="media-estrelas" style="margin-top:8px;">${stars} ${media.toFixed(1)} <span style="color:#94a3b8;font-weight:400;">(${total} aval.)</span></div>`;
+}
+</script>
+
+
+<!-- PAINEL VOLUNTÁRIO -->
+<div class="vol-panel-overlay" id="volPanelOverlay" onclick="fecharPainelVoluntario()"></div>
+<div class="vol-panel" id="volPanel">
+  <div class="vol-panel-header">
+    <div class="vol-avatar-big" id="volAvatarBig">A</div>
+    <div class="vol-header-info">
+      <div class="vol-header-nome" id="volHeaderNome">Voluntário</div>
+      <div class="vol-header-email" id="volHeaderEmail">—</div>
+      <div class="vol-header-pts">
+        <span class="vol-pts-badge">⭐ <span id="volMediaEstrelas">—</span></span>
+        <span class="vol-pts-badge">✅ <span id="volTotalAjudas">0</span> ajudas</span>
+      </div>
+    </div>
+    <button class="vol-panel-close" onclick="fecharPainelVoluntario()">✕</button>
+  </div>
+
+  <div class="vol-tabs">
+    <div class="vol-tab active" onclick="volAba('confirmadas')">🙋 Confirmadas</div>
+    <div class="vol-tab" onclick="volAba('historico')">✅ Histórico</div>
+    <div class="vol-tab" onclick="volAba('avaliacoes')">⭐ Avaliações</div>
+    <div class="vol-tab" onclick="volAba('perfil')">👤 Perfil</div>
+  </div>
+
+  <div class="vol-panel-body">
+
+    <!-- CONFIRMADAS -->
+    <div class="vol-tab-content active" id="vol-confirmadas">
+      <div class="vol-stats" id="volStats">
+        <div class="vol-stat-card"><div class="vol-stat-n" id="vs-confirmadas">0</div><div class="vol-stat-l">Confirmadas</div></div>
+        <div class="vol-stat-card"><div class="vol-stat-n red" id="vs-urgentes">0</div><div class="vol-stat-l">Urgentes</div></div>
+        <div class="vol-stat-card"><div class="vol-stat-n gold" id="vs-pontos">0</div><div class="vol-stat-l">Pontos</div></div>
+      </div>
+      <div id="lista-confirmadas">
+        <div class="vol-empty"><div class="ve-icon">🙋</div><p>Você ainda não confirmou presença em nenhuma solicitação.</p></div>
+      </div>
+    </div>
+
+    <!-- HISTÓRICO -->
+    <div class="vol-tab-content" id="vol-historico">
+      <div id="lista-historico">
+        <div class="vol-empty"><div class="ve-icon">✅</div><p>Seu histórico de ajudas concluídas aparecerá aqui.</p></div>
+      </div>
+    </div>
+
+    <!-- AVALIAÇÕES -->
+    <div class="vol-tab-content" id="vol-avaliacoes">
+      <div id="lista-avaliacoes">
+        <div class="vol-empty"><div class="ve-icon">⭐</div><p>Suas avaliações aparecerão aqui após ajudar alguém.</p></div>
+      </div>
+    </div>
+
+    <!-- PERFIL -->
+    <div class="vol-tab-content" id="vol-perfil">
+      <div class="vol-perfil-section">
+        <h4>Informações pessoais</h4>
+        <div class="form-group"><label>Nome completo</label><input class="form-control" id="perfil-nome" placeholder="Seu nome"></div>
+        <div class="form-group"><label>WhatsApp</label><input class="form-control" id="perfil-whatsapp" placeholder="(xx) 9xxxx-xxxx"></div>
+        <div class="form-group"><label>Cidade</label><input class="form-control" id="perfil-cidade" placeholder="Sua cidade"></div>
+      </div>
+      <div class="vol-perfil-section">
+        <h4>Habilidades</h4>
+        <div class="checkbox-group" id="perfil-habilidades">
+          <div class="chk" onclick="toggleChk(this)">💪 Trabalho braçal</div>
+          <div class="chk" onclick="toggleChk(this)">🚗 Tenho veículo</div>
+          <div class="chk" onclick="toggleChk(this)">🏥 Saúde</div>
+          <div class="chk" onclick="toggleChk(this)">🔨 Construção</div>
+          <div class="chk" onclick="toggleChk(this)">👩‍🍳 Cozinha</div>
+          <div class="chk" onclick="toggleChk(this)">📦 Logística</div>
+        </div>
+      </div>
+      <div class="vol-perfil-section">
+        <h4>Raio de atuação</h4>
+        <select class="form-control" id="perfil-raio">
+          <option>Até 10km</option>
+          <option>Até 50km</option>
+          <option selected>Até 100km</option>
+          <option>Todo o estado</option>
+          <option>Qualquer lugar</option>
+        </select>
+      </div>
+      <button class="btn-salvar-perfil" onclick="salvarPerfil()">💾 Salvar perfil</button>
+    </div>
+
+  </div>
+</div>
+
+
+<script>
+// ═══════════════════════════════════════
+// PAINEL DO VOLUNTÁRIO
+// ═══════════════════════════════════════
+let _volPanelAberto = false;
+let _volDados = null;
+
+async function abrirPainelVoluntario() {
+  if (!usuarioAtual) { abrirModal('modal-auth'); return; }
+
+  // Preenche header
+  const u = usuarioAtual.user;
+  const nome = u.user_metadata?.full_name || u.email?.split('@')[0] || 'Voluntário';
+  const inicial = nome[0].toUpperCase();
+
+  document.getElementById('volAvatarBig').textContent = inicial;
+  document.getElementById('volHeaderNome').textContent = nome;
+  document.getElementById('volHeaderEmail').textContent = u.email || '';
+
+  // Abre painel
+  document.getElementById('volPanel').classList.add('open');
+  document.getElementById('volPanelOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  _volPanelAberto = true;
+
+  // Carrega dados
+  await carregarDadosVoluntario();
+}
+
+function fecharPainelVoluntario() {
+  document.getElementById('volPanel').classList.remove('open');
+  document.getElementById('volPanelOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+  _volPanelAberto = false;
+}
+
+function volAba(aba) {
+  document.querySelectorAll('.vol-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.vol-tab-content').forEach(c => c.classList.remove('active'));
+  const idx = ['confirmadas','historico','avaliacoes','perfil'].indexOf(aba);
+  document.querySelectorAll('.vol-tab')[idx]?.classList.add('active');
+  document.getElementById('vol-' + aba)?.classList.add('active');
+}
+
+async function carregarDadosVoluntario() {
+  if (!usuarioAtual) return;
+  const userId = usuarioAtual.user?.id;
+  const email  = usuarioAtual.user?.email;
+
+  try {
+    // Busca voluntário pelo email (se cadastrado)
+    const vols = await sbFetch(`voluntarios?select=*`);
+    _volDados = vols.find(v => v.whatsapp || v.nome) || null;
+
+    // Busca confirmações do usuário
+    const confs = await sbFetch(`confirmacoes?select=*,solicitacoes(*)`) || [];
+
+    // Stats
+    const total = confs.length;
+    const urgentes = confs.filter(c => c.solicitacoes?.urgencia === 'vermelho').length;
+    const pts = _volDados?.pontos || total * 10;
+
+    document.getElementById('vs-confirmadas').textContent = total;
+    document.getElementById('vs-urgentes').textContent = urgentes;
+    document.getElementById('vs-pontos').textContent = pts;
+    document.getElementById('volTotalAjudas').textContent = total;
+
+    // Média estrelas
+    if (_volDados?.media_estrelas) {
+      const med = parseFloat(_volDados.media_estrelas).toFixed(1);
+      document.getElementById('volMediaEstrelas').textContent = med + ' ⭐';
+    } else {
+      document.getElementById('volMediaEstrelas').textContent = 'Sem aval.';
+    }
+
+    // Lista confirmadas (ativas)
+    const ativas = confs.filter(c => c.solicitacoes?.ativo);
+    renderListaConfirmadas(ativas);
+
+    // Lista histórico (concluídas)
+    const concluidas = confs.filter(c => !c.solicitacoes?.ativo);
+    renderHistorico(concluidas);
+
+    // Avaliações
+    await carregarAvaliacoes();
+
+    // Perfil
+    if (_volDados) preencherPerfil(_volDados);
+
+  } catch(e) {
+    console.warn('Erro ao carregar dados voluntário:', e);
+  }
+}
+
+function renderListaConfirmadas(confs) {
+  const el = document.getElementById('lista-confirmadas');
+  if (!confs.length) {
+    el.innerHTML = '<div class="vol-empty"><div class="ve-icon">🙋</div><p>Você ainda não confirmou presença em nenhuma solicitação ativa.</p></div>';
+    return;
+  }
+  el.innerHTML = confs.map(c => {
+    const s = c.solicitacoes || {};
+    const exp = calcularExpiracao(s.expira_em);
+    return `<div class="vol-item">
+      <div class="vol-item-nome">${s.nome || '—'}</div>
+      <div class="vol-item-local">📍 ${s.cidade || ''}, ${s.estado || ''}</div>
+      <div class="vol-item-tags">${(s.tipos_ajuda||[]).map(t=>`<span class="tag">${t}</span>`).join('')}</div>
+      <div class="vol-item-footer">
+        <span class="vol-status vs-confirmado">✅ Confirmado</span>
+        <span style="font-size:0.75rem;color:#64748b;">⏰ ${exp}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderHistorico(confs) {
+  const el = document.getElementById('lista-historico');
+  if (!confs.length) {
+    el.innerHTML = '<div class="vol-empty"><div class="ve-icon">✅</div><p>Seu histórico de ajudas concluídas aparecerá aqui.</p></div>';
+    return;
+  }
+  el.innerHTML = confs.map(c => {
+    const s = c.solicitacoes || {};
+    return `<div class="vol-item">
+      <div class="vol-item-nome">${s.nome || '—'}</div>
+      <div class="vol-item-local">📍 ${s.cidade || ''}, ${s.estado || ''}</div>
+      <div class="vol-item-tags">${(s.tipos_ajuda||[]).map(t=>`<span class="tag">${t}</span>`).join('')}</div>
+      <div class="vol-item-footer">
+        <span class="vol-status vs-concluido">✅ Concluído</span>
+        <span style="font-size:0.75rem;color:#64748b;">${new Date(c.criado_em).toLocaleDateString('pt-BR')}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function carregarAvaliacoes() {
+  const el = document.getElementById('lista-avaliacoes');
+  if (!_volDados?.id) {
+    el.innerHTML = '<div class="vol-empty"><div class="ve-icon">⭐</div><p>Cadastre-se como voluntário para receber avaliações.</p></div>';
+    return;
+  }
+  try {
+    const avals = await sbFetch(`avaliacoes?avaliado_id=eq.${_volDados.id}&order=criado_em.desc&select=*`);
+    if (!avals.length) {
+      el.innerHTML = '<div class="vol-empty"><div class="ve-icon">⭐</div><p>Suas avaliações aparecerão aqui após ajudar alguém.</p></div>';
+      return;
+    }
+    const media = avals.reduce((s,a) => s + a.estrelas, 0) / avals.length;
+    el.innerHTML = `
+      <div style="text-align:center;background:#fffbeb;border-radius:14px;padding:20px;margin-bottom:16px;border:1.5px solid #FDE68A;">
+        <div style="font-size:2.5rem;font-weight:900;color:#D97706;">${media.toFixed(1)}</div>
+        <div style="color:#F59E0B;font-size:1.3rem;letter-spacing:3px;">${'★'.repeat(Math.round(media))}${'☆'.repeat(5-Math.round(media))}</div>
+        <div style="font-size:0.78rem;color:#92400E;margin-top:4px;">${avals.length} avaliação(ões)</div>
+      </div>
+      ${avals.map(a => `
+        <div class="aval-item">
+          <div class="aval-stars">${'★'.repeat(a.estrelas)}${'☆'.repeat(5-a.estrelas)}</div>
+          ${a.comentario ? `<div class="aval-comentario">"${a.comentario}"</div>` : ''}
+          <div class="aval-data">${new Date(a.criado_em).toLocaleDateString('pt-BR')}</div>
+        </div>`).join('')}`;
+  } catch(e) { console.warn('Erro ao carregar avaliações:', e); }
+}
+
+function preencherPerfil(vol) {
+  if (document.getElementById('perfil-nome')) document.getElementById('perfil-nome').value = vol.nome || '';
+  if (document.getElementById('perfil-whatsapp')) document.getElementById('perfil-whatsapp').value = vol.whatsapp || '';
+  if (document.getElementById('perfil-cidade')) document.getElementById('perfil-cidade').value = vol.cidade || '';
+  if (vol.raio_atuacao) {
+    const sel = document.getElementById('perfil-raio');
+    if (sel) sel.value = vol.raio_atuacao;
+  }
+  if (vol.habilidades?.length) {
+    document.querySelectorAll('#perfil-habilidades .chk').forEach(el => {
+      const txt = el.textContent.replace(/^[^a-zA-ZÀ-ú]+/,'').trim();
+      if (vol.habilidades.some(h => h.includes(txt) || txt.includes(h))) {
+        el.classList.add('ativo');
+      }
+    });
+  }
+}
+
+async function salvarPerfil() {
+  const nome     = document.getElementById('perfil-nome')?.value?.trim();
+  const whatsapp = document.getElementById('perfil-whatsapp')?.value?.trim();
+  const cidade   = document.getElementById('perfil-cidade')?.value?.trim();
+  const raio     = document.getElementById('perfil-raio')?.value;
+  const habs     = [...document.querySelectorAll('#perfil-habilidades .chk.ativo')].map(e => e.textContent.replace(/^[^a-zA-ZÀ-ú]+/,'').trim());
+
+  if (!nome) { toast('⚠️ Preencha seu nome!'); return; }
+
+  try {
+    if (_volDados?.id) {
+      await sbFetch(`voluntarios?id=eq.${_volDados.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ nome, whatsapp, cidade, raio_atuacao: raio, habilidades: habs })
+      });
+    } else {
+      await sbFetch('voluntarios', {
+        method: 'POST',
+        body: JSON.stringify({ nome, whatsapp: whatsapp||'', cidade: cidade||'', estado:'', raio_atuacao: raio, habilidades: habs })
+      });
+    }
+    toast('✅ Perfil salvo com sucesso!', 'ok');
+    await carregarDadosVoluntario();
+  } catch(e) {
+    toast('⚠️ Erro ao salvar. Tente novamente.');
+  }
 }
 </script>
 
