@@ -1263,8 +1263,11 @@ function renderizarCards(solicitacoes) {
     const card = document.createElement('div');
     card.className = 'card';
     card.onclick = () => abrirDetalheReal(s);
+    const cardImgContent = s.foto_url
+      ? `<img src="${s.foto_url}" alt="Fachada" style="width:100%;height:100%;object-fit:cover;display:block;">${s.urgencia === 'vermelho' ? '<span class="badge-urgente">URGENTE</span>' : ''}`
+      : `🏠 ${s.urgencia === 'vermelho' ? '<span class="badge-urgente">URGENTE</span>' : ''}`;
     card.innerHTML = `
-      <div class="card-img">🏠 ${s.urgencia === 'vermelho' ? '<span class="badge-urgente">URGENTE</span>' : ''}</div>
+      <div class="card-img" style="${s.foto_url ? 'padding:0;overflow:hidden;' : ''}">${cardImgContent}</div>
       <div class="card-body">
         <div class="card-nome">${s.nome}</div>
         <div class="card-local">📍 ${s.cidade}, ${s.estado}</div>
