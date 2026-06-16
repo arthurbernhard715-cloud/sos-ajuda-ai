@@ -1460,7 +1460,7 @@ async function confirmarPresenca(solId, btn) {
     if (btn) { btn.style.display = 'none'; }
     // Mostra botão cancelar
     const btnCancelar = document.getElementById('btn-cancelar-presenca');
-    if (btnCancelar && conf?.length) {
+    if (btnCancelar) {
       btnCancelar.style.display = 'block';
       btnCancelar.dataset.solId = solId;
     }
