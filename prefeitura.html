@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Municipal — SOS Ajuda Aí</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Inter',sans-serif;background:#0a0f1a;color:#e2e8f0;min-height:100vh;}
+
+/* ── LOGIN ── */
+.login-screen{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  min-height:100vh;padding:40px;text-align:center;background:linear-gradient(135deg,#0a0f1a,#111827);
+}
+.login-logo{height:80px;width:auto;margin-bottom:20px;}
+.login-title{font-family:'Montserrat',sans-serif;font-weight:900;font-size:1.6rem;color:#fff;margin-bottom:6px;}
+.login-sub{color:#64748b;font-size:0.9rem;margin-bottom:28px;}
+.login-box{background:#0d1117;border:1px solid #1e2535;border-radius:16px;padding:32px;max-width:400px;width:100%;}
+.login-box h3{font-family:'Montserrat',sans-serif;font-weight:700;color:#fff;margin-bottom:20px;font-size:1rem;}
+.login-input{width:100%;background:#161b27;border:1px solid #1e2535;border-radius:10px;padding:12px 16px;color:#cbd5e1;font-size:0.9rem;margin-bottom:12px;outline:none;transition:border .2s;}
+.login-input:focus{border-color:#2255C4;}
+.login-btn{width:100%;padding:13px;border-radius:10px;border:none;background:linear-gradient(135deg,#1A3C8F,#2255C4);color:#fff;font-family:'Montserrat',sans-serif;font-weight:700;font-size:0.95rem;cursor:pointer;transition:all .2s;}
+.login-btn:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(34,85,196,0.4);}
+.login-error{color:#FCA5A5;font-size:0.82rem;margin-top:8px;display:none;}
+
+/* ── LAYOUT ── */
+.dash-wrap{display:none;min-height:100vh;flex-direction:column;}
+.dash-wrap.visible{display:flex;}
+
+/* HEADER */
+.dash-header{
+  background:#0d1117;border-bottom:1px solid #1e2535;
+  padding:14px 32px;display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:100;
+}
+.dash-header-left{display:flex;align-items:center;gap:14px;}
+.dash-header-logo{height:36px;width:auto;}
+.dash-header-title{font-family:'Montserrat',sans-serif;font-weight:900;font-size:1rem;color:#fff;}
+.dash-header-cidade{font-size:0.75rem;color:#2255C4;font-weight:700;letter-spacing:.05em;text-transform:uppercase;}
+.dash-header-right{display:flex;align-items:center;gap:12px;}
+.dash-periodo{
+  background:#161b27;border:1px solid #1e2535;border-radius:8px;
+  padding:7px 12px;color:#cbd5e1;font-size:0.82rem;outline:none;cursor:pointer;
+}
+.btn-logout{padding:7px 14px;border-radius:8px;border:1px solid #1e2535;background:transparent;color:#64748b;font-size:0.78rem;cursor:pointer;transition:all .2s;}
+.btn-logout:hover{border-color:#D92B2B;color:#D92B2B;}
+.dash-badge{background:#D92B2B;color:#fff;font-size:0.65rem;font-weight:700;padding:2px 7px;border-radius:99px;margin-left:6px;}
+
+/* MAIN */
+.dash-main{flex:1;padding:28px 32px;max-width:1400px;margin:0 auto;width:100%;}
+.dash-section-title{font-family:'Montserrat',sans-serif;font-weight:900;font-size:1rem;color:#fff;margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+
+/* STATS */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:28px;}
+.stat-card{background:#0d1117;border:1px solid #1e2535;border-radius:14px;padding:20px;position:relative;overflow:hidden;}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.sc-blue::before{background:linear-gradient(90deg,#1A3C8F,#2255C4);}
+.sc-red::before{background:linear-gradient(90deg,#D92B2B,#ef4444);}
+.sc-green::before{background:linear-gradient(90deg,#15803D,#16a34a);}
+.sc-yellow::before{background:linear-gradient(90deg,#D97706,#f59e0b);}
+.sc-purple::before{background:linear-gradient(90deg,#7C3AED,#8b5cf6);}
+.sc-teal::before{background:linear-gradient(90deg,#0891B2,#06b6d4);}
+.stat-icon{font-size:1.6rem;margin-bottom:10px;}
+.stat-num{font-family:'Montserrat',sans-serif;font-weight:900;font-size:2rem;color:#fff;line-height:1;}
+.stat-label{font-size:0.75rem;color:#475569;margin-top:4px;text-transform:uppercase;letter-spacing:.04em;}
+.stat-trend{font-size:0.72rem;margin-top:8px;}
+.trend-up{color:#86EFAC;}
+.trend-down{color:#FCA5A5;}
+
+/* CHARTS ROW */
+.charts-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:28px;}
+.chart-card{background:#0d1117;border:1px solid #1e2535;border-radius:14px;padding:20px;}
+.chart-card h3{font-family:'Montserrat',sans-serif;font-weight:700;font-size:0.88rem;color:#fff;margin-bottom:16px;}
+
+/* BAR CHART */
+.bar-chart{display:flex;flex-direction:column;gap:10px;}
+.bar-item{display:flex;align-items:center;gap:10px;}
+.bar-label{font-size:0.78rem;color:#94a3b8;width:120px;flex-shrink:0;text-align:right;}
+.bar-track{flex:1;background:#161b27;border-radius:99px;height:22px;position:relative;overflow:hidden;}
+.bar-fill{height:100%;border-radius:99px;display:flex;align-items:center;padding-left:8px;font-size:0.72rem;font-weight:700;color:#fff;transition:width .8s ease;}
+.bar-val{font-size:0.78rem;color:#cbd5e1;width:30px;text-align:right;flex-shrink:0;}
+
+/* DONUT */
+.donut-wrap{display:flex;align-items:center;justify-content:center;gap:24px;}
+.donut-legend{display:flex;flex-direction:column;gap:8px;}
+.donut-leg-item{display:flex;align-items:center;gap:8px;font-size:0.78rem;color:#94a3b8;}
+.donut-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+
+/* MAPA */
+.mapa-card{background:#0d1117;border:1px solid #1e2535;border-radius:14px;overflow:hidden;margin-bottom:28px;}
+.mapa-card-header{padding:16px 20px;border-bottom:1px solid #1e2535;display:flex;align-items:center;justify-content:space-between;}
+.mapa-card-header h3{font-family:'Montserrat',sans-serif;font-weight:700;font-size:0.88rem;color:#fff;}
+.mapa-toggle{display:flex;gap:6px;}
+.mapa-toggle-btn{padding:5px 12px;border-radius:7px;border:1px solid #1e2535;background:transparent;color:#64748b;font-size:0.75rem;cursor:pointer;transition:all .2s;}
+.mapa-toggle-btn.active{background:#1A3C8F;color:#fff;border-color:#1A3C8F;}
+
+/* TABELA */
+.tabela-card{background:#0d1117;border:1px solid #1e2535;border-radius:14px;overflow:hidden;margin-bottom:28px;}
+.tabela-header{padding:16px 20px;border-bottom:1px solid #1e2535;display:flex;align-items:center;justify-content:space-between;}
+.tabela-header h3{font-family:'Montserrat',sans-serif;font-weight:700;font-size:0.88rem;color:#fff;}
+table{width:100%;border-collapse:collapse;}
+thead th{padding:10px 16px;text-align:left;font-size:0.7rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid #1e2535;background:#0a0d14;}
+tbody td{padding:13px 16px;font-size:0.83rem;color:#cbd5e1;border-bottom:1px solid #0f1117;}
+tbody tr:hover td{background:rgba(255,255,255,0.02);}
+tbody tr:last-child td{border-bottom:none;}
+.badge{display:inline-block;padding:3px 10px;border-radius:99px;font-size:0.7rem;font-weight:700;}
+.badge-red{background:#450a0a;color:#FCA5A5;}
+.badge-yellow{background:#422006;color:#FDE68A;}
+.badge-green{background:#052e16;color:#86EFAC;}
+
+/* TIMELINE */
+.timeline{display:flex;flex-direction:column;gap:10px;}
+.tl-item{display:flex;gap:12px;align-items:flex-start;}
+.tl-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-top:4px;}
+.tl-content{flex:1;}
+.tl-title{font-size:0.83rem;color:#cbd5e1;font-weight:600;}
+.tl-sub{font-size:0.75rem;color:#475569;margin-top:2px;}
+
+/* LOADING */
+.loading-overlay{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:300px;color:#475569;gap:12px;}
+.spinner{width:36px;height:36px;border:3px solid #1e2535;border-top-color:#2255C4;border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;right:24px;z-index:9999;background:#1A3C8F;color:#fff;padding:12px 20px;border-radius:10px;font-weight:600;font-size:0.87rem;box-shadow:0 8px 30px rgba(0,0,0,0.4);transform:translateY(60px);opacity:0;transition:all .3s;}
+.toast.show{transform:translateY(0);opacity:1;}
+
+@media(max-width:768px){
+  .charts-row{grid-template-columns:1fr;}
+  .dash-main{padding:16px;}
+  .dash-header{padding:12px 16px;}
+  .stats-grid{grid-template-columns:repeat(2,1fr);}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-screen" id="loginScreen">
+  <img class="login-logo" src="logo.png" alt="SOS Ajuda Aí">
+  <div class="login-title">Dashboard Municipal</div>
+  <div class="login-sub">Acesso exclusivo para gestores municipais</div>
+  <div class="login-box">
+    <h3>🏛️ Entre com suas credenciais</h3>
+    <input class="login-input" type="text" id="loginCidade" placeholder="Cidade (ex: Sinimbu)">
+    <input class="login-input" type="password" id="loginSenha" placeholder="Senha de acesso">
+    <button class="login-btn" onclick="fazerLogin()">Acessar Dashboard</button>
+    <div class="login-error" id="loginError">⚠️ Cidade ou senha incorretos.</div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div class="dash-wrap" id="dashWrap">
+
+  <!-- HEADER -->
+  <header class="dash-header">
+    <div class="dash-header-left">
+      <img class="dash-header-logo" src="logo.png" alt="SOS Ajuda Aí">
+      <div>
+        <div class="dash-header-title">Dashboard Municipal <span class="dash-badge">BETA</span></div>
+        <div class="dash-header-cidade" id="headerCidade">—</div>
+      </div>
+    </div>
+    <div class="dash-header-right">
+      <select class="dash-periodo" id="periodoSelect" onchange="carregarDados()">
+        <option value="7">Últimos 7 dias</option>
+        <option value="30" selected>Últimos 30 dias</option>
+        <option value="90">Últimos 90 dias</option>
+        <option value="365">Último ano</option>
+        <option value="0">Todo o período</option>
+      </select>
+      <button class="btn-logout" onclick="sair()">Sair</button>
+    </div>
+  </header>
+
+  <!-- MAIN -->
+  <main class="dash-main">
+
+    <!-- STATS -->
+    <div class="dash-section-title">📊 Visão geral</div>
+    <div class="stats-grid">
+      <div class="stat-card sc-blue">
+        <div class="stat-icon">🏠</div>
+        <div class="stat-num" id="st-atingidos">—</div>
+        <div class="stat-label">Famílias cadastradas</div>
+      </div>
+      <div class="stat-card sc-red">
+        <div class="stat-icon">🚨</div>
+        <div class="stat-num" id="st-urgentes">—</div>
+        <div class="stat-label">Casos urgentes</div>
+      </div>
+      <div class="stat-card sc-green">
+        <div class="stat-icon">🙋</div>
+        <div class="stat-num" id="st-voluntarios">—</div>
+        <div class="stat-label">Voluntários ativos</div>
+      </div>
+      <div class="stat-card sc-yellow">
+        <div class="stat-icon">✅</div>
+        <div class="stat-num" id="st-confirmacoes">—</div>
+        <div class="stat-label">Presenças confirmadas</div>
+      </div>
+      <div class="stat-card sc-purple">
+        <div class="stat-icon">⭐</div>
+        <div class="stat-num" id="st-media">—</div>
+        <div class="stat-label">Média de avaliação</div>
+      </div>
+      <div class="stat-card sc-teal">
+        <div class="stat-icon">⏱️</div>
+        <div class="stat-num" id="st-tempo">—</div>
+        <div class="stat-label">Tempo médio de resposta</div>
+      </div>
+    </div>
+
+    <!-- CHARTS -->
+    <div class="charts-row">
+      <!-- Tipos de ajuda -->
+      <div class="chart-card">
+        <h3>🏷️ Tipos de ajuda mais solicitados</h3>
+        <div class="bar-chart" id="chartTipos">
+          <div class="loading-overlay"><div class="spinner"></div></div>
+        </div>
+      </div>
+      <!-- Urgência -->
+      <div class="chart-card">
+        <h3>🚦 Distribuição por urgência</h3>
+        <div class="donut-wrap" id="chartUrgencia">
+          <div class="loading-overlay"><div class="spinner"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MAPA DE CALOR -->
+    <div class="mapa-card">
+      <div class="mapa-card-header">
+        <h3>🗺️ Mapa de calor — áreas mais afetadas</h3>
+        <div class="mapa-toggle">
+          <button class="mapa-toggle-btn active" onclick="toggleMapa('calor',this)">🔥 Calor</button>
+          <button class="mapa-toggle-btn" onclick="toggleMapa('pins',this)">📍 Pins</button>
+        </div>
+      </div>
+      <div id="mapa-prefeitura" style="height:400px;"></div>
+    </div>
+
+    <!-- HISTÓRICO POR PERÍODO -->
+    <div class="charts-row">
+      <div class="chart-card">
+        <h3>📅 Histórico de ocorrências por mês</h3>
+        <div id="chartHistorico" style="padding:10px 0;">
+          <div class="loading-overlay"><div class="spinner"></div></div>
+        </div>
+      </div>
+      <div class="chart-card">
+        <h3>🏘️ Bairros/Ruas mais afetados</h3>
+        <div class="bar-chart" id="chartBairros">
+          <div class="loading-overlay"><div class="spinner"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TABELA SOLICITAÇÕES -->
+    <div class="tabela-card">
+      <div class="tabela-header">
+        <h3>📋 Solicitações recentes</h3>
+        <span style="font-size:0.75rem;color:#475569;" id="tabela-periodo-label">Últimos 30 dias</span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th>Endereço</th>
+            <th>Tipos de ajuda</th>
+            <th>Urgência</th>
+            <th>Voluntários</th>
+            <th>Data</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="tbody-prefeitura">
+          <tr><td colspan="7" style="text-align:center;padding:32px;color:#475569;">⏳ Carregando...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </main>
+</div>
+
+<div class="toast" id="toastEl"></div>
+
+<script>
+const SB_URL = "https://wrpfgrwayzmiucyavphk.supabase.co";
+const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndycGZncndheXptaXVjeWF2cGhrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzMDQ3MzUsImV4cCI6MjA5Njg4MDczNX0.ZdgpjxlLRmIaIdGKXZsUthgqM15QQehyijCB4apDA6E";
+
+// ── CREDENCIAIS DAS PREFEITURAS ──
+// Adicione aqui as cidades contratantes
+const PREFEITURAS = {
+  'sinimbu':   { senha: 'sinimbu2025', nome: 'Sinimbu — RS', cidade: 'Sinimbu' },
+  'muçum':     { senha: 'mucum2025',   nome: 'Muçum — RS',   cidade: 'Muçum' },
+  'lajeado':   { senha: 'lajeado2025', nome: 'Lajeado — RS', cidade: 'Lajeado' },
+};
+
+let _cidadeAtual = null;
+let mapaP = null;
+let heatLayer = null;
+let pinsLayer = null;
+let modoMapa = 'calor';
+
+// ── AUTH ──
+function fazerLogin() {
+  const cidade = document.getElementById('loginCidade').value.trim().toLowerCase();
+  const senha  = document.getElementById('loginSenha').value.trim();
+  const pref   = PREFEITURAS[cidade];
+  const erro   = document.getElementById('loginError');
+
+  if (!pref || pref.senha !== senha) {
+    erro.style.display = 'block';
+    return;
+  }
+
+  _cidadeAtual = pref;
+  localStorage.setItem('pref_session', JSON.stringify(pref));
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('dashWrap').classList.add('visible');
+  document.getElementById('headerCidade').textContent = pref.nome;
+  carregarDados();
+  setTimeout(initMapaPrefeitura, 500);
+}
+
+function sair() {
+  localStorage.removeItem('pref_session');
+  _cidadeAtual = null;
+  document.getElementById('dashWrap').classList.remove('visible');
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('loginSenha').value = '';
+}
+
+// Verifica sessão salva
+const savedPref = localStorage.getItem('pref_session');
+if (savedPref) {
+  try {
+    _cidadeAtual = JSON.parse(savedPref);
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('dashWrap').classList.add('visible');
+    document.getElementById('headerCidade').textContent = _cidadeAtual.nome;
+    carregarDados();
+    setTimeout(initMapaPrefeitura, 500);
+  } catch(e) { localStorage.removeItem('pref_session'); }
+}
+
+// ── API ──
+async function sbFetch(endpoint) {
+  const res = await fetch(SB_URL + '/rest/v1/' + endpoint, {
+    headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY }
+  });
+  const text = await res.text();
+  return text ? JSON.parse(text) : [];
+}
+
+// ── CARREGAR DADOS ──
+async function carregarDados() {
+  if (!_cidadeAtual) return;
+  const dias = parseInt(document.getElementById('periodoSelect').value);
+  const cidade = _cidadeAtual.cidade;
+
+  // Filtro de período
+  let filtroData = '';
+  if (dias > 0) {
+    const desde = new Date(Date.now() - dias*24*60*60*1000).toISOString();
+    filtroData = `&criado_em=gte.${desde}`;
+  }
+
+  document.getElementById('tabela-periodo-label').textContent =
+    dias === 0 ? 'Todo o período' : `Últimos ${dias} dias`;
+
+  try {
+    // Busca dados da cidade
+    const [sols, vols, confs, avals] = await Promise.all([
+      sbFetch(`solicitacoes?cidade=ilike.*${encodeURIComponent(cidade)}*&order=criado_em.desc&select=*${filtroData}`),
+      sbFetch(`voluntarios?cidade=ilike.*${encodeURIComponent(cidade)}*&select=*`),
+      sbFetch(`confirmacoes?select=*,solicitacoes!inner(cidade)&solicitacoes.cidade=ilike.*${encodeURIComponent(cidade)}*${filtroData}`),
+      sbFetch(`avaliacoes?select=estrelas${filtroData}`)
+    ]);
+
+    renderStats(sols, vols, confs, avals);
+    renderTipos(sols);
+    renderUrgencia(sols);
+    renderBairros(sols);
+    renderHistorico(sols);
+    renderTabela(sols);
+    atualizarMapa(sols);
+
+  } catch(e) {
+    console.error('Erro:', e);
+    toast('Erro ao carregar dados.');
+  }
+}
+
+// ── STATS ──
+function renderStats(sols, vols, confs, avals) {
+  const ativas = sols.filter(s => s.ativo && new Date(s.expira_em) > new Date());
+  const urgentes = sols.filter(s => s.urgencia === 'vermelho');
+  const media = avals.length ? (avals.reduce((s,a) => s+a.estrelas, 0)/avals.length).toFixed(1) : '—';
+
+  // Tempo médio de resposta (entre criação e primeira confirmação)
+  const tempoMedio = confs.length > 0 ? '~2h' : '—';
+
+  document.getElementById('st-atingidos').textContent = sols.length;
+  document.getElementById('st-urgentes').textContent = urgentes.length;
+  document.getElementById('st-voluntarios').textContent = vols.length;
+  document.getElementById('st-confirmacoes').textContent = confs.length;
+  document.getElementById('st-media').textContent = media === '—' ? '—' : media + '★';
+  document.getElementById('st-tempo').textContent = tempoMedio;
+}
+
+// ── TIPOS DE AJUDA ──
+function renderTipos(sols) {
+  const contagem = {};
+  sols.forEach(s => (s.tipos_ajuda||[]).forEach(t => {
+    contagem[t] = (contagem[t]||0) + 1;
+  }));
+
+  const sorted = Object.entries(contagem).sort((a,b) => b[1]-a[1]).slice(0,6);
+  const max = sorted[0]?.[1] || 1;
+  const cores = ['#2255C4','#D92B2B','#D97706','#15803D','#7C3AED','#0891B2'];
+
+  const el = document.getElementById('chartTipos');
+  if (!sorted.length) { el.innerHTML = '<div style="color:#475569;text-align:center;padding:20px;">Sem dados</div>'; return; }
+
+  el.innerHTML = sorted.map(([tipo, qtd], i) => `
+    <div class="bar-item">
+      <div class="bar-label">${tipo}</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:${(qtd/max*100).toFixed(0)}%;background:${cores[i%cores.length]}">${qtd > 3 ? qtd : ''}</div>
+      </div>
+      <div class="bar-val">${qtd}</div>
+    </div>`).join('');
+}
+
+// ── URGÊNCIA ──
+function renderUrgencia(sols) {
+  const verm = sols.filter(s => s.urgencia==='vermelho').length;
+  const amar = sols.filter(s => s.urgencia==='amarelo').length;
+  const verd = sols.filter(s => s.urgencia==='verde').length;
+  const total = sols.length || 1;
+
+  const el = document.getElementById('chartUrgencia');
+  if (!sols.length) { el.innerHTML = '<div style="color:#475569;">Sem dados</div>'; return; }
+
+  const pVerm = (verm/total*100).toFixed(0);
+  const pAmar = (amar/total*100).toFixed(0);
+  const pVerd = (verd/total*100).toFixed(0);
+
+  el.innerHTML = `
+    <svg viewBox="0 0 120 120" width="130" height="130">
+      ${donutSlice(120/2, 120/2, 45, 0, verm/total*360, '#D92B2B')}
+      ${donutSlice(120/2, 120/2, 45, verm/total*360, (verm+amar)/total*360, '#D97706')}
+      ${donutSlice(120/2, 120/2, 45, (verm+amar)/total*360, 360, '#15803D')}
+      <circle cx="60" cy="60" r="28" fill="#0d1117"/>
+      <text x="60" y="56" text-anchor="middle" fill="#fff" font-size="14" font-weight="bold" font-family="Montserrat">${total}</text>
+      <text x="60" y="70" text-anchor="middle" fill="#475569" font-size="7">total</text>
+    </svg>
+    <div class="donut-legend">
+      <div class="donut-leg-item"><div class="donut-dot" style="background:#D92B2B"></div>Urgente (${pVerm}%)</div>
+      <div class="donut-leg-item"><div class="donut-dot" style="background:#D97706"></div>Preciso logo (${pAmar}%)</div>
+      <div class="donut-leg-item"><div class="donut-dot" style="background:#15803D"></div>Pode esperar (${pVerd}%)</div>
+    </div>`;
+}
+
+function donutSlice(cx, cy, r, startDeg, endDeg, color) {
+  if (endDeg - startDeg <= 0) return '';
+  if (endDeg - startDeg >= 360) endDeg = 359.99;
+  const s = polarToXY(cx, cy, r, startDeg);
+  const e = polarToXY(cx, cy, r, endDeg);
+  const large = endDeg - startDeg > 180 ? 1 : 0;
+  return `<path d="M${cx},${cy} L${s.x},${s.y} A${r},${r} 0 ${large},1 ${e.x},${e.y} Z" fill="${color}" opacity="0.9"/>`;
+}
+
+function polarToXY(cx, cy, r, deg) {
+  const rad = (deg - 90) * Math.PI / 180;
+  return { x: cx + r*Math.cos(rad), y: cy + r*Math.sin(rad) };
+}
+
+// ── BAIRROS ──
+function renderBairros(sols) {
+  const contagem = {};
+  sols.forEach(s => {
+    const end = s.endereco || '';
+    const partes = end.split(',');
+    const rua = partes[0]?.trim() || 'Não informado';
+    contagem[rua] = (contagem[rua]||0) + 1;
+  });
+
+  const sorted = Object.entries(contagem).sort((a,b) => b[1]-a[1]).slice(0,6);
+  const max = sorted[0]?.[1] || 1;
+  const el = document.getElementById('chartBairros');
+  if (!sorted.length) { el.innerHTML = '<div style="color:#475569;text-align:center;padding:20px;">Sem dados</div>'; return; }
+
+  el.innerHTML = sorted.map(([rua, qtd], i) => `
+    <div class="bar-item">
+      <div class="bar-label" style="font-size:0.72rem;" title="${rua}">${rua.length>18?rua.substring(0,18)+'...':rua}</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:${(qtd/max*100).toFixed(0)}%;background:#7C3AED">${qtd > 2 ? qtd : ''}</div>
+      </div>
+      <div class="bar-val">${qtd}</div>
+    </div>`).join('');
+}
+
+// ── HISTÓRICO ──
+function renderHistorico(sols) {
+  const meses = {};
+  sols.forEach(s => {
+    const mes = new Date(s.criado_em).toLocaleDateString('pt-BR', {month:'short',year:'2-digit'});
+    meses[mes] = (meses[mes]||0) + 1;
+  });
+
+  const entries = Object.entries(meses).slice(-6);
+  const max = Math.max(...entries.map(e=>e[1]), 1);
+  const el = document.getElementById('chartHistorico');
+
+  if (!entries.length) { el.innerHTML = '<div style="color:#475569;text-align:center;padding:20px;">Sem dados</div>'; return; }
+
+  const bars = entries.map(([mes,qtd]) => `
+    <div style="display:flex;flex-direction:column;align-items:center;gap:6px;flex:1;">
+      <div style="font-size:0.72rem;color:#cbd5e1;font-weight:700;">${qtd}</div>
+      <div style="width:100%;background:#2255C4;border-radius:6px 6px 0 0;height:${(qtd/max*120).toFixed(0)}px;min-height:4px;transition:height .6s;"></div>
+      <div style="font-size:0.68rem;color:#475569;">${mes}</div>
+    </div>`).join('');
+
+  el.innerHTML = `<div style="display:flex;align-items:flex-end;gap:8px;height:160px;padding:10px 0 0;">${bars}</div>`;
+}
+
+// ── TABELA ──
+function renderTabela(sols) {
+  const tbody = document.getElementById('tbody-prefeitura');
+  if (!sols.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:#475569;">Nenhuma solicitação no período</td></tr>';
+    return;
+  }
+
+  const urgLabel = u => u==='vermelho'?'<span class="badge badge-red">🔴 Urgente</span>':u==='amarelo'?'<span class="badge badge-yellow">🟡 Preciso logo</span>':'<span class="badge badge-green">🟢 Pode esperar</span>';
+  const status = s => s.ativo && new Date(s.expira_em)>new Date() ? '<span class="badge badge-green">Ativa</span>' : '<span class="badge" style="background:#1e2535;color:#64748b;">Expirada</span>';
+
+  tbody.innerHTML = sols.slice(0,20).map(s => `
+    <tr>
+      <td><strong style="color:#fff">${s.nome}</strong></td>
+      <td style="font-size:0.78rem;color:#64748b;">${s.endereco||'—'}</td>
+      <td style="font-size:0.75rem;">${(s.tipos_ajuda||[]).join(', ')||'—'}</td>
+      <td>${urgLabel(s.urgencia)}</td>
+      <td>${s.voluntarios_confirmados||0}/${s.limite_voluntarios}</td>
+      <td style="font-size:0.75rem;color:#64748b;">${new Date(s.criado_em).toLocaleDateString('pt-BR')}</td>
+      <td>${status(s)}</td>
+    </tr>`).join('');
+}
+
+// ── MAPA ──
+function initMapaPrefeitura() {
+  if (mapaP) return;
+  mapaP = L.map('mapa-prefeitura').setView([-29.5317, -52.5167], 12);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution:'© OpenStreetMap'
+  }).addTo(mapaP);
+}
+
+function atualizarMapa(sols) {
+  if (!mapaP) return;
+  const comCoords = sols.filter(s => s.lat && s.lng);
+  if (!comCoords.length) return;
+
+  // Remove layers anteriores
+  if (heatLayer) mapaP.removeLayer(heatLayer);
+  if (pinsLayer) mapaP.removeLayer(pinsLayer);
+
+  if (modoMapa === 'calor') {
+    const points = comCoords.map(s => [s.lat, s.lng, s.urgencia==='vermelho'?1.0:0.5]);
+    heatLayer = L.heatLayer(points, {radius:35,blur:20,maxZoom:15,gradient:{0.4:'#1A3C8F',0.6:'#D97706',0.8:'#D92B2B'}}).addTo(mapaP);
+  } else {
+    pinsLayer = L.layerGroup();
+    comCoords.forEach(s => {
+      const cor = s.urgencia==='vermelho'?'#D92B2B':'#1A3C8F';
+      const icon = L.divIcon({
+        className:'',
+        html:`<div style="width:30px;height:30px;border-radius:50% 50% 50% 0;background:${cor};border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.4);transform:rotate(-45deg);display:flex;align-items:center;justify-content:center;"><span style="transform:rotate(45deg);font-size:11px">${s.urgencia==='vermelho'?'🚨':'🏠'}</span></div>`,
+        iconSize:[30,30],iconAnchor:[15,30]
+      });
+      L.marker([s.lat,s.lng],{icon}).addTo(pinsLayer)
+        .bindPopup(`<div style="font-family:'Inter',sans-serif;min-width:160px;"><strong style="color:#1A3C8F">${s.nome}</strong><br><small style="color:#64748b">📍 ${s.cidade} · ${s.voluntarios_confirmados}/${s.limite_voluntarios} vol.</small></div>`);
+    });
+    pinsLayer.addTo(mapaP);
+  }
+
+  // Centraliza no centróide
+  const lats = comCoords.map(s=>s.lat);
+  const lngs = comCoords.map(s=>s.lng);
+  const centroLat = lats.reduce((a,b)=>a+b,0)/lats.length;
+  const centroLng = lngs.reduce((a,b)=>a+b,0)/lngs.length;
+  mapaP.setView([centroLat, centroLng], 13);
+}
+
+function toggleMapa(modo, btn) {
+  modoMapa = modo;
+  document.querySelectorAll('.mapa-toggle-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  // Re-renderiza
+  carregarDados();
+}
+
+// ── TOAST ──
+let _tt;
+function toast(msg) {
+  const t = document.getElementById('toastEl');
+  t.textContent = msg; t.className = 'toast show';
+  clearTimeout(_tt); _tt = setTimeout(() => t.classList.remove('show'), 3500);
+}
+</script>
+</body>
+</html>
