@@ -821,6 +821,7 @@ textarea.form-control { resize: vertical; min-height: 88px; }
         </div>
         <input class="form-control" id="numeroInput" placeholder="Nº" style="text-align:center;">
       </div>
+      <input class="form-control" id="complementoInput" placeholder="Complemento (Apto, Bloco, Casa...) — opcional" style="margin-bottom:8px;">
       <input class="form-control" id="bairroInput" placeholder="Bairro (opcional)">
     </div>
 
@@ -1093,7 +1094,11 @@ function abrirModal(id){document.getElementById(id).classList.add('open');docume
 function fecharModal(id){
   document.getElementById(id).classList.remove('open');
   document.body.style.overflow='';
-  if (id === 'modal-atingido') removerFoto();
+  if (id === 'modal-atingido') {
+    removerFoto();
+    const comp = document.getElementById('complementoInput');
+    if (comp) comp.value = '';
+  }
 }
 document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)fecharModal(o.id);}));
 
@@ -1407,8 +1412,18 @@ async function confirmarPresenca(solId, btn) {
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Confirmando...'; }
 
   try {
-    // 1. Verifica se já confirmou presença nesta solicitação
-    const userId = usuarioAtual.user?.id;
+    // 1. Busca o ID do voluntário pelo google_id
+    const googleId = usuarioAtual.user?.id;
+    const volRegistro = await sbFetch(`voluntarios?google_id=eq.${googleId}&select=id`);
+    if (!volRegistro.length) {
+      toast('⚠️ Finalize seu cadastro de voluntário primeiro!');
+      if (btn) { btn.disabled = false; btn.textContent = 'Quero ajudar'; }
+      abrirModalVoluntario();
+      return;
+    }
+    const userId = volRegistro[0].id;
+
+    // 2. Verifica se já confirmou presença nesta solicitação
     const jaConfirmou = await sbFetch(`confirmacoes?solicitacao_id=eq.${solId}&voluntario_id=eq.${userId}&select=id`);
     if (jaConfirmou.length > 0) {
       toast('⚠️ Você já confirmou presença nesta solicitação!');
@@ -1479,10 +1494,11 @@ async function submeterCadastroReal() {
   const pais     = document.getElementById('paisInput')?.value?.trim();
   const estado   = document.getElementById('estadoInputText')?.value?.trim();
   const cidade   = document.getElementById('cidadeInput')?.value?.trim();
-  const endRua   = document.getElementById('enderecoInput')?.value?.trim() || '';
-  const endNum   = document.getElementById('numeroInput')?.value?.trim() || '';
-  const endBairro= document.getElementById('bairroInput')?.value?.trim() || '';
-  const endereco = [endRua, endNum, endBairro].filter(Boolean).join(', ');
+  const endRua        = document.getElementById('enderecoInput')?.value?.trim() || '';
+  const endNum        = document.getElementById('numeroInput')?.value?.trim() || '';
+  const endComplemento= document.getElementById('complementoInput')?.value?.trim() || '';
+  const endBairro     = document.getElementById('bairroInput')?.value?.trim() || '';
+  const endereco      = [endRua, endNum, endComplemento, endBairro].filter(Boolean).join(', ');
   const descricao= document.getElementById('descricaoInput')?.value?.trim();
   const limite   = parseInt(document.getElementById('limiteInput')?.value) || 15;
 
@@ -1491,6 +1507,17 @@ async function submeterCadastroReal() {
   if (!estado) { toast('⚠️ Selecione o estado ou província!'); return; }
   if (!cidade) { toast('⚠️ Selecione a cidade!'); return; }
   if (!endRua) { toast('⚠️ Preencha o endereço ou use o GPS!'); return; }
+
+  // Verifica se já existe solicitação ativa neste endereço + complemento
+  try {
+    const jaExiste = await sbFetch(
+      `solicitacoes?endereco=eq.${encodeURIComponent(endereco)}&cidade=eq.${encodeURIComponent(cidade)}&estado=eq.${encodeURIComponent(estado)}&ativo=eq.true&select=id`
+    );
+    if (jaExiste.length > 0) {
+      toast('⚠️ Já existe uma solicitação ativa para este endereço! Se for apto/casa diferente, preencha o complemento.');
+      return;
+    }
+  } catch(e) { console.warn('Erro ao verificar endereço:', e); }
 
   const tipos = [...document.querySelectorAll('#modal-atingido .chk.ativo')].map(el => el.textContent.replace(/^[^a-zA-ZÀ-ú]+/,'').trim());
   const urgEl = document.querySelector('#modal-atingido .urg.ativo');
@@ -1526,6 +1553,7 @@ async function submeterCadastroReal() {
         tipos_ajuda: tipos, urgencia,
         limite_voluntarios: limite,
         foto_url: _fotoUrl || null,
+        email_dono: usuarioAtual?.user?.email || null,
         ativo: true, lat, lng,
         expira_em: new Date(Date.now() + 24*60*60*1000).toISOString()
       })
@@ -2428,8 +2456,11 @@ let _solAtualId = null;
 // Mostra botão "Concluir" se for o dono da solicitação
 async function verificarJaConfirmou(solId) {
   try {
-    const userId = usuarioAtual?.user?.id;
-    if (!userId) return;
+    const googleId = usuarioAtual?.user?.id;
+    if (!googleId) return;
+    const volReg = await sbFetch(`voluntarios?google_id=eq.${googleId}&select=id`);
+    if (!volReg.length) return;
+    const userId = volReg[0].id;
     const confs = await sbFetch(`confirmacoes?solicitacao_id=eq.${solId}&voluntario_id=eq.${userId}&select=id`);
     const btn = document.getElementById('btn-confirmar-presenca');
     const btnCancelar = document.getElementById('btn-cancelar-presenca');
@@ -2833,12 +2864,16 @@ async function carregarDadosVoluntario() {
   const email  = usuarioAtual.user?.email;
 
   try {
-    // Busca voluntário pelo email (se cadastrado)
-    const vols = await sbFetch(`voluntarios?select=*`);
-    _volDados = vols.find(v => v.whatsapp || v.nome) || null;
+    // Busca voluntário pelo google_id
+    const googleId = usuarioAtual?.user?.id;
+    const vols = await sbFetch(`voluntarios?google_id=eq.${googleId}&select=*`);
+    _volDados = vols.length ? vols[0] : null;
 
-    // Busca confirmações do usuário
-    const confs = await sbFetch(`confirmacoes?select=*,solicitacoes(*)`) || [];
+    // Busca confirmações do usuário pelo ID do voluntário
+    let confs = [];
+    if (_volDados?.id) {
+      confs = await sbFetch(`confirmacoes?voluntario_id=eq.${_volDados.id}&select=*,solicitacoes(*)`) || [];
+    }
 
     // Stats
     const total = confs.length;
