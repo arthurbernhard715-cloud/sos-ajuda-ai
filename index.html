@@ -1525,6 +1525,36 @@ document.addEventListener('DOMContentLoaded', () => {
 const SB_AUTH_URL = "https://wrpfgrwayzmiucyavphk.supabase.co/auth/v1";
 let usuarioAtual = null;
 
+async function garantirVoluntarioCadastrado(user) {
+  if (!user?.id) return;
+  try {
+    // Verifica se já existe pelo id do Google
+    const existe = await sbFetch(`voluntarios?google_id=eq.${user.id}&select=id`);
+    if (existe.length > 0) return; // Já existe
+
+    // Cria registro básico
+    const nome = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Voluntário';
+    await sbFetch('voluntarios', {
+      method: 'POST',
+      body: JSON.stringify({
+        nome,
+        cpf: '',
+        whatsapp: '',
+        cidade: '',
+        estado: '',
+        google_id: user.id,
+        habilidades: []
+      })
+    });
+    console.log('✅ Voluntário criado automaticamente');
+  } catch(e) {
+    // Ignora erro de duplicata
+    if (!e.message?.includes('unique') && !e.message?.includes('duplicate')) {
+      console.warn('Erro ao criar voluntário:', e.message);
+    }
+  }
+}
+
 async function entrarComGoogle() {
   fecharModal('modal-auth');
   const redirectTo = window.location.href.split('#')[0];
@@ -1582,6 +1612,8 @@ async function verificarSessao() {
       atualizarUIAuth(usuarioAtual);
       window.history.replaceState(null, '', window.location.pathname);
       toast('👋 Bem-vindo, ' + (user.user_metadata?.full_name || user.email) + '!', 'ok');
+    // Garante que usuário existe na tabela voluntarios
+    garantirVoluntarioCadastrado(user);
     // Se veio do modal voluntário, reabre
     if (localStorage.getItem('_reabrir_vol')) {
       localStorage.removeItem('_reabrir_vol');
@@ -2441,6 +2473,13 @@ function exibirEstrelasDetalhe(media, total) {
     </div>
     <button class="vol-panel-close" onclick="fecharPainelVoluntario()">✕</button>
   </div>
+  <!-- Barra de ações rápidas -->
+  <div style="padding:10px 16px;background:#f8faff;border-bottom:1px solid #e2e8f0;display:flex;justify-content:flex-end;">
+    <button onclick="sairDoPainel()" style="display:flex;align-items:center;gap:6px;background:transparent;border:1.5px solid #FECACA;color:#D92B2B;padding:6px 14px;border-radius:8px;cursor:pointer;font-size:0.78rem;font-weight:700;font-family:'Montserrat',sans-serif;transition:all .2s;"
+      onmouseover="this.style.background='#FEF2F2'" onmouseout="this.style.background='transparent'">
+      🚪 Sair da conta
+    </button>
+  </div>
 
   <div class="vol-tabs">
     <div class="vol-tab active" onclick="volAba('confirmadas')">🙋 Confirmadas</div>
@@ -2589,6 +2628,11 @@ async function cancelarPresencaPainel(confId, solId) {
     if (itemEl) { itemEl.style.opacity = '1'; itemEl.style.pointerEvents = 'auto'; }
     console.error(e);
   }
+}
+
+function sairDoPainel() {
+  fecharPainelVoluntario();
+  setTimeout(() => sair(), 300);
 }
 
 function fecharPainelVoluntario() {
