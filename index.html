@@ -2120,6 +2120,183 @@ function selecionarCidadeVol(nome) {
 function fecharListaCidadeVol() { const el=document.getElementById('listaCidadeVol'); if(el) el.style.display='none'; }
 
 
+
+// ═══════════════════════════════════════
+// SISTEMA DE AVALIAÇÃO COMPLETO
+// ═══════════════════════════════════════
+let _avalPendente = null; // { confirmacao_id, avaliador_id, avaliado_id, tipo, nome }
+
+async function verificarAvaliacoesPendentes() {
+  if (!usuarioAtual) return;
+  const googleId = usuarioAtual.user?.id;
+  if (!googleId) return;
+
+  try {
+    // Busca voluntário pelo google_id
+    const volReg = await sbFetch(`voluntarios?google_id=eq.${googleId}&select=id,nome`);
+    if (!volReg.length) return;
+    const volId = volReg[0].id;
+    const volNome = volReg[0].nome;
+
+    // Busca confirmações em solicitações EXPIRADAS (ativas=false) nos últimos 7 dias
+    const seteDiasAtras = new Date(Date.now() - 7*24*60*60*1000).toISOString();
+    const confs = await sbFetch(
+      `confirmacoes?voluntario_id=eq.${volId}&criado_em=gte.${seteDiasAtras}&select=id,solicitacao_id,solicitacoes(id,nome,ativo,expira_em,email_dono)`
+    );
+
+    // Filtra só as de solicitações expiradas
+    const expiradas = confs.filter(c =>
+      c.solicitacoes && !c.solicitacoes.ativo
+    );
+
+    if (!expiradas.length) return;
+
+    // Verifica quais ainda não foram avaliadas
+    for (const conf of expiradas) {
+      const jaAvaliou = await sbFetch(
+        `avaliacoes?confirmacao_id=eq.${conf.id}&avaliador_id=eq.${volId}&select=id`
+      );
+      if (!jaAvaliou.length) {
+        // Encontrou pendente! Mostra banner
+        _avalPendente = {
+          confirmacao_id: conf.id,
+          avaliador_id: volId,
+          avaliado_id: null, // Será buscado ao abrir
+          tipo: 'voluntario_avalia_atingido',
+          nome: conf.solicitacoes.nome,
+          sol_id: conf.solicitacoes.id,
+          email_dono: conf.solicitacoes.email_dono
+        };
+        mostrarBannerAval(
+          `Como foi ajudar ${conf.solicitacoes.nome}?`,
+          'Sua avaliação é opcional e ajuda a melhorar a plataforma.'
+        );
+        return; // Mostra um por vez
+      }
+    }
+
+    // Verifica se o atingido tem solicitações expiradas para avaliar voluntários
+    await verificarAvaliacoesPendentesAtingido(googleId, volId);
+
+  } catch(e) { console.warn('Erro ao verificar avaliações:', e); }
+}
+
+async function verificarAvaliacoesPendentesAtingido(googleId, volId) {
+  try {
+    const email = usuarioAtual.user?.email;
+    if (!email) return;
+
+    const seteDiasAtras = new Date(Date.now() - 7*24*60*60*1000).toISOString();
+    // Busca solicitações do dono que expiraram
+    const sols = await sbFetch(
+      `solicitacoes?email_dono=eq.${email}&ativo=eq.false&expira_em=gte.${seteDiasAtras}&select=id,nome`
+    );
+
+    for (const sol of sols) {
+      // Busca confirmações desta solicitação
+      const confs = await sbFetch(
+        `confirmacoes?solicitacao_id=eq.${sol.id}&select=id,voluntario_id`
+      );
+
+      for (const conf of confs) {
+        // Verifica se já avaliou este voluntário
+        const jaAvaliou = await sbFetch(
+          `avaliacoes?confirmacao_id=eq.${conf.id}&avaliador_id=eq.${volId}&select=id`
+        );
+        if (!jaAvaliou.length) {
+          _avalPendente = {
+            confirmacao_id: conf.id,
+            avaliador_id: volId,
+            avaliado_id: conf.voluntario_id,
+            tipo: 'atingido_avalia_voluntario',
+            nome: sol.nome
+          };
+          mostrarBannerAval(
+            `Avalie o voluntário que te ajudou!`,
+            `Como foi a ajuda que você recebeu em "${sol.nome}"?`
+          );
+          return;
+        }
+      }
+    }
+  } catch(e) { console.warn('Erro ao verificar avaliações do atingido:', e); }
+}
+
+function mostrarBannerAval(titulo, sub) {
+  document.getElementById('avalBannerTitle').textContent = titulo;
+  document.getElementById('avalBannerSub').textContent = sub;
+  document.getElementById('avalBanner').style.display = 'block';
+}
+
+function fecharBannerAval() {
+  document.getElementById('avalBanner').style.display = 'none';
+  // Marca como "ignorado" por hoje no localStorage
+  localStorage.setItem('aval_ignorada_' + (_avalPendente?.confirmacao_id || ''), Date.now());
+  _avalPendente = null;
+}
+
+async function abrirAvaliacaoBanner() {
+  document.getElementById('avalBanner').style.display = 'none';
+  if (!_avalPendente) return;
+
+  // Preenche dados do modal
+  const tipo = _avalPendente.tipo;
+  let nomeAvaliado = '';
+
+  if (tipo === 'atingido_avalia_voluntario') {
+    // Busca nome do voluntário
+    try {
+      const vol = await sbFetch(`voluntarios?id=eq.${_avalPendente.avaliado_id}&select=nome`);
+      nomeAvaliado = vol[0]?.nome || 'Voluntário';
+    } catch(e) { nomeAvaliado = 'Voluntário'; }
+    document.getElementById('avaliacao-nome').textContent = nomeAvaliado;
+    document.getElementById('avaliacao-tipo-txt').textContent = 'Como foi a ajuda que você recebeu?';
+    document.getElementById('avaliacao-sub').textContent = 'Avalie o voluntário';
+  } else {
+    nomeAvaliado = _avalPendente.nome;
+    document.getElementById('avaliacao-nome').textContent = nomeAvaliado;
+    document.getElementById('avaliacao-tipo-txt').textContent = 'Como foi ajudar esta família?';
+    document.getElementById('avaliacao-sub').textContent = 'Avalie a experiência';
+  }
+
+  _avaliacaoData = {
+    confirmacao_id: _avalPendente.confirmacao_id,
+    avaliador_id:   _avalPendente.avaliador_id,
+    avaliado_id:    _avalPendente.avaliado_id,
+    tipo
+  };
+
+  _estrelaSelecionada = 0;
+  document.querySelectorAll('.star-btn').forEach(s => s.classList.remove('ativo'));
+  document.getElementById('avaliacaoComentario').value = '';
+  document.getElementById('estrela-label').textContent = 'Clique nas estrelas para avaliar';
+  abrirModal('modal-avaliacao');
+}
+
+// Botão avaliar no histórico do painel do voluntário
+async function abrirAvaliacaoHistorico(confId, solNome, avaliadorId, avaliadoId) {
+  _avaliacaoData = {
+    confirmacao_id: confId,
+    avaliador_id: avaliadorId,
+    avaliado_id: avaliadoId,
+    tipo: 'voluntario_avalia_atingido'
+  };
+  _avalPendente = { confirmacao_id: confId };
+
+  document.getElementById('avaliacao-nome').textContent = solNome;
+  document.getElementById('avaliacao-tipo-txt').textContent = 'Como foi ajudar esta família?';
+  document.getElementById('avaliacao-sub').textContent = 'Avalie a experiência';
+  _estrelaSelecionada = 0;
+  document.querySelectorAll('.star-btn').forEach(s => s.classList.remove('ativo'));
+  document.getElementById('avaliacaoComentario').value = '';
+  document.getElementById('estrela-label').textContent = 'Clique nas estrelas para avaliar';
+  abrirModal('modal-avaliacao');
+}
+
+// Verifica pendentes após login (aguarda 3 segundos)
+setTimeout(() => {
+  if (usuarioAtual) verificarAvaliacoesPendentes();
+}, 3000);
 </script>
 
 
@@ -3189,184 +3366,7 @@ function removerFoto() {
 </script>
 
 
-<script>
-// ═══════════════════════════════════════
-// SISTEMA DE AVALIAÇÃO COMPLETO
-// ═══════════════════════════════════════
-let _avalPendente = null; // { confirmacao_id, avaliador_id, avaliado_id, tipo, nome }
 
-async function verificarAvaliacoesPendentes() {
-  if (!usuarioAtual) return;
-  const googleId = usuarioAtual.user?.id;
-  if (!googleId) return;
-
-  try {
-    // Busca voluntário pelo google_id
-    const volReg = await sbFetch(`voluntarios?google_id=eq.${googleId}&select=id,nome`);
-    if (!volReg.length) return;
-    const volId = volReg[0].id;
-    const volNome = volReg[0].nome;
-
-    // Busca confirmações em solicitações EXPIRADAS (ativas=false) nos últimos 7 dias
-    const seteDiasAtras = new Date(Date.now() - 7*24*60*60*1000).toISOString();
-    const confs = await sbFetch(
-      `confirmacoes?voluntario_id=eq.${volId}&criado_em=gte.${seteDiasAtras}&select=id,solicitacao_id,solicitacoes(id,nome,ativo,expira_em,email_dono)`
-    );
-
-    // Filtra só as de solicitações expiradas
-    const expiradas = confs.filter(c =>
-      c.solicitacoes && !c.solicitacoes.ativo
-    );
-
-    if (!expiradas.length) return;
-
-    // Verifica quais ainda não foram avaliadas
-    for (const conf of expiradas) {
-      const jaAvaliou = await sbFetch(
-        `avaliacoes?confirmacao_id=eq.${conf.id}&avaliador_id=eq.${volId}&select=id`
-      );
-      if (!jaAvaliou.length) {
-        // Encontrou pendente! Mostra banner
-        _avalPendente = {
-          confirmacao_id: conf.id,
-          avaliador_id: volId,
-          avaliado_id: null, // Será buscado ao abrir
-          tipo: 'voluntario_avalia_atingido',
-          nome: conf.solicitacoes.nome,
-          sol_id: conf.solicitacoes.id,
-          email_dono: conf.solicitacoes.email_dono
-        };
-        mostrarBannerAval(
-          `Como foi ajudar ${conf.solicitacoes.nome}?`,
-          'Sua avaliação é opcional e ajuda a melhorar a plataforma.'
-        );
-        return; // Mostra um por vez
-      }
-    }
-
-    // Verifica se o atingido tem solicitações expiradas para avaliar voluntários
-    await verificarAvaliacoesPendentesAtingido(googleId, volId);
-
-  } catch(e) { console.warn('Erro ao verificar avaliações:', e); }
-}
-
-async function verificarAvaliacoesPendentesAtingido(googleId, volId) {
-  try {
-    const email = usuarioAtual.user?.email;
-    if (!email) return;
-
-    const seteDiasAtras = new Date(Date.now() - 7*24*60*60*1000).toISOString();
-    // Busca solicitações do dono que expiraram
-    const sols = await sbFetch(
-      `solicitacoes?email_dono=eq.${email}&ativo=eq.false&expira_em=gte.${seteDiasAtras}&select=id,nome`
-    );
-
-    for (const sol of sols) {
-      // Busca confirmações desta solicitação
-      const confs = await sbFetch(
-        `confirmacoes?solicitacao_id=eq.${sol.id}&select=id,voluntario_id`
-      );
-
-      for (const conf of confs) {
-        // Verifica se já avaliou este voluntário
-        const jaAvaliou = await sbFetch(
-          `avaliacoes?confirmacao_id=eq.${conf.id}&avaliador_id=eq.${volId}&select=id`
-        );
-        if (!jaAvaliou.length) {
-          _avalPendente = {
-            confirmacao_id: conf.id,
-            avaliador_id: volId,
-            avaliado_id: conf.voluntario_id,
-            tipo: 'atingido_avalia_voluntario',
-            nome: sol.nome
-          };
-          mostrarBannerAval(
-            `Avalie o voluntário que te ajudou!`,
-            `Como foi a ajuda que você recebeu em "${sol.nome}"?`
-          );
-          return;
-        }
-      }
-    }
-  } catch(e) { console.warn('Erro ao verificar avaliações do atingido:', e); }
-}
-
-function mostrarBannerAval(titulo, sub) {
-  document.getElementById('avalBannerTitle').textContent = titulo;
-  document.getElementById('avalBannerSub').textContent = sub;
-  document.getElementById('avalBanner').style.display = 'block';
-}
-
-function fecharBannerAval() {
-  document.getElementById('avalBanner').style.display = 'none';
-  // Marca como "ignorado" por hoje no localStorage
-  localStorage.setItem('aval_ignorada_' + (_avalPendente?.confirmacao_id || ''), Date.now());
-  _avalPendente = null;
-}
-
-async function abrirAvaliacaoBanner() {
-  document.getElementById('avalBanner').style.display = 'none';
-  if (!_avalPendente) return;
-
-  // Preenche dados do modal
-  const tipo = _avalPendente.tipo;
-  let nomeAvaliado = '';
-
-  if (tipo === 'atingido_avalia_voluntario') {
-    // Busca nome do voluntário
-    try {
-      const vol = await sbFetch(`voluntarios?id=eq.${_avalPendente.avaliado_id}&select=nome`);
-      nomeAvaliado = vol[0]?.nome || 'Voluntário';
-    } catch(e) { nomeAvaliado = 'Voluntário'; }
-    document.getElementById('avaliacao-nome').textContent = nomeAvaliado;
-    document.getElementById('avaliacao-tipo-txt').textContent = 'Como foi a ajuda que você recebeu?';
-    document.getElementById('avaliacao-sub').textContent = 'Avalie o voluntário';
-  } else {
-    nomeAvaliado = _avalPendente.nome;
-    document.getElementById('avaliacao-nome').textContent = nomeAvaliado;
-    document.getElementById('avaliacao-tipo-txt').textContent = 'Como foi ajudar esta família?';
-    document.getElementById('avaliacao-sub').textContent = 'Avalie a experiência';
-  }
-
-  _avaliacaoData = {
-    confirmacao_id: _avalPendente.confirmacao_id,
-    avaliador_id:   _avalPendente.avaliador_id,
-    avaliado_id:    _avalPendente.avaliado_id,
-    tipo
-  };
-
-  _estrelaSelecionada = 0;
-  document.querySelectorAll('.star-btn').forEach(s => s.classList.remove('ativo'));
-  document.getElementById('avaliacaoComentario').value = '';
-  document.getElementById('estrela-label').textContent = 'Clique nas estrelas para avaliar';
-  abrirModal('modal-avaliacao');
-}
-
-// Botão avaliar no histórico do painel do voluntário
-async function abrirAvaliacaoHistorico(confId, solNome, avaliadorId, avaliadoId) {
-  _avaliacaoData = {
-    confirmacao_id: confId,
-    avaliador_id: avaliadorId,
-    avaliado_id: avaliadoId,
-    tipo: 'voluntario_avalia_atingido'
-  };
-  _avalPendente = { confirmacao_id: confId };
-
-  document.getElementById('avaliacao-nome').textContent = solNome;
-  document.getElementById('avaliacao-tipo-txt').textContent = 'Como foi ajudar esta família?';
-  document.getElementById('avaliacao-sub').textContent = 'Avalie a experiência';
-  _estrelaSelecionada = 0;
-  document.querySelectorAll('.star-btn').forEach(s => s.classList.remove('ativo'));
-  document.getElementById('avaliacaoComentario').value = '';
-  document.getElementById('estrela-label').textContent = 'Clique nas estrelas para avaliar';
-  abrirModal('modal-avaliacao');
-}
-
-// Verifica pendentes após login (aguarda 3 segundos)
-setTimeout(() => {
-  if (usuarioAtual) verificarAvaliacoesPendentes();
-}, 3000);
-</script>
 
 </body>
 </html>
