@@ -726,6 +726,22 @@ textarea.form-control { resize: vertical; min-height: 88px; }
       <input class="form-control" id="nomeInput" placeholder="Ex: Arthur Bernhard">
     </div>
 
+    <!-- GPS no topo -->
+    <div class="form-group">
+      <label>📍 Localização</label>
+      <button type="button" class="btn-localizacao" id="btnLocalizacao" onclick="usarLocalizacaoAtual()" style="margin-bottom:0;">
+        📍 Usar minha localização atual (GPS)
+      </button>
+      <div id="localizacaoConfirmada" style="display:none;background:#ECFDF5;border:1.5px solid #A7F3D0;border-radius:10px;padding:10px 14px;margin-top:8px;font-size:0.83rem;color:#15803D;">
+        ✅ <span id="localizacaoTexto">Localização confirmada!</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;margin:14px 0 4px;">
+        <div style="flex:1;height:1px;background:#e2e8f0;"></div>
+        <span style="font-size:0.75rem;color:#94a3b8;white-space:nowrap;">ou preencha manualmente</span>
+        <div style="flex:1;height:1px;background:#e2e8f0;"></div>
+      </div>
+    </div>
+
     <!-- PASSO 1: País -->
     <div class="form-group">
       <label>1️⃣ País</label>
@@ -759,12 +775,7 @@ textarea.form-control { resize: vertical; min-height: 88px; }
     <!-- PASSO 4: Endereço -->
     <div class="form-group" id="grupoEndereco" style="opacity:0.35;pointer-events:none;">
       <label>4️⃣ Endereço <small style="color:#94a3b8;font-weight:400;">— selecione a cidade primeiro</small></label>
-      <button type="button" class="btn-localizacao" id="btnLocalizacao" onclick="usarLocalizacaoAtual()">
-        📍 Usar minha localização atual (GPS)
-      </button>
-      <div id="localizacaoConfirmada" style="display:none;background:#ECFDF5;border:1.5px solid #A7F3D0;border-radius:10px;padding:10px 14px;margin-bottom:8px;font-size:0.83rem;color:#15803D;">
-        ✅ <span id="localizacaoTexto">Localização confirmada!</span>
-      </div>
+
       <div style="display:grid;grid-template-columns:1fr 80px;gap:8px;margin-bottom:8px;position:relative;">
         <div style="position:relative;">
           <input class="form-control" id="enderecoInput" placeholder="Rua ou avenida..." autocomplete="off"
@@ -901,6 +912,22 @@ textarea.form-control { resize: vertical; min-height: 88px; }
           <input class="form-control" id="vol-whatsapp" placeholder="9xxxx-xxxx" type="tel" style="flex:1;">
         </div>
         <div style="font-size:0.72rem;color:#94a3b8;margin-top:4px;">O código do país é selecionado automaticamente</div>
+      </div>
+
+      <!-- GPS no topo -->
+      <div class="form-group">
+        <label>📍 Localização</label>
+        <button type="button" class="btn-localizacao" onclick="usarLocalizacaoAtualVol()">
+          📍 Usar minha localização atual (GPS)
+        </button>
+        <div id="vol-localizacaoConfirmada" style="display:none;background:#ECFDF5;border:1.5px solid #A7F3D0;border-radius:10px;padding:10px 14px;margin-top:8px;font-size:0.83rem;color:#15803D;">
+          ✅ <span id="vol-localizacaoTexto">Localização confirmada!</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;margin:14px 0 4px;">
+          <div style="flex:1;height:1px;background:#e2e8f0;"></div>
+          <span style="font-size:0.75rem;color:#94a3b8;white-space:nowrap;">ou preencha manualmente</span>
+          <div style="flex:1;height:1px;background:#e2e8f0;"></div>
+        </div>
       </div>
 
       <!-- PASSO 1: País -->
@@ -1774,6 +1801,54 @@ function selecionarPaisVol(nome) {
 }
 function fecharListaPaisVol() { const el=document.getElementById('listaPaisVol'); if(el) el.style.display='none'; }
 
+async function usarLocalizacaoAtualVol() {
+  const btn = event.target;
+  if (!navigator.geolocation) { toast('⚠️ GPS não disponível no seu navegador.'); return; }
+  btn.textContent = '⏳ Obtendo localização...';
+  btn.disabled = true;
+
+  navigator.geolocation.getCurrentPosition(async (pos) => {
+    try {
+      const { latitude, longitude } = pos.coords;
+      const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`);
+      const data = await res.json();
+      const addr = data.address || {};
+
+      const mapaEst = {'Rio Grande do Sul':'RS','Santa Catarina':'SC','Paraná':'PR','São Paulo':'SP','Rio de Janeiro':'RJ','Minas Gerais':'MG','Bahia':'BA','Pernambuco':'PE','Ceará':'CE','Goiás':'GO','Mato Grosso':'MT','Mato Grosso do Sul':'MS','Pará':'PA','Maranhão':'MA','Amazonas':'AM','Espírito Santo':'ES','Alagoas':'AL','Piauí':'PI','Rio Grande do Norte':'RN','Paraíba':'PB','Sergipe':'SE','Rondônia':'RO','Tocantins':'TO','Acre':'AC','Amapá':'AP','Roraima':'RR','Distrito Federal':'DF'};
+      const pais   = addr.country || '';
+      const estado = mapaEst[addr.state] || addr.state || '';
+      const cidade = addr.city || addr.town || addr.village || '';
+
+      if (pais)   { document.getElementById('vol-pais').value = pais; _volPaisSel = pais; }
+      if (estado) { document.getElementById('vol-estado').value = estado; _volEstadoSel = estado; }
+      if (cidade) { document.getElementById('vol-cidade').value = cidade; _volCidadeSel = cidade; }
+
+      // Unlock all steps
+      ['vol-grupoEstado','vol-grupoCidade'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) { el.style.opacity='1'; el.style.pointerEvents='auto'; el.querySelector('small').textContent=''; }
+      });
+
+      // Show confirmation
+      const conf = document.getElementById('vol-localizacaoConfirmada');
+      const txt  = document.getElementById('vol-localizacaoTexto');
+      if (conf && txt) { txt.textContent = `📍 ${cidade}, ${estado}, ${pais}`; conf.style.display='block'; }
+
+      btn.textContent = '✅ Localização obtida!';
+      btn.style.background = '#ECFDF5'; btn.style.color = '#15803D'; btn.style.borderColor = '#A7F3D0';
+      toast('📍 Localização preenchida automaticamente!', 'ok');
+    } catch(e) {
+      btn.textContent = '📍 Usar minha localização atual (GPS)';
+      btn.disabled = false;
+      toast('⚠️ Erro ao obter localização.');
+    }
+  }, () => {
+    btn.textContent = '📍 Usar minha localização atual (GPS)';
+    btn.disabled = false;
+    toast('⚠️ Permissão de GPS negada.');
+  }, { enableHighAccuracy: true, timeout: 10000 });
+}
+
 // Autocomplete Estado
 let _vEstadoTimer = null;
 async function buscarEstadoVol(valor) {
@@ -2535,16 +2610,7 @@ function exibirEstrelasDetalhe(media, total) {
           <div class="chk" onclick="toggleChk(this)">📦 Logística</div>
         </div>
       </div>
-      <div class="vol-perfil-section">
-        <h4>Raio de atuação</h4>
-        <select class="form-control" id="perfil-raio">
-          <option>Até 10km</option>
-          <option>Até 50km</option>
-          <option selected>Até 100km</option>
-          <option>Todo o estado</option>
-          <option>Qualquer lugar</option>
-        </select>
-      </div>
+
       <button class="btn-salvar-perfil" onclick="salvarPerfil()">💾 Salvar perfil</button>
     </div>
 
