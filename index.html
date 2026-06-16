@@ -2922,6 +2922,43 @@ function exibirEstrelasDetalhe(media, total) {
   </div>
 </div>
 
+
+<!-- MODAL: AVALIAÇÃO -->
+<div class="modal-overlay" id="modal-avaliacao">
+  <div class="modal">
+    <button class="modal-close" onclick="fecharModal('modal-avaliacao')">✕</button>
+    <h2>⭐ Avaliar</h2>
+    <p class="modal-sub" id="avaliacao-sub">Como foi a experiência?</p>
+
+    <div class="avaliacao-card" style="background:#EEF2FF;">
+      <h4 id="avaliacao-nome">—</h4>
+      <div style="font-size:0.82rem;color:#64748b;" id="avaliacao-tipo-txt">—</div>
+    </div>
+
+    <div class="form-group">
+      <label>Sua nota</label>
+      <div class="stars-input" id="starsInput">
+        <button class="star-btn" onclick="selecionarEstrela(1)" data-val="1">★</button>
+        <button class="star-btn" onclick="selecionarEstrela(2)" data-val="2">★</button>
+        <button class="star-btn" onclick="selecionarEstrela(3)" data-val="3">★</button>
+        <button class="star-btn" onclick="selecionarEstrela(4)" data-val="4">★</button>
+        <button class="star-btn" onclick="selecionarEstrela(5)" data-val="5">★</button>
+      </div>
+      <div id="estrela-label" style="font-size:0.82rem;color:#64748b;margin-top:4px;">Clique nas estrelas para avaliar</div>
+    </div>
+
+    <div class="form-group">
+      <label>Comentário <span style="color:#94a3b8;font-weight:400;">(opcional)</span></label>
+      <textarea class="form-control" id="avaliacaoComentario" placeholder="Conte como foi a experiência..." style="min-height:80px;"></textarea>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="fecharModal('modal-avaliacao')">Agora não</button>
+      <button class="btn-submit" onclick="enviarAvaliacao()">⭐ Enviar avaliação</button>
+    </div>
+  </div>
+</div>
+
 <!-- PAINEL VOLUNTÁRIO -->
 <div class="vol-panel-overlay" id="volPanelOverlay" onclick="fecharPainelVoluntario()"></div>
 <div class="vol-panel" id="volPanel">
