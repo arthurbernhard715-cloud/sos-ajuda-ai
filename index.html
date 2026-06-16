@@ -1431,7 +1431,24 @@ async function confirmarPresenca(solId, btn) {
       return;
     }
 
-    // 2. Verifica limite de voluntários
+    // 2. Verifica se já tem outras confirmações ativas
+    const confirmacoesAtivas = await sbFetch(
+      `confirmacoes?voluntario_id=eq.${userId}&select=id,solicitacoes(nome,cidade)`
+    );
+    if (confirmacoesAtivas.length > 0) {
+      const nomes = confirmacoesAtivas
+        .map(c => c.solicitacoes?.nome || 'alguém')
+        .join(', ');
+      const continuar = confirm(
+        `⚠️ Você já tem ${confirmacoesAtivas.length} confirmação(ões) ativa(s):\n${nomes}\n\nDeseja confirmar presença em mais um endereço?`
+      );
+      if (!continuar) {
+        if (btn) { btn.disabled = false; btn.textContent = 'Quero ajudar'; }
+        return;
+      }
+    }
+
+    // 3. Verifica limite de voluntários
     const atual = await sbFetch(`solicitacoes?id=eq.${solId}&select=voluntarios_confirmados,limite_voluntarios`);
     if (!atual.length) throw new Error('Solicitação não encontrada');
     const s = atual[0];
