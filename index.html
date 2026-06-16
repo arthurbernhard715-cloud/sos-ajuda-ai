@@ -283,6 +283,43 @@ textarea.form-control { resize: vertical; min-height: 88px; }
 
 
 
+
+/* ── UPLOAD FOTO ── */
+.foto-upload-area {
+  border: 2px dashed #c7d2fe; border-radius: 12px;
+  padding: 20px; text-align: center; cursor: pointer;
+  transition: all .2s; background: #f8faff; position: relative;
+}
+.foto-upload-area:hover { border-color: var(--azul-med); background: #EEF2FF; }
+.foto-upload-area input[type="file"] { display: none; }
+.foto-upload-icon { font-size: 2.2rem; margin-bottom: 8px; }
+.foto-upload-txt { font-size: 0.85rem; color: #64748b; line-height: 1.5; }
+.foto-upload-txt strong { color: var(--azul); }
+.foto-dica {
+  background: #FFF7ED; border: 1.5px solid #FED7AA;
+  border-radius: 10px; padding: 10px 14px;
+  font-size: 0.8rem; color: #92400E; line-height: 1.55;
+  margin-top: 10px; display: flex; gap: 8px; align-items: flex-start;
+}
+.foto-preview-wrap {
+  margin-top: 12px; position: relative; display: none;
+}
+.foto-preview-wrap img {
+  width: 100%; border-radius: 10px; max-height: 200px;
+  object-fit: cover; border: 2px solid #A7F3D0;
+}
+.foto-preview-remove {
+  position: absolute; top: 8px; right: 8px;
+  background: rgba(0,0,0,0.6); color: #fff;
+  border: none; border-radius: 50%; width: 28px; height: 28px;
+  cursor: pointer; font-size: 0.85rem; display: flex;
+  align-items: center; justify-content: center;
+}
+.foto-uploading {
+  display: none; text-align: center; padding: 12px;
+  font-size: 0.85rem; color: var(--azul); font-weight: 600;
+}
+
 /* ── PAINEL VOLUNTÁRIO ── */
 .vol-panel-overlay {
   display:none; position:fixed; inset:0;
@@ -787,6 +824,27 @@ textarea.form-control { resize: vertical; min-height: 88px; }
       <input class="form-control" id="bairroInput" placeholder="Bairro (opcional)">
     </div>
 
+    <!-- Foto da fachada -->
+    <div class="form-group">
+      <label>📷 Foto da fachada da casa</label>
+      <div class="foto-upload-area" onclick="document.getElementById('fotoInput').click()">
+        <input type="file" id="fotoInput" accept="image/*" onchange="previsualizarFoto(this)">
+        <div class="foto-upload-icon">📸</div>
+        <div class="foto-upload-txt">
+          <strong>Clique para adicionar uma foto</strong><br>
+          JPG, PNG ou HEIC — máx. 10MB
+        </div>
+      </div>
+      <div class="foto-dica">
+        💡 <span>Tire uma foto da <strong>fachada da sua casa</strong> para que os voluntários consigam te localizar com mais facilidade.</span>
+      </div>
+      <div class="foto-uploading" id="fotoUploading">⏳ Enviando foto...</div>
+      <div class="foto-preview-wrap" id="fotoPreviewWrap">
+        <img id="fotoPreview" src="" alt="Preview">
+        <button class="foto-preview-remove" onclick="removerFoto()" title="Remover foto">✕</button>
+      </div>
+    </div>
+
     <!-- Tipo de ajuda -->
     <div class="form-group">
       <label>O que você precisa?</label>
@@ -1032,7 +1090,11 @@ const dadosExpirado = {nome:'João Silva (EXPIRADO)',local:'Sinimbu, RS',desc:'E
 const dados = []; // Dados carregados do Supabase
 
 function abrirModal(id){document.getElementById(id).classList.add('open');document.body.style.overflow='hidden';}
-function fecharModal(id){document.getElementById(id).classList.remove('open');document.body.style.overflow='';}
+function fecharModal(id){
+  document.getElementById(id).classList.remove('open');
+  document.body.style.overflow='';
+  if (id === 'modal-atingido') removerFoto();
+}
 document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)fecharModal(o.id);}));
 
 function abrirDetalhe(i,expirado){
@@ -1301,6 +1363,15 @@ function abrirDetalheReal(s) {
   document.getElementById('d-nome').textContent = s.nome;
   document.getElementById('d-local').textContent = '📍 ' + s.cidade + ', ' + s.estado + ' — ' + s.endereco;
   document.getElementById('d-desc').textContent = s.descricao || '';
+  // Foto
+  const fotoWrap = document.getElementById('d-foto-wrap');
+  const fotoImg  = document.getElementById('d-foto');
+  if (s.foto_url && fotoWrap && fotoImg) {
+    fotoImg.src = s.foto_url;
+    fotoWrap.style.display = 'block';
+  } else if (fotoWrap) {
+    fotoWrap.style.display = 'none';
+  }
   document.getElementById('d-tipo').textContent = (s.tipos_ajuda||[]).join(', ');
   document.getElementById('d-vol').textContent = s.voluntarios_confirmados + '/' + s.limite_voluntarios;
   document.getElementById('d-exp').textContent = calcularExpiracao(s.expira_em);
@@ -1451,6 +1522,7 @@ async function submeterCadastroReal() {
         nome, pais: pais||'Brasil', cidade, estado, endereco, descricao,
         tipos_ajuda: tipos, urgencia,
         limite_voluntarios: limite,
+        foto_url: _fotoUrl || null,
         ativo: true, lat, lng,
         expira_em: new Date(Date.now() + 24*60*60*1000).toISOString()
       })
@@ -2889,6 +2961,75 @@ async function salvarPerfil() {
   } catch(e) {
     toast('⚠️ Erro ao salvar. Tente novamente.');
   }
+}
+</script>
+
+
+<script>
+// ═══════════════════════════════════════
+// UPLOAD DE FOTO — CLOUDINARY
+// ═══════════════════════════════════════
+const CLOUDINARY_URL = "https://api.cloudinary.com/v1_1/dih2l3gi1/image/upload";
+const CLOUDINARY_PRESET = "sos ajuda ai";
+let _fotoUrl = null;
+
+function previsualizarFoto(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  // Valida tamanho (10MB)
+  if (file.size > 10 * 1024 * 1024) {
+    toast('⚠️ Foto muito grande! Máximo 10MB.');
+    input.value = '';
+    return;
+  }
+
+  // Mostra preview local
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    document.getElementById('fotoPreview').src = e.target.result;
+    document.getElementById('fotoPreviewWrap').style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+
+  // Faz upload para Cloudinary
+  uploadFotoCloudinary(file);
+}
+
+async function uploadFotoCloudinary(file) {
+  const uploading = document.getElementById('fotoUploading');
+  uploading.style.display = 'block';
+  _fotoUrl = null;
+
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', CLOUDINARY_PRESET);
+    formData.append('folder', 'sos-ajuda-ai');
+
+    const res = await fetch(CLOUDINARY_URL, {
+      method: 'POST',
+      body: formData
+    });
+
+    if (!res.ok) throw new Error('Erro no upload');
+    const data = await res.json();
+    _fotoUrl = data.secure_url;
+    uploading.style.display = 'none';
+    toast('✅ Foto enviada com sucesso!', 'ok');
+  } catch(e) {
+    uploading.style.display = 'none';
+    toast('⚠️ Erro ao enviar foto. Tente novamente.');
+    removerFoto();
+    console.error(e);
+  }
+}
+
+function removerFoto() {
+  _fotoUrl = null;
+  document.getElementById('fotoInput').value = '';
+  document.getElementById('fotoPreviewWrap').style.display = 'none';
+  document.getElementById('fotoPreview').src = '';
 }
 </script>
 
