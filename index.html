@@ -471,6 +471,37 @@ textarea.form-control { resize: vertical; min-height: 88px; }
 .vol-empty p { font-size:0.87rem; }
 
 
+
+/* ── TERMOS LGPD ── */
+.modal-termos { max-width: 560px; }
+.termos-body {
+  max-height: 320px; overflow-y: auto; background:#F4F6FA;
+  border-radius:10px; padding:16px; margin:14px 0;
+  font-size:0.82rem; color:#334155; line-height:1.7;
+  border:1.5px solid #e2e8f0;
+}
+.termos-body h4 { font-family:'Montserrat',sans-serif; font-weight:700; color:var(--azul); margin:12px 0 6px; font-size:0.85rem; }
+.termos-body p { margin-bottom:8px; }
+.termos-body ul { padding-left:18px; margin-bottom:8px; }
+.termos-body li { margin-bottom:4px; }
+.termos-check {
+  display:flex; align-items:flex-start; gap:10px;
+  background:#EEF2FF; border-radius:10px; padding:12px;
+  margin-bottom:14px; cursor:pointer;
+}
+.termos-check input { margin-top:2px; width:18px; height:18px; cursor:pointer; flex-shrink:0; accent-color:var(--azul); }
+.termos-check label { font-size:0.83rem; color:#1E293B; cursor:pointer; line-height:1.5; }
+.termos-check label strong { color:var(--azul); }
+.btn-aceitar-termos {
+  width:100%; padding:13px; border-radius:12px; border:none;
+  background:linear-gradient(135deg,var(--azul),var(--azul-med));
+  color:#fff; font-family:'Montserrat',sans-serif; font-weight:700;
+  font-size:0.93rem; cursor:pointer; transition:all .2s;
+  opacity:0.5; pointer-events:none;
+}
+.btn-aceitar-termos.habilitado { opacity:1; pointer-events:auto; }
+.btn-aceitar-termos.habilitado:hover { transform:translateY(-1px); box-shadow:0 4px 14px rgba(26,60,143,0.3); }
+
 /* ── QR CODE ── */
 .modal-qr { max-width: 380px; text-align: center; }
 .qr-titulo { font-family:'Montserrat',sans-serif; font-weight:900; font-size:1.1rem; color:var(--azul); margin-bottom:6px; }
@@ -627,7 +658,7 @@ textarea.form-control { resize: vertical; min-height: 88px; }
     <a href="#mapa">Mapa</a>
     <a href="#solicitacoes">Ver solicitações</a>
     <a href="#ranking">Ranking</a>
-    <a href="#" class="nav-cta" onclick="limparLocalizacao();abrirModal('modal-atingido')">Preciso de ajuda</a>
+    <a href="#" class="nav-cta" onclick="if(!usuarioAtual){abrirModal('modal-auth')}else{verificarTermos('atingido',()=>{ limparLocalizacao(); abrirModal('modal-atingido'); })}">Preciso de ajuda</a>
     <!-- Não logado -->
     <button id="navBtnLogin" onclick="abrirModal('modal-auth')" style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.12);border:1.5px solid rgba(255,255,255,0.25);color:#fff;padding:7px 14px;border-radius:9px;cursor:pointer;font-size:0.83rem;font-weight:600;margin-left:6px;transition:all .2s;">
       <svg viewBox="0 0 24 24" width="16" height="16"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
@@ -651,8 +682,8 @@ textarea.form-control { resize: vertical; min-height: 88px; }
   <div class="hero-panel">
     <img class="panel-logo" src="logo.png" alt="SOS Ajuda Aí">
     <p class="panel-slogan">"Conectando quem precisa,<br>com quem quer <strong>ajudar!</strong>"</p>
-    <button class="btn-verm" onclick="limparLocalizacao();abrirModal('modal-atingido')">🏠 Fui atingido — preciso de ajuda</button>
-    <button class="btn-azul" onclick="abrirModalVoluntario()">🤝 Quero ser voluntário</button>
+    <button class="btn-verm" onclick="if(!usuarioAtual){abrirModal('modal-auth')}else{verificarTermos('atingido',()=>{ limparLocalizacao(); abrirModal('modal-atingido'); })}">🏠 Fui atingido — preciso de ajuda</button>
+    <button class="btn-azul" onclick="if(!usuarioAtual){abrirModal('modal-auth')}else{verificarTermos('voluntario',()=>abrirModalVoluntario())}">🤝 Quero ser voluntário</button>
     <div class="panel-divider"></div>
     <div class="stats">
       <div class="stat"><div class="stat-n">2.4<em>mil</em></div><div class="stat-l">Pessoas ajudadas</div></div>
@@ -748,7 +779,7 @@ textarea.form-control { resize: vertical; min-height: 88px; }
     <div class="rank-card"><div class="rank-pos bronze">🥉</div><div style="font-size:1.3rem">👩</div><div class="rank-info"><div class="rank-nome">Fernanda Müller</div><div class="rank-cidade">Lajeado, RS</div><div class="rank-badges">💪🏠✅</div></div><div class="rank-pts"><div class="rank-pts-n">1.970</div><div class="rank-pts-l">pontos</div></div></div>
     <div class="rank-card"><div class="rank-pos normal">4</div><div style="font-size:1.3rem">🧑</div><div class="rank-info"><div class="rank-nome">Rafael Borges</div><div class="rank-cidade">Venâncio Aires, RS</div><div class="rank-badges">🤝⭐</div></div><div class="rank-pts"><div class="rank-pts-n">1.450</div><div class="rank-pts-l">pontos</div></div></div>
     <div class="rank-card"><div class="rank-pos normal">5</div><div style="font-size:1.3rem">👩</div><div class="rank-info"><div class="rank-nome">Aline Teixeira</div><div class="rank-cidade">Rio Pardo, RS</div><div class="rank-badges">💧🏠</div></div><div class="rank-pts"><div class="rank-pts-n">1.120</div><div class="rank-pts-l">pontos</div></div></div>
-    <div class="rank-card" style="cursor:pointer;justify-content:center" onclick="abrirModalVoluntario()">
+    <div class="rank-card" style="cursor:pointer;justify-content:center" onclick="if(!usuarioAtual){abrirModal('modal-auth')}else{verificarTermos('voluntario',()=>abrirModalVoluntario())}">
       <div style="text-align:center;width:100%"><div style="font-size:1.6rem;margin-bottom:8px">🙋</div><div style="font-family:'Montserrat',sans-serif;font-weight:700;color:var(--azul);font-size:.9rem">Seja o próximo destaque</div><div style="font-size:.8rem;color:var(--cinza-t);margin-top:4px">Cadastre-se como voluntário</div></div>
     </div>
   </div>
@@ -1133,6 +1164,120 @@ textarea.form-control { resize: vertical; min-height: 88px; }
     </button>
     <button class="btn-baixar-qr" onclick="baixarQR()">⬇️ Baixar QR Code</button>
     <div class="qr-dica">💡 O voluntário que ler este código será direcionado direto para o seu pedido de ajuda.</div>
+  </div>
+</div>
+
+
+<!-- MODAL: TERMOS ATINGIDO -->
+<div class="modal-overlay" id="modal-termos-atingido">
+  <div class="modal modal-termos">
+    <button class="modal-close" onclick="fecharModal('modal-termos-atingido')">✕</button>
+    <h2>📋 Termos de uso</h2>
+    <p class="modal-sub">Leia e aceite os termos antes de cadastrar sua solicitação.</p>
+
+    <div class="termos-body">
+      <h4>1. Sobre o SOS Ajuda Aí</h4>
+      <p>O SOS Ajuda Aí é uma plataforma digital gratuita que conecta pessoas afetadas por enchentes e desastres naturais com voluntários dispostos a ajudar.</p>
+
+      <h4>2. Dados coletados</h4>
+      <p>Ao cadastrar uma solicitação de ajuda, coletamos:</p>
+      <ul>
+        <li>Nome completo</li>
+        <li>Endereço completo (rua, número, cidade, estado, país)</li>
+        <li>Foto da fachada da residência</li>
+        <li>Descrição da situação</li>
+        <li>Email da conta Google utilizada</li>
+      </ul>
+
+      <h4>3. Como seus dados são usados</h4>
+      <p>Seus dados são utilizados exclusivamente para:</p>
+      <ul>
+        <li>Exibir sua solicitação no mapa para voluntários próximos</li>
+        <li>Permitir que voluntários confirmem presença e te ajudem</li>
+        <li>Gerar relatórios estatísticos (sem identificação pessoal) para órgãos públicos</li>
+      </ul>
+
+      <h4>4. Visibilidade dos dados</h4>
+      <p>Seu <strong>nome, endereço e foto</strong> serão visíveis publicamente no mapa da plataforma enquanto sua solicitação estiver ativa (até 24 horas ou até ser concluída).</p>
+
+      <h4>5. Seus direitos (LGPD)</h4>
+      <p>Conforme a Lei Geral de Proteção de Dados (Lei 13.709/2018), você tem direito a:</p>
+      <ul>
+        <li>Acessar seus dados pessoais</li>
+        <li>Solicitar correção ou exclusão a qualquer momento</li>
+        <li>Revogar o consentimento</li>
+      </ul>
+      <p>Para exercer seus direitos, entre em contato: <strong>arthurbernhard715@gmail.com</strong></p>
+
+      <h4>6. Segurança</h4>
+      <p>Seus dados são armazenados de forma segura no Supabase e as fotos no Cloudinary, ambos com criptografia em trânsito e em repouso.</p>
+
+      <h4>7. Retenção de dados</h4>
+      <p>Solicitações expiradas são desativadas automaticamente após 24 horas. Dados podem ser mantidos por até 1 ano para fins de relatório estatístico.</p>
+    </div>
+
+    <div class="termos-check" onclick="toggleTermos('check-atingido','btn-aceitar-atingido')">
+      <input type="checkbox" id="check-atingido" onchange="toggleTermos('check-atingido','btn-aceitar-atingido')">
+      <label for="check-atingido">Li e aceito os <strong>Termos de Uso e Política de Privacidade</strong> do SOS Ajuda Aí. Entendo que meu nome, endereço e foto ficarão visíveis publicamente durante a solicitação.</label>
+    </div>
+
+    <button class="btn-aceitar-termos" id="btn-aceitar-atingido" onclick="aceitarTermos('atingido')">
+      ✅ Aceitar e continuar
+    </button>
+  </div>
+</div>
+
+<!-- MODAL: TERMOS VOLUNTÁRIO -->
+<div class="modal-overlay" id="modal-termos-voluntario">
+  <div class="modal modal-termos">
+    <button class="modal-close" onclick="fecharModal('modal-termos-voluntario')">✕</button>
+    <h2>📋 Termos do voluntário</h2>
+    <p class="modal-sub">Leia e aceite os termos antes de se cadastrar como voluntário.</p>
+
+    <div class="termos-body">
+      <h4>1. Sobre o voluntariado</h4>
+      <p>Ao se cadastrar como voluntário no SOS Ajuda Aí, você declara que participará das atividades de forma espontânea, gratuita e sem vínculo empregatício com a plataforma.</p>
+
+      <h4>2. Dados coletados</h4>
+      <p>Ao se cadastrar como voluntário, coletamos:</p>
+      <ul>
+        <li>Nome completo</li>
+        <li>Número de WhatsApp</li>
+        <li>Cidade, estado e país de atuação</li>
+        <li>Habilidades declaradas</li>
+        <li>Email da conta Google utilizada</li>
+      </ul>
+
+      <h4>3. Como seus dados são usados</h4>
+      <ul>
+        <li>Exibir seu perfil no ranking de voluntários</li>
+        <li>Permitir que solicitantes entrem em contato via WhatsApp</li>
+        <li>Calcular pontuação e avaliações recebidas</li>
+      </ul>
+
+      <h4>4. Responsabilidades do voluntário</h4>
+      <ul>
+        <li>Comparecer ao local após confirmar presença</li>
+        <li>Agir com respeito e ética com as famílias atendidas</li>
+        <li>Não compartilhar dados pessoais das vítimas sem consentimento</li>
+        <li>Cancelar a confirmação caso não possa comparecer</li>
+      </ul>
+
+      <h4>5. Seus direitos (LGPD)</h4>
+      <p>Você pode solicitar a exclusão do seu perfil e dados a qualquer momento através do email: <strong>arthurbernhard715@gmail.com</strong></p>
+
+      <h4>6. Isenção de responsabilidade</h4>
+      <p>O SOS Ajuda Aí é uma plataforma de conexão. A responsabilidade pelas atividades realizadas é exclusivamente do voluntário. A plataforma não se responsabiliza por acidentes ou danos durante as atividades voluntárias.</p>
+    </div>
+
+    <div class="termos-check" onclick="toggleTermos('check-voluntario','btn-aceitar-voluntario')">
+      <input type="checkbox" id="check-voluntario" onchange="toggleTermos('check-voluntario','btn-aceitar-voluntario')">
+      <label for="check-voluntario">Li e aceito os <strong>Termos de Uso, Política de Privacidade e Responsabilidades do Voluntário</strong> do SOS Ajuda Aí.</label>
+    </div>
+
+    <button class="btn-aceitar-termos" id="btn-aceitar-voluntario" onclick="aceitarTermos('voluntario')">
+      ✅ Aceitar e continuar
+    </button>
   </div>
 </div>
 
@@ -3542,6 +3687,64 @@ async function verificarURLSolicitacao() {
 
 // Chama na inicialização
 verificarURLSolicitacao();
+</script>
+<script>
+// ═══════════════════════════════════════
+// TERMOS LGPD
+// ═══════════════════════════════════════
+let _acaoAposTermos = null;
+
+function toggleTermos(checkId, btnId) {
+  const check = document.getElementById(checkId);
+  const btn   = document.getElementById(btnId);
+  if (check && btn) {
+    btn.classList.toggle('habilitado', check.checked);
+  }
+}
+
+async function verificarTermos(tipo, callback) {
+  if (!usuarioAtual) { abrirModal('modal-auth'); return; }
+  const googleId = usuarioAtual.user?.id;
+  try {
+    const aceito = await sbFetch(`termos_aceitos?google_id=eq.${googleId}&tipo=eq.${tipo}&select=id`);
+    if (aceito.length > 0) {
+      callback(); // Já aceitou — continua
+    } else {
+      _acaoAposTermos = callback;
+      // Reset checkbox
+      const checkId = tipo === 'atingido' ? 'check-atingido' : 'check-voluntario';
+      const btnId   = tipo === 'atingido' ? 'btn-aceitar-atingido' : 'btn-aceitar-voluntario';
+      const check = document.getElementById(checkId);
+      const btn   = document.getElementById(btnId);
+      if (check) check.checked = false;
+      if (btn)   btn.classList.remove('habilitado');
+      abrirModal(`modal-termos-${tipo}`);
+    }
+  } catch(e) {
+    console.warn('Erro ao verificar termos:', e);
+    callback(); // Em caso de erro, deixa passar
+  }
+}
+
+async function aceitarTermos(tipo) {
+  const googleId = usuarioAtual?.user?.id;
+  if (!googleId) return;
+  try {
+    await sbFetch('termos_aceitos', {
+      method: 'POST',
+      body: JSON.stringify({ google_id: googleId, tipo })
+    });
+    fecharModal(`modal-termos-${tipo}`);
+    if (_acaoAposTermos) {
+      _acaoAposTermos();
+      _acaoAposTermos = null;
+    }
+  } catch(e) {
+    // Ignora erro de duplicata
+    fecharModal(`modal-termos-${tipo}`);
+    if (_acaoAposTermos) { _acaoAposTermos(); _acaoAposTermos = null; }
+  }
+}
 </script>
 </body>
 </html>

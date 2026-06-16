@@ -231,6 +231,9 @@ tbody tr:last-child td{border-bottom:none;}
       <div class="nav-item" onclick="irPara('mapa')">
         <span class="ni-icon">🗺️</span> Mapa geral
       </div>
+      <div class="nav-item" onclick="irPara('prefeituras')">
+        <span class="ni-icon">🏛️</span> Prefeituras
+      </div>
       <div class="nav-item" onclick="window.open('https://sos-ajuda-ai.vercel.app','_blank')">
         <span class="ni-icon">🌐</span> Ver site
       </div>
@@ -350,6 +353,77 @@ tbody tr:last-child td{border-bottom:none;}
           </thead>
           <tbody id="tbody-conf">
             <tr class="loading-row"><td colspan="5">⏳ Carregando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- PREFEITURAS -->
+    <div class="page" id="page-prefeituras">
+      <div class="page-title">Prefeituras</div>
+      <div class="page-sub">Gerencie as prefeituras contratantes e seus acessos.</div>
+
+      <!-- Adicionar nova -->
+      <div class="table-wrap" style="margin-bottom:24px;">
+        <div class="table-header">
+          <div class="table-title">🏛️ Adicionar prefeitura</div>
+        </div>
+        <div style="padding:20px;display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div>
+            <label style="font-size:0.75rem;color:#475569;font-weight:600;display:block;margin-bottom:6px;">CIDADE *</label>
+            <input class="table-search" id="pref-cidade" placeholder="Ex: Sinimbu" style="width:100%;">
+          </div>
+          <div>
+            <label style="font-size:0.75rem;color:#475569;font-weight:600;display:block;margin-bottom:6px;">ESTADO *</label>
+            <input class="table-search" id="pref-estado" placeholder="Ex: RS" maxlength="2" style="width:100%;text-transform:uppercase;">
+          </div>
+          <div>
+            <label style="font-size:0.75rem;color:#475569;font-weight:600;display:block;margin-bottom:6px;">SENHA DE ACESSO *</label>
+            <input class="table-search" id="pref-senha" placeholder="Senha para o dashboard" style="width:100%;">
+          </div>
+          <div>
+            <label style="font-size:0.75rem;color:#475569;font-weight:600;display:block;margin-bottom:6px;">VALIDADE ATÉ *</label>
+            <input class="table-search" id="pref-datafim" type="date" style="width:100%;">
+          </div>
+          <div>
+            <label style="font-size:0.75rem;color:#475569;font-weight:600;display:block;margin-bottom:6px;">CONTATO (NOME)</label>
+            <input class="table-search" id="pref-contato" placeholder="Nome do responsável" style="width:100%;">
+          </div>
+          <div>
+            <label style="font-size:0.75rem;color:#475569;font-weight:600;display:block;margin-bottom:6px;">EMAIL DO CONTATO</label>
+            <input class="table-search" id="pref-email" placeholder="email@prefeitura.gov.br" style="width:100%;">
+          </div>
+          <div>
+            <label style="font-size:0.75rem;color:#475569;font-weight:600;display:block;margin-bottom:6px;">WHATSAPP DO CONTATO</label>
+            <input class="table-search" id="pref-whatsapp" placeholder="(xx) 9xxxx-xxxx" style="width:100%;">
+          </div>
+          <div style="display:flex;align-items:flex-end;">
+            <button class="btn-action btn-reativar-admin" onclick="adicionarPrefeitura()" style="width:100%;padding:10px;font-size:0.85rem;">
+              ➕ Adicionar prefeitura
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Lista de prefeituras -->
+      <div class="table-wrap">
+        <div class="table-header">
+          <div class="table-title">📋 Prefeituras cadastradas</div>
+          <input class="table-search" placeholder="🔍 Buscar..." oninput="filtrarTabela('pref',this.value)">
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Cidade/Estado</th>
+              <th>Contato</th>
+              <th>Senha</th>
+              <th>Validade</th>
+              <th>Status</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-pref">
+            <tr class="loading-row"><td colspan="6">⏳ Carregando...</td></tr>
           </tbody>
         </table>
       </div>
@@ -674,9 +748,10 @@ function irPara(pagina) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('page-' + pagina).classList.add('active');
-  document.querySelectorAll('.nav-item')[['dashboard','solicitacoes','voluntarios','confirmacoes','mapa'].indexOf(pagina)]?.classList.add('active');
+  document.querySelectorAll('.nav-item')[['dashboard','solicitacoes','voluntarios','confirmacoes','prefeituras','mapa'].indexOf(pagina)]?.classList.add('active');
   if (pagina === 'mapa') setTimeout(initMapaAdmin, 200);
   if (pagina === 'confirmacoes') carregarConfirmacoes();
+  if (pagina === 'prefeituras') carregarPrefeituras();
 }
 
 // ── FILTROS ──
@@ -685,6 +760,150 @@ function filtrarTabela(tipo, valor) {
   if (tipo === 'sol') renderSolicitacoes(v);
   if (tipo === 'vol') renderVoluntarios(v);
   if (tipo === 'conf') renderConfirmacoes(v);
+  if (tipo === 'pref') renderPrefeituras(v);
+}
+
+// ── PREFEITURAS ──
+let dadosPref = [];
+
+async function carregarPrefeituras() {
+  try {
+    dadosPref = await sbFetch('prefeituras?order=criado_em.desc&select=*');
+    renderPrefeituras();
+  } catch(e) { toast('Erro ao carregar prefeituras: ' + e.message, 'err'); }
+}
+
+function renderPrefeituras(filtro='') {
+  const tbody = document.getElementById('tbody-pref');
+  const lista = filtro ? dadosPref.filter(p =>
+    p.cidade?.toLowerCase().includes(filtro) ||
+    p.estado?.toLowerCase().includes(filtro) ||
+    p.contato_nome?.toLowerCase().includes(filtro)
+  ) : dadosPref;
+
+  if (!lista.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:32px;color:#475569;">Nenhuma prefeitura cadastrada</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = lista.map(p => {
+    const vencida = p.data_fim && new Date(p.data_fim) < new Date();
+    const status = !p.ativo ? '<span class="badge badge-cinza">Inativa</span>'
+      : vencida ? '<span class="badge badge-verm">Vencida</span>'
+      : '<span class="badge badge-verde">Ativa</span>';
+    const dias = p.data_fim ? Math.ceil((new Date(p.data_fim)-new Date())/86400000) : null;
+    const validade = p.data_fim
+      ? `${new Date(p.data_fim).toLocaleDateString('pt-BR')}${dias > 0 ? ` <small style="color:#64748b">(${dias}d)</small>` : ''}`
+      : '—';
+
+    return `<tr>
+      <td>
+        <strong style="color:#fff">${p.cidade}</strong>
+        <span style="color:#475569"> — ${p.estado}</span>
+      </td>
+      <td>
+        <div style="font-size:0.82rem">${p.contato_nome || '—'}</div>
+        <div style="font-size:0.72rem;color:#475569">${p.contato_email || ''}</div>
+        <div style="font-size:0.72rem;color:#475569">${p.contato_whatsapp || ''}</div>
+      </td>
+      <td>
+        <span style="font-family:monospace;background:#161b27;padding:3px 8px;border-radius:6px;font-size:0.82rem;color:#93C5FD;">${p.senha}</span>
+        <button onclick="editarSenha('${p.id}','${p.senha}')" style="background:none;border:none;color:#475569;cursor:pointer;font-size:0.75rem;margin-left:4px;">✏️</button>
+      </td>
+      <td style="font-size:0.82rem">${validade}</td>
+      <td>${status}</td>
+      <td>
+        <div class="actions-cell">
+          ${p.ativo
+            ? `<button class="btn-action btn-ver" onclick="togglePrefeitura('${p.id}',false)">⏸️ Pausar</button>`
+            : `<button class="btn-action btn-reativar-admin" onclick="togglePrefeitura('${p.id}',true)">▶️ Ativar</button>`
+          }
+          <button class="btn-action btn-reativar-admin" onclick="renovarPrefeitura('${p.id}')">🔄 +30d</button>
+          <button class="btn-action btn-del" onclick="confirmarDelete('pref','${p.id}','${p.cidade}')">🗑️</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+async function adicionarPrefeitura() {
+  const cidade   = document.getElementById('pref-cidade').value.trim();
+  const estado   = document.getElementById('pref-estado').value.trim().toUpperCase();
+  const senha    = document.getElementById('pref-senha').value.trim();
+  const datafim  = document.getElementById('pref-datafim').value;
+  const contato  = document.getElementById('pref-contato').value.trim();
+  const email    = document.getElementById('pref-email').value.trim();
+  const whatsapp = document.getElementById('pref-whatsapp').value.trim();
+
+  if (!cidade || !estado || !senha || !datafim) {
+    toast('⚠️ Preencha cidade, estado, senha e validade!', 'err');
+    return;
+  }
+
+  try {
+    await sbFetch('prefeituras', {
+      method: 'POST',
+      body: JSON.stringify({
+        cidade, estado, senha,
+        data_fim: datafim,
+        contato_nome: contato || null,
+        contato_email: email || null,
+        contato_whatsapp: whatsapp || null,
+        ativo: true
+      })
+    });
+    toast('✅ Prefeitura adicionada!', 'ok');
+    // Limpa campos
+    ['pref-cidade','pref-estado','pref-senha','pref-datafim','pref-contato','pref-email','pref-whatsapp']
+      .forEach(id => document.getElementById(id).value = '');
+    await carregarPrefeituras();
+  } catch(e) { toast('Erro: ' + e.message, 'err'); }
+}
+
+async function togglePrefeitura(id, ativo) {
+  try {
+    const token = usuarioAtual?.access_token || SB_KEY;
+    await fetch(`${SB_URL}/rest/v1/prefeituras?id=eq.${id}`, {
+      method: 'PATCH',
+      headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+      body: JSON.stringify({ ativo })
+    });
+    toast(ativo ? '✅ Prefeitura ativada!' : '⏸️ Prefeitura pausada!', 'ok');
+    await carregarPrefeituras();
+  } catch(e) { toast('Erro: ' + e.message, 'err'); }
+}
+
+async function renovarPrefeitura(id) {
+  try {
+    const pref = dadosPref.find(p => p.id === id);
+    if (!pref) return;
+    const base = pref.data_fim && new Date(pref.data_fim) > new Date() ? new Date(pref.data_fim) : new Date();
+    base.setDate(base.getDate() + 30);
+    const novaData = base.toISOString().split('T')[0];
+    const token = usuarioAtual?.access_token || SB_KEY;
+    await fetch(`${SB_URL}/rest/v1/prefeituras?id=eq.${id}`, {
+      method: 'PATCH',
+      headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+      body: JSON.stringify({ data_fim: novaData, ativo: true })
+    });
+    toast('✅ Renovada por +30 dias!', 'ok');
+    await carregarPrefeituras();
+  } catch(e) { toast('Erro: ' + e.message, 'err'); }
+}
+
+async function editarSenha(id, senhaAtual) {
+  const novaSenha = prompt('Nova senha de acesso:', senhaAtual);
+  if (!novaSenha || novaSenha === senhaAtual) return;
+  try {
+    const token = usuarioAtual?.access_token || SB_KEY;
+    await fetch(`${SB_URL}/rest/v1/prefeituras?id=eq.${id}`, {
+      method: 'PATCH',
+      headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+      body: JSON.stringify({ senha: novaSenha })
+    });
+    toast('✅ Senha atualizada!', 'ok');
+    await carregarPrefeituras();
+  } catch(e) { toast('Erro: ' + e.message, 'err'); }
 }
 
 // ── AÇÕES ──
@@ -712,7 +931,7 @@ function confirmarDelete(tipo, id, nome) {
   document.getElementById('modalConfirmMsg').textContent = `Excluir "${nome}"? Esta ação não pode ser desfeita.`;
   deleteCallback = async () => {
     try {
-      const tabela = tipo === 'sol' ? 'solicitacoes' : 'voluntarios';
+      const tabela = tipo === 'sol' ? 'solicitacoes' : tipo === 'vol' ? 'voluntarios' : tipo === 'conf' ? 'confirmacoes' : 'prefeituras';
       const token = usuarioAtual?.access_token || SB_KEY;
       const delRes = await fetch(`${SB_URL}/rest/v1/${tabela}?id=eq.${id}`, {
         method: 'DELETE',
