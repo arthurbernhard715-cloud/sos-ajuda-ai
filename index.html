@@ -1547,6 +1547,17 @@ async function submeterVoluntarioReal() {
     toast('⚠️ Entre com sua conta Google para se cadastrar.');
     return;
   }
+
+  // Verifica novamente se já existe
+  try {
+    const existe = await sbFetch(`voluntarios?google_id=eq.${usuarioAtual.user.id}&select=id`);
+    if (existe.length > 0) {
+      fecharModal('modal-voluntario');
+      toast('✅ Você já é voluntário!', 'ok');
+      abrirPainelVoluntario();
+      return;
+    }
+  } catch(e) {}
   const nome     = document.getElementById('vol-nome')?.value?.trim();
   const ddi = document.getElementById('vol-ddi')?.value || '+55';
   const wNum = document.getElementById('vol-whatsapp')?.value?.trim() || '';
@@ -1566,7 +1577,12 @@ async function submeterVoluntarioReal() {
   try {
     await sbFetch('voluntarios', {
       method: 'POST',
-      body: JSON.stringify({ nome, whatsapp, pais: pais||'Brasil', estado, cidade, raio_atuacao: raio, habilidades: habs })
+      body: JSON.stringify({
+        nome, whatsapp, pais: pais||'Brasil', estado, cidade,
+        raio_atuacao: raio, habilidades: habs,
+        google_id: usuarioAtual.user.id,
+        cpf: ''
+      })
     });
     fecharModal('modal-voluntario');
     toast('🙋 Perfil criado! Comece a ajudar agora.', 'ok');
@@ -1630,11 +1646,14 @@ let usuarioAtual = null;
 async function garantirVoluntarioCadastrado(user) {
   if (!user?.id) return;
   try {
-    // Verifica se já existe pelo id do Google
-    const existe = await sbFetch(`voluntarios?google_id=eq.${user.id}&select=id`);
-    if (existe.length > 0) return; // Já existe
+    // Verifica se já existe pelo google_id
+    const existe = await sbFetch(`voluntarios?google_id=eq.${user.id}&select=id,nome`);
+    if (existe.length > 0) {
+      console.log('✅ Voluntário já existe:', existe[0].nome);
+      return; // Já existe — não cria novo
+    }
 
-    // Cria registro básico
+    // Cria registro básico apenas se não existir
     const nome = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Voluntário';
     await sbFetch('voluntarios', {
       method: 'POST',
@@ -1650,9 +1669,10 @@ async function garantirVoluntarioCadastrado(user) {
     });
     console.log('✅ Voluntário criado automaticamente');
   } catch(e) {
-    // Ignora erro de duplicata
     if (!e.message?.includes('unique') && !e.message?.includes('duplicate')) {
       console.warn('Erro ao criar voluntário:', e.message);
+    } else {
+      console.log('✅ Voluntário já existe (unique constraint)');
     }
   }
 }
@@ -1776,24 +1796,40 @@ setInterval(async () => {
 // ═══════════════════════════════════════
 let _volPaisSel = '', _volEstadoSel = '', _volCidadeSel = '';
 
-function abrirModalVoluntario() {
-  // Verifica login
+async function abrirModalVoluntario() {
   const semLogin = document.getElementById('vol-sem-login');
   const volForm  = document.getElementById('vol-form');
+
   if (!usuarioAtual) {
     semLogin.style.display = 'block';
     volForm.style.display  = 'none';
-  } else {
-    semLogin.style.display = 'none';
-    volForm.style.display  = 'block';
-    const u = usuarioAtual.user;
-    const nome = u.user_metadata?.full_name || '';
-    document.getElementById('vol-google-nome').textContent = nome || u.email;
-    document.getElementById('vol-google-email').textContent = u.email;
-    document.getElementById('vol-google-inicial').textContent = (nome || u.email || 'V')[0].toUpperCase();
-    if (nome && !document.getElementById('vol-nome').value) {
-      document.getElementById('vol-nome').value = nome;
+    abrirModal('modal-voluntario');
+    return;
+  }
+
+  const u = usuarioAtual.user;
+  const nome = u.user_metadata?.full_name || '';
+
+  // Verifica se já tem cadastro
+  try {
+    const existe = await sbFetch(`voluntarios?google_id=eq.${u.id}&select=id,nome,whatsapp,cidade`);
+    if (existe.length > 0) {
+      // Já cadastrado — abre painel direto
+      fecharModal('modal-voluntario');
+      abrirPainelVoluntario();
+      toast('✅ Você já é voluntário! Veja seu perfil.', 'ok');
+      return;
     }
+  } catch(e) { console.warn('Erro ao verificar:', e); }
+
+  // Não cadastrado — mostra formulário
+  semLogin.style.display = 'none';
+  volForm.style.display  = 'block';
+  document.getElementById('vol-google-nome').textContent = nome || u.email;
+  document.getElementById('vol-google-email').textContent = u.email;
+  document.getElementById('vol-google-inicial').textContent = (nome || u.email || 'V')[0].toUpperCase();
+  if (nome && !document.getElementById('vol-nome').value) {
+    document.getElementById('vol-nome').value = nome;
   }
   abrirModal('modal-voluntario');
 }
