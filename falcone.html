@@ -652,7 +652,8 @@ function initMapaAdmin() {
     attribution: '© OpenStreetMap'
   }).addTo(mapaAdmin);
 
-  dadosSol.forEach(s => {
+  const agora = new Date();
+  dadosSol.filter(s => s.ativo && new Date(s.expira_em) > agora).forEach(s => {
     if (!s.lat || !s.lng) return;
     const cor = s.urgencia === 'vermelho' ? '#D92B2B' : '#1A3C8F';
     const icon = L.divIcon({
