@@ -1956,72 +1956,7 @@ function precisaLogin(acao) {
 verificarSessao();
 
 
-// ═══════════════════════════════════════
-// QR CODE
-// ═══════════════════════════════════════
-let _qrSolId = null;
-let _qrNome = '';
-let _qrEnd = '';
 
-async function gerarQRCode(solId, nome, endereco) {
-  _qrSolId = solId;
-  _qrNome = nome;
-  _qrEnd = endereco;
-
-  const url = `${window.location.origin}${window.location.pathname}?sol=${solId}`;
-
-  document.getElementById('qrNome').textContent = nome;
-  document.getElementById('qrEnd').textContent = endereco;
-
-  // Gera QR Code no canvas
-  const canvas = document.getElementById('qrCanvas');
-  try {
-    await QRCode.toCanvas(canvas, url, {
-      width: 200,
-      margin: 2,
-      color: { dark: '#1A3C8F', light: '#FFFFFF' }
-    });
-  } catch(e) { console.error('QR erro:', e); }
-
-  abrirModal('modal-qr');
-}
-
-function compartilharWhatsApp() {
-  const url = `${window.location.origin}${window.location.pathname}?sol=${_qrSolId}`;
-  const msg = `🆘 *SOS Ajuda Aí*\n\nPreciso de ajuda! Meu nome é *${_qrNome}*.\n📍 ${_qrEnd}\n\nClique para ver os detalhes e confirmar presença:\n${url}`;
-  window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
-}
-
-function baixarQR() {
-  const canvas = document.getElementById('qrCanvas');
-  const link = document.createElement('a');
-  link.download = `qr-sos-${_qrNome.replace(/\s+/g,'-').toLowerCase()}.png`;
-  link.href = canvas.toDataURL();
-  link.click();
-}
-
-// Abre solicitação específica se vier com ?sol=ID na URL
-async function verificarURLSolicitacao() {
-  const params = new URLSearchParams(window.location.search);
-  const solId = params.get('sol');
-  if (!solId) return;
-
-  try {
-    const data = await sbFetch(`solicitacoes?id=eq.${solId}&select=*`);
-    if (data.length) {
-      // Remove parâmetro da URL
-      window.history.replaceState(null, '', window.location.pathname);
-      // Aguarda site carregar e abre o card
-      setTimeout(() => {
-        abrirDetalheReal(data[0]);
-        toast('📍 Solicitação encontrada!', 'ok');
-      }, 1500);
-    }
-  } catch(e) { console.warn('Erro ao abrir solicitação por URL:', e); }
-}
-
-// Chama na inicialização
-verificarURLSolicitacao();
 
 
 // Renova sessão automaticamente a cada 50 minutos
@@ -3539,5 +3474,74 @@ function removerFoto() {
 
 
 
+
+<script>
+// ═══════════════════════════════════════
+// QR CODE
+// ═══════════════════════════════════════
+let _qrSolId = null;
+let _qrNome = '';
+let _qrEnd = '';
+
+async function gerarQRCode(solId, nome, endereco) {
+  _qrSolId = solId;
+  _qrNome = nome;
+  _qrEnd = endereco;
+
+  const url = `${window.location.origin}${window.location.pathname}?sol=${solId}`;
+
+  document.getElementById('qrNome').textContent = nome;
+  document.getElementById('qrEnd').textContent = endereco;
+
+  // Gera QR Code no canvas
+  const canvas = document.getElementById('qrCanvas');
+  try {
+    await QRCode.toCanvas(canvas, url, {
+      width: 200,
+      margin: 2,
+      color: { dark: '#1A3C8F', light: '#FFFFFF' }
+    });
+  } catch(e) { console.error('QR erro:', e); }
+
+  abrirModal('modal-qr');
+}
+
+function compartilharWhatsApp() {
+  const url = `${window.location.origin}${window.location.pathname}?sol=${_qrSolId}`;
+  const msg = `🆘 *SOS Ajuda Aí*\n\nPreciso de ajuda! Meu nome é *${_qrNome}*.\n📍 ${_qrEnd}\n\nClique para ver os detalhes e confirmar presença:\n${url}`;
+  window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+}
+
+function baixarQR() {
+  const canvas = document.getElementById('qrCanvas');
+  const link = document.createElement('a');
+  link.download = `qr-sos-${_qrNome.replace(/\s+/g,'-').toLowerCase()}.png`;
+  link.href = canvas.toDataURL();
+  link.click();
+}
+
+// Abre solicitação específica se vier com ?sol=ID na URL
+async function verificarURLSolicitacao() {
+  const params = new URLSearchParams(window.location.search);
+  const solId = params.get('sol');
+  if (!solId) return;
+
+  try {
+    const data = await sbFetch(`solicitacoes?id=eq.${solId}&select=*`);
+    if (data.length) {
+      // Remove parâmetro da URL
+      window.history.replaceState(null, '', window.location.pathname);
+      // Aguarda site carregar e abre o card
+      setTimeout(() => {
+        abrirDetalheReal(data[0]);
+        toast('📍 Solicitação encontrada!', 'ok');
+      }, 1500);
+    }
+  } catch(e) { console.warn('Erro ao abrir solicitação por URL:', e); }
+}
+
+// Chama na inicialização
+verificarURLSolicitacao();
+</script>
 </body>
 </html>
