@@ -224,22 +224,22 @@ tbody tr:last-child td{border-bottom:none;}
       <div class="sidebar-logo-txt">SOS Ajuda Aí <small>ADMIN PANEL</small></div>
     </div>
     <nav class="sidebar-nav">
-      <div class="nav-item active" onclick="irPara('dashboard')">
+      <div class="nav-item active" data-page="dashboard" onclick="irPara('dashboard')">
         <span class="ni-icon">📊</span> Dashboard
       </div>
-      <div class="nav-item" onclick="irPara('solicitacoes')">
+      <div class="nav-item" data-page="solicitacoes" onclick="irPara('solicitacoes')">
         <span class="ni-icon">🏠</span> Solicitações
       </div>
-      <div class="nav-item" onclick="irPara('voluntarios')">
+      <div class="nav-item" data-page="voluntarios" onclick="irPara('voluntarios')">
         <span class="ni-icon">🙋</span> Voluntários
       </div>
-      <div class="nav-item" onclick="irPara('confirmacoes')">
+      <div class="nav-item" data-page="confirmacoes" onclick="irPara('confirmacoes')">
         <span class="ni-icon">✅</span> Confirmações
       </div>
-      <div class="nav-item" onclick="irPara('mapa')">
+      <div class="nav-item" data-page="mapa" onclick="irPara('mapa')">
         <span class="ni-icon">🗺️</span> Mapa geral
       </div>
-      <div class="nav-item" onclick="irPara('prefeituras')">
+      <div class="nav-item" data-page="prefeituras" onclick="irPara('prefeituras')">
         <span class="ni-icon">🏛️</span> Prefeituras
       </div>
       <div class="nav-item" onclick="window.open('https://sos-ajuda-ai.vercel.app','_blank')">
@@ -786,7 +786,7 @@ function irPara(pagina) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('page-' + pagina).classList.add('active');
-  document.querySelectorAll('.nav-item')[['dashboard','solicitacoes','voluntarios','confirmacoes','prefeituras','mapa'].indexOf(pagina)]?.classList.add('active');
+  document.querySelector(`.nav-item[data-page="${pagina}"]`)?.classList.add('active');
   if (pagina === 'mapa') setTimeout(initMapaAdmin, 200);
   if (pagina === 'confirmacoes') carregarConfirmacoes();
   if (pagina === 'prefeituras') carregarPrefeituras();
