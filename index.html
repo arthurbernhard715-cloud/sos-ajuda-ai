@@ -1624,6 +1624,7 @@ function renderizarMapaPins(solicitacoes) {
   // Limpa pins antigos
   marcadores.forEach(m => mapaObj.removeLayer(m));
   marcadores = [];
+  pontosMapa = solicitacoes.filter(s => s.lat && s.lng);
 
   const sidebar = document.getElementById('mapaSidebar');
   if (sidebar) sidebar.innerHTML = '<div class="mapa-lista-title">📋 Solicitações ativas agora</div>';
