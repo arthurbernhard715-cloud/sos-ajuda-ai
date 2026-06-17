@@ -825,13 +825,13 @@ function renderPrefeituras(filtro='') {
   }
 
   tbody.innerHTML = lista.map(p => {
-    const vencida = p.data_fim && new Date(p.data_fim) < new Date();
+    const vencida = p.data_fim && dataLocalDeString(p.data_fim) < new Date(new Date().setHours(0,0,0,0));
     const status = !p.ativo ? '<span class="badge badge-cinza">Inativa</span>'
       : vencida ? '<span class="badge badge-verm">Vencida</span>'
       : '<span class="badge badge-verde">Ativa</span>';
-    const dias = p.data_fim ? Math.ceil((new Date(p.data_fim)-new Date())/86400000) : null;
+    const dias = p.data_fim ? Math.ceil((dataLocalDeString(p.data_fim) - new Date(new Date().setHours(0,0,0,0)))/86400000) : null;
     const validade = p.data_fim
-      ? `${new Date(p.data_fim).toLocaleDateString('pt-BR')}${dias > 0 ? ` <small style="color:#64748b">(${dias}d)</small>` : ''}`
+      ? `${formatarDataBR(p.data_fim)}${dias > 0 ? ` <small style="color:#64748b">(${dias}d)</small>` : ''}`
       : '—';
 
     return `<tr>
@@ -995,6 +995,25 @@ async function togglePrefeitura(id, ativo) {
 
 let _idRenovarAtual = null;
 
+// Interpreta uma string "AAAA-MM-DD" como data LOCAL (evita o bug do fuso UTC
+// que faz new Date("2026-07-18") virar 17/07 em fusos negativos como o do Brasil)
+function dataLocalDeString(str) {
+  const [ano, mes, dia] = str.split('-').map(Number);
+  return new Date(ano, mes - 1, dia);
+}
+
+function formatarDataBR(str) {
+  return dataLocalDeString(str).toLocaleDateString('pt-BR');
+}
+
+function hojeLocalISO() {
+  const hoje = new Date();
+  const ano = hoje.getFullYear();
+  const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+  const dia = String(hoje.getDate()).padStart(2, '0');
+  return `${ano}-${mes}-${dia}`;
+}
+
 function renovarPrefeitura(id) {
   const pref = dadosPref.find(p => p.id === id);
   if (!pref) return;
@@ -1003,8 +1022,8 @@ function renovarPrefeitura(id) {
   document.getElementById('modalRenovarCidade').textContent = `${pref.cidade} — ${pref.estado}`;
 
   // sugere a data atual de validade (ou hoje, se vencida/sem validade) no campo de data
-  const base = pref.data_fim && new Date(pref.data_fim) > new Date() ? new Date(pref.data_fim) : new Date();
-  document.getElementById('inputDataRenovar').value = base.toISOString().split('T')[0];
+  const hojeISO = hojeLocalISO();
+  document.getElementById('inputDataRenovar').value = (pref.data_fim && pref.data_fim > hojeISO) ? pref.data_fim : hojeISO;
   document.getElementById('inputDiasRenovar').value = '30';
 
   alternarModoRenovar('dias');
@@ -1040,16 +1059,21 @@ async function confirmarRenovacao() {
       toast('Informe um número de dias válido (maior que zero).', 'err');
       return;
     }
-    const base = pref.data_fim && new Date(pref.data_fim) > new Date() ? new Date(pref.data_fim) : new Date();
+    const hojeISO = hojeLocalISO();
+    const dataBase = (pref.data_fim && pref.data_fim > hojeISO) ? pref.data_fim : hojeISO;
+    const base = dataLocalDeString(dataBase);
     base.setDate(base.getDate() + dias);
-    novaData = base.toISOString().split('T')[0];
+    const ano = base.getFullYear();
+    const mes = String(base.getMonth() + 1).padStart(2, '0');
+    const dia = String(base.getDate()).padStart(2, '0');
+    novaData = `${ano}-${mes}-${dia}`;
   } else {
     const dataDigitada = document.getElementById('inputDataRenovar').value;
     if (!dataDigitada) {
       toast('Selecione uma data válida.', 'err');
       return;
     }
-    if (new Date(dataDigitada) < new Date(new Date().toISOString().split('T')[0])) {
+    if (dataDigitada < hojeLocalISO()) {
       toast('A data deve ser hoje ou no futuro.', 'err');
       return;
     }
@@ -1063,7 +1087,7 @@ async function confirmarRenovacao() {
       headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
       body: JSON.stringify({ data_fim: novaData, ativo: true })
     });
-    toast(`✅ Validade atualizada para ${new Date(novaData).toLocaleDateString('pt-BR')}!`, 'ok');
+    toast(`✅ Validade atualizada para ${formatarDataBR(novaData)}!`, 'ok');
     fecharModalRenovar();
     await carregarPrefeituras();
   } catch(e) { toast('Erro: ' + e.message, 'err'); }
