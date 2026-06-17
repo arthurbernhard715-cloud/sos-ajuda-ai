@@ -1490,6 +1490,16 @@ let mapaObj = null;
 let marcadores = [];
 let pontosMapa = [];
 
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 function initMapa() {
   if(mapaObj) return;
   mapaObj = L.map('mapa-leaflet').setView(SINIMBU, 13);
@@ -1634,8 +1644,7 @@ function renderizarMapaPins(solicitacoes) {
   const sidebar = document.getElementById('mapaSidebar');
   if (sidebar) sidebar.innerHTML = '<div class="mapa-lista-title">📋 Solicitações ativas agora</div>';
 
-  solicitacoes.forEach((s, i) => {
-    if (!s.lat || !s.lng) return;
+  pontosMapa.forEach((s, i) => {
     const cor = s.urgencia === 'vermelho' ? '#D92B2B' : '#1A3C8F';
     const emoji = s.urgencia === 'vermelho' ? '🚨' : '🏠';
     const icon = L.divIcon({
@@ -1648,11 +1657,11 @@ function renderizarMapaPins(solicitacoes) {
       .addTo(mapaObj)
       .bindPopup(`
         <div style="font-family:'Inter',sans-serif;min-width:190px;">
-          <div style="font-weight:700;color:#1A3C8F;font-size:0.92rem;margin-bottom:4px;">${s.nome}</div>
-          <div style="font-size:0.78rem;color:#64748b;margin-bottom:4px;">📍 ${s.cidade}, ${s.estado}</div>
-          <div style="font-size:0.78rem;color:#64748b;margin-bottom:4px;">🏷️ ${(s.tipos_ajuda||[]).join(', ')}</div>
+          <div style="font-weight:700;color:#1A3C8F;font-size:0.92rem;margin-bottom:4px;">${escapeHtml(s.nome)}</div>
+          <div style="font-size:0.78rem;color:#64748b;margin-bottom:4px;">📍 ${escapeHtml(s.cidade)}, ${escapeHtml(s.estado)}</div>
+          <div style="font-size:0.78rem;color:#64748b;margin-bottom:4px;">🏷️ ${(s.tipos_ajuda||[]).map(escapeHtml).join(', ')}</div>
           <div style="font-size:0.76rem;color:#64748b;margin-bottom:10px;">👥 ${s.voluntarios_confirmados}/${s.limite_voluntarios} voluntários</div>
-          <button onclick="abrirDetalheReal(${JSON.stringify(s).replace(/"/g,'&quot;')})" style="width:100%;background:#D92B2B;color:#fff;border:none;border-radius:8px;padding:8px;font-weight:700;font-size:0.8rem;cursor:pointer;font-family:'Montserrat',sans-serif;">Ver detalhes</button>
+          <button onclick="abrirDetalheReal(pontosMapa[${i}])" style="width:100%;background:#D92B2B;color:#fff;border:none;border-radius:8px;padding:8px;font-weight:700;font-size:0.8rem;cursor:pointer;font-family:'Montserrat',sans-serif;">Ver detalhes</button>
         </div>
       `);
     marcadores.push(m);
