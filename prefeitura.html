@@ -318,13 +318,15 @@ async function fazerLogin() {
   btn.disabled = true;
 
   try {
-    // Busca prefeitura no banco pelo nome da cidade (case insensitive)
-    const res = await fetch(`${SB_URL}/rest/v1/prefeituras?cidade=ilike.${encodeURIComponent(cidadeDigitada)}&select=*`, {
-      headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY }
+    // Usa função segura com senha criptografada (bcrypt)
+    const res = await fetch(`${SB_URL}/rest/v1/rpc/verificar_login_prefeitura`, {
+      method: 'POST',
+      headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_cidade: cidadeDigitada, p_senha: senha })
     });
     const data = await res.json();
 
-    const pref = data.find(p => p.senha === senha && p.ativo);
+    const pref = data && data.length ? data[0] : null;
 
     if (!pref) {
       erro.textContent = '⚠️ Cidade ou senha incorretos, ou acesso inativo.';

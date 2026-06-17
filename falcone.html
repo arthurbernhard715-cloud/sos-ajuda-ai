@@ -809,8 +809,8 @@ function renderPrefeituras(filtro='') {
         <div style="font-size:0.72rem;color:#475569">${p.contato_whatsapp || ''}</div>
       </td>
       <td>
-        <span style="font-family:monospace;background:#161b27;padding:3px 8px;border-radius:6px;font-size:0.82rem;color:#93C5FD;">${p.senha}</span>
-        <button onclick="editarSenha('${p.id}','${p.senha}')" style="background:none;border:none;color:#475569;cursor:pointer;font-size:0.75rem;margin-left:4px;">✏️</button>
+        <span style="font-family:monospace;background:#161b27;padding:3px 8px;border-radius:6px;font-size:0.82rem;color:#93C5FD;">••••••••</span>
+        <button onclick="editarSenha('${p.id}')" style="background:none;border:none;color:#475569;cursor:pointer;font-size:0.75rem;margin-left:4px;">✏️</button>
       </td>
       <td style="font-size:0.82rem">${validade}</td>
       <td>${status}</td>
@@ -826,6 +826,22 @@ function renderPrefeituras(filtro='') {
       </td>
     </tr>`;
   }).join('');
+}
+
+// ── CRIPTOGRAFIA DE SENHA ──
+async function criptografarSenha(senhaTexto) {
+  try {
+    const res = await fetch(`${SB_URL}/rest/v1/rpc/criptografar_senha_prefeitura`, {
+      method: 'POST',
+      headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_senha: senhaTexto })
+    });
+    const data = await res.json();
+    return data; // retorna o hash
+  } catch(e) {
+    console.error('Erro ao criptografar senha:', e);
+    return senhaTexto; // fallback (não ideal, mas evita quebrar)
+  }
 }
 
 // ── AUTOCOMPLETE CIDADE NO ADMIN ──
@@ -904,10 +920,12 @@ async function adicionarPrefeitura() {
   }
 
   try {
+    // Criptografa a senha antes de salvar
+    const senhaHash = await criptografarSenha(senha);
     await sbFetch('prefeituras', {
       method: 'POST',
       body: JSON.stringify({
-        cidade, estado, senha,
+        cidade, estado, senha: senhaHash,
         data_fim: datafim,
         contato_nome: contato || null,
         contato_email: email || null,
@@ -958,14 +976,15 @@ async function renovarPrefeitura(id) {
 }
 
 async function editarSenha(id, senhaAtual) {
-  const novaSenha = prompt('Nova senha de acesso:', senhaAtual);
-  if (!novaSenha || novaSenha === senhaAtual) return;
+  const novaSenha = prompt('Nova senha de acesso (deixe em branco para cancelar):');
+  if (!novaSenha) return;
   try {
+    const senhaHash = await criptografarSenha(novaSenha);
     const token = usuarioAtual?.access_token || SB_KEY;
     await fetch(`${SB_URL}/rest/v1/prefeituras?id=eq.${id}`, {
       method: 'PATCH',
       headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
-      body: JSON.stringify({ senha: novaSenha })
+      body: JSON.stringify({ senha: senhaHash })
     });
     toast('✅ Senha atualizada!', 'ok');
     await carregarPrefeituras();
