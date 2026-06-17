@@ -820,7 +820,7 @@ function renderPrefeituras(filtro='') {
             ? `<button class="btn-action btn-ver" onclick="togglePrefeitura('${p.id}',false)">⏸️ Pausar</button>`
             : `<button class="btn-action btn-reativar-admin" onclick="togglePrefeitura('${p.id}',true)">▶️ Ativar</button>`
           }
-          <button class="btn-action btn-reativar-admin" onclick="renovarPrefeitura('${p.id}')">🔄 +30d</button>
+          <button class="btn-action btn-reativar-admin" onclick="renovarPrefeitura('${p.id}')">🔄 Renovar</button>
           <button class="btn-action btn-del" onclick="confirmarDelete('pref','${p.id}','${p.cidade}')">🗑️</button>
         </div>
       </td>
@@ -961,8 +961,18 @@ async function renovarPrefeitura(id) {
   try {
     const pref = dadosPref.find(p => p.id === id);
     if (!pref) return;
+
+    const entrada = prompt('Quantos dias deseja adicionar à validade?', '30');
+    if (entrada === null) return; // cancelou
+
+    const dias = parseInt(entrada, 10);
+    if (!Number.isFinite(dias) || dias <= 0) {
+      toast('Informe um número de dias válido (maior que zero).', 'err');
+      return;
+    }
+
     const base = pref.data_fim && new Date(pref.data_fim) > new Date() ? new Date(pref.data_fim) : new Date();
-    base.setDate(base.getDate() + 30);
+    base.setDate(base.getDate() + dias);
     const novaData = base.toISOString().split('T')[0];
     const token = usuarioAtual?.access_token || SB_KEY;
     await fetch(`${SB_URL}/rest/v1/prefeituras?id=eq.${id}`, {
@@ -970,7 +980,7 @@ async function renovarPrefeitura(id) {
       headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
       body: JSON.stringify({ data_fim: novaData, ativo: true })
     });
-    toast('✅ Renovada por +30 dias!', 'ok');
+    toast(`✅ Renovada por +${dias} dia${dias > 1 ? 's' : ''}!`, 'ok');
     await carregarPrefeituras();
   } catch(e) { toast('Erro: ' + e.message, 'err'); }
 }
