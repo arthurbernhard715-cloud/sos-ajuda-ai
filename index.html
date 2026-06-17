@@ -36,7 +36,8 @@ nav.scrolled {
   backdrop-filter: blur(16px);
   box-shadow: 0 2px 24px rgba(0,0,0,0.3);
 }
-.nav-logo img { height: 54px; width: auto; }
+.nav-logo { display:flex; align-items:center; padding: 4px 0; }
+.nav-logo img { height: 58px; width: auto; object-fit: contain; display:block; max-width: 180px; }
 .nav-links { display: flex; gap: 6px; align-items: center; }
 .nav-links a { color: rgba(255,255,255,0.88); text-decoration: none; font-size: .87rem; font-weight: 500; padding: 7px 15px; border-radius: 8px; transition: all .2s; }
 .nav-links a:hover { background: rgba(255,255,255,0.1); color: #fff; }
@@ -66,7 +67,8 @@ nav.scrolled {
   pointer-events: none;
 }
 .hero-panel {
-  background: #fff;
+  background: rgba(255,255,255,0.92);
+  backdrop-filter: blur(10px);
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
   padding: 90px 52px; text-align: center;
@@ -77,9 +79,8 @@ nav.scrolled {
   background: linear-gradient(90deg, var(--azul), var(--verm));
 }
 .panel-logo { 
-  height: 160px; width: auto; margin-bottom: 18px;
-  mix-blend-mode: multiply; /* removes white background */
-  filter: drop-shadow(0 4px 16px rgba(26,60,143,0.15));
+  height: 180px; width: auto; margin-bottom: 18px;
+  object-fit: contain;
 }
 .panel-slogan { font-size: 1rem; color: var(--cinza-t); line-height: 1.75; max-width: 290px; margin-bottom: 28px; font-style: italic; }
 .panel-slogan strong { color: var(--verm); font-style: normal; }
