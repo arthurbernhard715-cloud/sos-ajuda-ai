@@ -645,6 +645,10 @@ textarea.form-control { resize: vertical; min-height: 88px; }
 .urgentes-box .ub-label { font-size: 0.75rem; color: #64748b; margin-top: 2px; }
 .leaflet-popup-content-wrapper { border-radius: 12px !important; box-shadow: 0 4px 20px rgba(0,0,0,0.15) !important; }
 .leaflet-popup-content { margin: 14px 16px !important; }
+/* Garante que o mapa nunca fique acima dos modais */
+.leaflet-container, .leaflet-pane, .leaflet-top, .leaflet-bottom,
+.leaflet-control, .leaflet-popup { z-index: 1 !important; }
+#mapa-leaflet { z-index: 1; position: relative; }
 @media(max-width:768px) {
   .mapa-wrap { grid-template-columns: 1fr; }
   .mapa-sidebar { display: none; }
