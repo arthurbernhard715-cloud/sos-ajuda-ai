@@ -174,6 +174,14 @@ tbody tr:last-child td{border-bottom:none;}
 .btn-confirm-cancel{padding:10px 24px;border-radius:9px;border:1px solid #1e2535;background:transparent;color:#94a3b8;cursor:pointer;font-weight:600;}
 .btn-confirm-del{padding:10px 24px;border-radius:9px;border:none;background:#D92B2B;color:#fff;cursor:pointer;font-weight:700;font-family:'Montserrat',sans-serif;}
 
+/* MODAL RENOVAR */
+.renovar-tabs{display:flex;gap:8px;margin-bottom:18px;}
+.renovar-tab{flex:1;padding:9px 0;border-radius:9px;border:1px solid #1e2535;background:transparent;color:#94a3b8;cursor:pointer;font-weight:600;font-size:0.85rem;}
+.renovar-tab.active{background:#1A3C8F;color:#fff;border-color:#1A3C8F;}
+.renovar-label{display:block;text-align:left;color:#94a3b8;font-size:0.8rem;margin-bottom:6px;}
+.renovar-input{width:100%;padding:10px 12px;border-radius:9px;border:1px solid #1e2535;background:#161b27;color:#fff;font-size:0.92rem;box-sizing:border-box;}
+.renovar-input:focus{outline:none;border-color:#1A3C8F;}
+
 /* TOAST */
 .toast{position:fixed;bottom:24px;right:24px;z-index:9999;background:#1A3C8F;color:#fff;padding:12px 20px;border-radius:10px;font-weight:600;font-size:0.87rem;box-shadow:0 8px 30px rgba(0,0,0,0.4);transform:translateY(60px);opacity:0;transition:all .3s cubic-bezier(.34,1.56,.64,1);}
 .toast.show{transform:translateY(0);opacity:1;}
@@ -454,6 +462,34 @@ tbody tr:last-child td{border-bottom:none;}
     <div class="modal-confirm-btns">
       <button class="btn-confirm-cancel" onclick="fecharConfirm()">Cancelar</button>
       <button class="btn-confirm-del" id="btnConfirmDel">Excluir</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL RENOVAR VALIDADE -->
+<div class="modal-confirm" id="modalRenovar">
+  <div class="modal-confirm-box" style="max-width:380px;">
+    <h3>🔄 Renovar validade</h3>
+    <p id="modalRenovarCidade" style="margin-bottom:16px;">—</p>
+
+    <div class="renovar-tabs">
+      <button type="button" class="renovar-tab active" id="tabDias" onclick="alternarModoRenovar('dias')">+ Dias</button>
+      <button type="button" class="renovar-tab" id="tabData" onclick="alternarModoRenovar('data')">📅 Data exata</button>
+    </div>
+
+    <div id="renovarModoDias">
+      <label class="renovar-label" for="inputDiasRenovar">Quantos dias adicionar à validade atual</label>
+      <input type="number" id="inputDiasRenovar" class="renovar-input" min="1" step="1" value="30">
+    </div>
+
+    <div id="renovarModoData" style="display:none;">
+      <label class="renovar-label" for="inputDataRenovar">Nova data de validade</label>
+      <input type="date" id="inputDataRenovar" class="renovar-input">
+    </div>
+
+    <div class="modal-confirm-btns" style="margin-top:24px;">
+      <button class="btn-confirm-cancel" onclick="fecharModalRenovar()">Cancelar</button>
+      <button class="btn-confirm-del" style="background:#1A3C8F;" onclick="confirmarRenovacao()">Confirmar</button>
     </div>
   </div>
 </div>
@@ -957,30 +993,78 @@ async function togglePrefeitura(id, ativo) {
   } catch(e) { toast('Erro: ' + e.message, 'err'); }
 }
 
-async function renovarPrefeitura(id) {
-  try {
-    const pref = dadosPref.find(p => p.id === id);
-    if (!pref) return;
+let _idRenovarAtual = null;
 
-    const entrada = prompt('Quantos dias deseja adicionar à validade?', '30');
-    if (entrada === null) return; // cancelou
+function renovarPrefeitura(id) {
+  const pref = dadosPref.find(p => p.id === id);
+  if (!pref) return;
 
-    const dias = parseInt(entrada, 10);
+  _idRenovarAtual = id;
+  document.getElementById('modalRenovarCidade').textContent = `${pref.cidade} — ${pref.estado}`;
+
+  // sugere a data atual de validade (ou hoje, se vencida/sem validade) no campo de data
+  const base = pref.data_fim && new Date(pref.data_fim) > new Date() ? new Date(pref.data_fim) : new Date();
+  document.getElementById('inputDataRenovar').value = base.toISOString().split('T')[0];
+  document.getElementById('inputDiasRenovar').value = '30';
+
+  alternarModoRenovar('dias');
+  document.getElementById('modalRenovar').classList.add('open');
+}
+
+function alternarModoRenovar(modo) {
+  const ehDias = modo === 'dias';
+  document.getElementById('renovarModoDias').style.display = ehDias ? 'block' : 'none';
+  document.getElementById('renovarModoData').style.display = ehDias ? 'none' : 'block';
+  document.getElementById('tabDias').classList.toggle('active', ehDias);
+  document.getElementById('tabData').classList.toggle('active', !ehDias);
+  document.getElementById('modalRenovar').dataset.modo = modo;
+}
+
+function fecharModalRenovar() {
+  document.getElementById('modalRenovar').classList.remove('open');
+  _idRenovarAtual = null;
+}
+
+async function confirmarRenovacao() {
+  if (!_idRenovarAtual) return;
+  const id = _idRenovarAtual;
+  const pref = dadosPref.find(p => p.id === id);
+  if (!pref) return;
+
+  const modo = document.getElementById('modalRenovar').dataset.modo;
+  let novaData;
+
+  if (modo === 'dias') {
+    const dias = parseInt(document.getElementById('inputDiasRenovar').value, 10);
     if (!Number.isFinite(dias) || dias <= 0) {
       toast('Informe um número de dias válido (maior que zero).', 'err');
       return;
     }
-
     const base = pref.data_fim && new Date(pref.data_fim) > new Date() ? new Date(pref.data_fim) : new Date();
     base.setDate(base.getDate() + dias);
-    const novaData = base.toISOString().split('T')[0];
+    novaData = base.toISOString().split('T')[0];
+  } else {
+    const dataDigitada = document.getElementById('inputDataRenovar').value;
+    if (!dataDigitada) {
+      toast('Selecione uma data válida.', 'err');
+      return;
+    }
+    if (new Date(dataDigitada) < new Date(new Date().toISOString().split('T')[0])) {
+      toast('A data deve ser hoje ou no futuro.', 'err');
+      return;
+    }
+    novaData = dataDigitada;
+  }
+
+  try {
     const token = usuarioAtual?.access_token || SB_KEY;
     await fetch(`${SB_URL}/rest/v1/prefeituras?id=eq.${id}`, {
       method: 'PATCH',
       headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
       body: JSON.stringify({ data_fim: novaData, ativo: true })
     });
-    toast(`✅ Renovada por +${dias} dia${dias > 1 ? 's' : ''}!`, 'ok');
+    toast(`✅ Validade atualizada para ${new Date(novaData).toLocaleDateString('pt-BR')}!`, 'ok');
+    fecharModalRenovar();
     await carregarPrefeituras();
   } catch(e) { toast('Erro: ' + e.message, 'err'); }
 }
