@@ -76,7 +76,11 @@ nav.scrolled {
   content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
   background: linear-gradient(90deg, var(--azul), var(--verm));
 }
-.panel-logo { height: 150px; width: auto; margin-bottom: 18px; }
+.panel-logo { 
+  height: 160px; width: auto; margin-bottom: 18px;
+  mix-blend-mode: multiply; /* removes white background */
+  filter: drop-shadow(0 4px 16px rgba(26,60,143,0.15));
+}
 .panel-slogan { font-size: 1rem; color: var(--cinza-t); line-height: 1.75; max-width: 290px; margin-bottom: 28px; font-style: italic; }
 .panel-slogan strong { color: var(--verm); font-style: normal; }
 .btn-verm {
@@ -646,7 +650,6 @@ textarea.form-control { resize: vertical; min-height: 88px; }
 }
 </style>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
 
@@ -3833,5 +3836,6 @@ async function aceitarTermos(tipo) {
   }
 }
 </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </body>
 </html>
