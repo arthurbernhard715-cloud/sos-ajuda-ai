@@ -624,8 +624,12 @@ textarea.form-control { resize: vertical; min-height: 88px; }
 .mapa-section { background: #fff; padding: 60px 5%; }
 .mapa-wrap { display: grid; grid-template-columns: 1fr 320px; gap: 20px; max-width: 1100px; margin: 0 auto; }
 .mapa-container { border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px rgba(26,60,143,0.12); }
-.mapa-sidebar { display: flex; flex-direction: column; gap: 12px; }
-.mapa-lista-title { font-family: 'Montserrat', sans-serif; font-weight: 900; font-size: 0.85rem; color: #0F2460; background: #F4F6FA; padding: 12px 16px; border-radius: 12px; border: 1.5px solid #E2E8F0; }
+.mapa-sidebar { display: flex; flex-direction: column; gap: 12px; max-height: 460px; overflow-y: auto; padding-right: 6px; scrollbar-width: thin; scrollbar-color: #C7D2E8 #F4F6FA; }
+.mapa-sidebar::-webkit-scrollbar { width: 6px; }
+.mapa-sidebar::-webkit-scrollbar-track { background: #F4F6FA; border-radius: 99px; }
+.mapa-sidebar::-webkit-scrollbar-thumb { background: #C7D2E8; border-radius: 99px; }
+.mapa-sidebar::-webkit-scrollbar-thumb:hover { background: #9FB3DC; }
+.mapa-lista-title { font-family: 'Montserrat', sans-serif; font-weight: 900; font-size: 0.85rem; color: #0F2460; background: #F4F6FA; padding: 12px 16px; border-radius: 12px; border: 1.5px solid #E2E8F0; position: sticky; top: 0; z-index: 2; }
 .mapa-card { background: #fff; border-radius: 12px; padding: 14px; border: 1.5px solid #E2E8F0; cursor: pointer; transition: box-shadow .2s, border-color .2s; }
 .mapa-card:hover { box-shadow: 0 4px 16px rgba(26,60,143,0.12); border-color: #2255C4; }
 .mapa-card-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
