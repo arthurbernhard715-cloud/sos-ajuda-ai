@@ -148,7 +148,7 @@ tbody tr:last-child td{border-bottom:none;}
   <div class="login-box">
     <h3>🏛️ Entre com suas credenciais</h3>
     <input class="login-input" type="text" id="loginCidade" placeholder="Cidade (ex: Sinimbu)">
-    <input class="login-input" type="password" id="loginSenha" placeholder="Senha de acesso">
+    <input class="login-input" type="password" id="loginSenha" placeholder="Senha de acesso" onkeydown="if(event.key==='Enter')fazerLogin()">
     <button class="login-btn" onclick="fazerLogin()">Acessar Dashboard</button>
     <div class="login-error" id="loginError">⚠️ Cidade ou senha incorretos.</div>
   </div>
@@ -295,39 +295,68 @@ tbody tr:last-child td{border-bottom:none;}
 const SB_URL = "https://wrpfgrwayzmiucyavphk.supabase.co";
 const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndycGZncndheXptaXVjeWF2cGhrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzMDQ3MzUsImV4cCI6MjA5Njg4MDczNX0.ZdgpjxlLRmIaIdGKXZsUthgqM15QQehyijCB4apDA6E";
 
-// ── CREDENCIAIS DAS PREFEITURAS ──
-// Adicione aqui as cidades contratantes
-const PREFEITURAS = {
-  'sinimbu':   { senha: 'sinimbu2025', nome: 'Sinimbu — RS', cidade: 'Sinimbu' },
-  'muçum':     { senha: 'mucum2025',   nome: 'Muçum — RS',   cidade: 'Muçum' },
-  'lajeado':   { senha: 'lajeado2025', nome: 'Lajeado — RS', cidade: 'Lajeado' },
-};
-
 let _cidadeAtual = null;
 let mapaP = null;
 let heatLayer = null;
 let pinsLayer = null;
 let modoMapa = 'calor';
 
-// ── AUTH ──
-function fazerLogin() {
-  const cidade = document.getElementById('loginCidade').value.trim().toLowerCase();
+// ── AUTH — busca do Supabase ──
+async function fazerLogin() {
+  const cidadeDigitada = document.getElementById('loginCidade').value.trim();
   const senha  = document.getElementById('loginSenha').value.trim();
-  const pref   = PREFEITURAS[cidade];
   const erro   = document.getElementById('loginError');
+  const btn    = document.querySelector('.login-btn');
 
-  if (!pref || pref.senha !== senha) {
+  if (!cidadeDigitada || !senha) {
+    erro.textContent = '⚠️ Preencha cidade e senha.';
     erro.style.display = 'block';
     return;
   }
 
-  _cidadeAtual = pref;
-  localStorage.setItem('pref_session', JSON.stringify(pref));
-  document.getElementById('loginScreen').style.display = 'none';
-  document.getElementById('dashWrap').classList.add('visible');
-  document.getElementById('headerCidade').textContent = pref.nome;
-  carregarDados();
-  setTimeout(initMapaPrefeitura, 500);
+  btn.textContent = '⏳ Verificando...';
+  btn.disabled = true;
+
+  try {
+    // Busca prefeitura no banco pelo nome da cidade (case insensitive)
+    const res = await fetch(`${SB_URL}/rest/v1/prefeituras?cidade=ilike.${encodeURIComponent(cidadeDigitada)}&select=*`, {
+      headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY }
+    });
+    const data = await res.json();
+
+    const pref = data.find(p => p.senha === senha && p.ativo);
+
+    if (!pref) {
+      erro.textContent = '⚠️ Cidade ou senha incorretos, ou acesso inativo.';
+      erro.style.display = 'block';
+      btn.textContent = 'Acessar Dashboard';
+      btn.disabled = false;
+      return;
+    }
+
+    // Verifica validade
+    if (pref.data_fim && new Date(pref.data_fim) < new Date()) {
+      erro.textContent = '⚠️ Seu acesso venceu. Entre em contato com o SOS Ajuda Aí.';
+      erro.style.display = 'block';
+      btn.textContent = 'Acessar Dashboard';
+      btn.disabled = false;
+      return;
+    }
+
+    _cidadeAtual = { cidade: pref.cidade, estado: pref.estado, nome: `${pref.cidade} — ${pref.estado}` };
+    localStorage.setItem('pref_session', JSON.stringify(_cidadeAtual));
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('dashWrap').classList.add('visible');
+    document.getElementById('headerCidade').textContent = _cidadeAtual.nome;
+    carregarDados();
+    setTimeout(initMapaPrefeitura, 500);
+
+  } catch(e) {
+    erro.textContent = '⚠️ Erro de conexão. Tente novamente.';
+    erro.style.display = 'block';
+    btn.textContent = 'Acessar Dashboard';
+    btn.disabled = false;
+  }
 }
 
 function sair() {
