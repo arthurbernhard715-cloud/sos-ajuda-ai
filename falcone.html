@@ -369,13 +369,15 @@ tbody tr:last-child td{border-bottom:none;}
           <div class="table-title">🏛️ Adicionar prefeitura</div>
         </div>
         <div style="padding:20px;display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-          <div>
-            <label style="font-size:0.75rem;color:#475569;font-weight:600;display:block;margin-bottom:6px;">CIDADE *</label>
-            <input class="table-search" id="pref-cidade" placeholder="Ex: Sinimbu" style="width:100%;">
+          <div style="position:relative;">
+            <label style="font-size:0.75rem;color:#475569;font-weight:600;display:block;margin-bottom:6px;">CIDADE * <span id="pref-cidade-ok" style="color:#86EFAC;display:none;">✓</span></label>
+            <input class="table-search" id="pref-cidade" placeholder="Digite a cidade..." style="width:100%;" autocomplete="off"
+              oninput="buscarCidadeAdmin(this.value)" onblur="setTimeout(fecharListaCidadeAdmin,250)">
+            <div id="listaCidadeAdmin" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:999;background:#0d1117;border:1.5px solid #2255C4;border-top:none;border-radius:0 0 10px 10px;max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.4);"></div>
           </div>
           <div>
-            <label style="font-size:0.75rem;color:#475569;font-weight:600;display:block;margin-bottom:6px;">ESTADO *</label>
-            <input class="table-search" id="pref-estado" placeholder="Ex: RS" maxlength="2" style="width:100%;text-transform:uppercase;">
+            <label style="font-size:0.75rem;color:#475569;font-weight:600;display:block;margin-bottom:6px;">ESTADO * <span id="pref-estado-ok" style="color:#86EFAC;display:none;">✓</span></label>
+            <input class="table-search" id="pref-estado" placeholder="Preenchido automaticamente" style="width:100%;background:#161b27;cursor:not-allowed;" readonly>
           </div>
           <div>
             <label style="font-size:0.75rem;color:#475569;font-weight:600;display:block;margin-bottom:6px;">SENHA DE ACESSO *</label>
@@ -826,6 +828,62 @@ function renderPrefeituras(filtro='') {
   }).join('');
 }
 
+// ── AUTOCOMPLETE CIDADE NO ADMIN ──
+let _adminCidadeTimer = null;
+let _adminCidadeValida = false;
+
+async function buscarCidadeAdmin(valor) {
+  clearTimeout(_adminCidadeTimer);
+  _adminCidadeValida = false;
+  document.getElementById('pref-cidade-ok').style.display = 'none';
+  const lista = document.getElementById('listaCidadeAdmin');
+  if (!valor || valor.length < 2) { lista.style.display = 'none'; return; }
+
+  _adminCidadeTimer = setTimeout(async () => {
+    try {
+      const q = encodeURIComponent(`${valor}, Brasil`);
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=6&addressdetails=1`);
+      const data = await res.json();
+      const vistos = new Set();
+      const cidades = data.filter(r => {
+        const c = r.address?.city || r.address?.town || r.address?.village || r.address?.municipality;
+        if (!c || vistos.has(c)) return false;
+        vistos.add(c); return true;
+      }).slice(0,6);
+
+      if (!cidades.length) { lista.style.display = 'none'; return; }
+
+      lista.innerHTML = cidades.map(r => {
+        const addr = r.address || {};
+        const cidade = addr.city || addr.town || addr.village || addr.municipality || '';
+        const mapaEst = {'Rio Grande do Sul':'RS','Santa Catarina':'SC','Paraná':'PR','São Paulo':'SP','Rio de Janeiro':'RJ','Minas Gerais':'MG','Bahia':'BA','Pernambuco':'PE','Ceará':'CE','Goiás':'GO','Mato Grosso':'MT','Mato Grosso do Sul':'MS','Pará':'PA','Maranhão':'MA','Amazonas':'AM','Espírito Santo':'ES','Alagoas':'AL','Piauí':'PI','Rio Grande do Norte':'RN','Paraíba':'PB','Sergipe':'SE','Rondônia':'RO','Tocantins':'TO','Acre':'AC','Amapá':'AP','Roraima':'RR','Distrito Federal':'DF'};
+        const estado = mapaEst[addr.state] || addr.state?.substring(0,2).toUpperCase() || '';
+        const pais = addr.country || '';
+        return `<div onclick="selecionarCidadeAdmin('${cidade.replace(/'/g,"\'")}','${estado}','${pais.replace(/'/g,"\'")}')"
+          style="padding:10px 14px;cursor:pointer;font-size:0.83rem;border-bottom:1px solid #1e2535;color:#cbd5e1;"
+          onmouseover="this.style.background='#161b27'" onmouseout="this.style.background='transparent'">
+          🏙️ <strong>${cidade}</strong> <span style="color:#475569;font-size:0.75rem;">— ${estado}, ${pais}</span>
+        </div>`;
+      }).join('');
+      lista.style.display = 'block';
+    } catch(e) {}
+  }, 400);
+}
+
+function selecionarCidadeAdmin(cidade, estado, pais) {
+  document.getElementById('pref-cidade').value = cidade;
+  document.getElementById('pref-estado').value = estado;
+  document.getElementById('listaCidadeAdmin').style.display = 'none';
+  document.getElementById('pref-cidade-ok').style.display = 'inline';
+  document.getElementById('pref-estado-ok').style.display = 'inline';
+  _adminCidadeValida = true;
+}
+
+function fecharListaCidadeAdmin() {
+  const el = document.getElementById('listaCidadeAdmin');
+  if (el) el.style.display = 'none';
+}
+
 async function adicionarPrefeitura() {
   const cidade   = document.getElementById('pref-cidade').value.trim();
   const estado   = document.getElementById('pref-estado').value.trim().toUpperCase();
@@ -835,8 +893,13 @@ async function adicionarPrefeitura() {
   const email    = document.getElementById('pref-email').value.trim();
   const whatsapp = document.getElementById('pref-whatsapp').value.trim();
 
-  if (!cidade || !estado || !senha || !datafim) {
-    toast('⚠️ Preencha cidade, estado, senha e validade!', 'err');
+  if (!cidade || !senha || !datafim) {
+    toast('⚠️ Preencha todos os campos obrigatórios!', 'err');
+    return;
+  }
+  if (!_adminCidadeValida) {
+    toast('⚠️ Selecione a cidade na lista de sugestões!', 'err');
+    document.getElementById('pref-cidade').focus();
     return;
   }
 
@@ -856,6 +919,9 @@ async function adicionarPrefeitura() {
     // Limpa campos
     ['pref-cidade','pref-estado','pref-senha','pref-datafim','pref-contato','pref-email','pref-whatsapp']
       .forEach(id => document.getElementById(id).value = '');
+    _adminCidadeValida = false;
+    document.getElementById('pref-cidade-ok').style.display = 'none';
+    document.getElementById('pref-estado-ok').style.display = 'none';
     await carregarPrefeituras();
   } catch(e) { toast('Erro: ' + e.message, 'err'); }
 }
