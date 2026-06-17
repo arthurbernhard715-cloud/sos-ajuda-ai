@@ -1659,6 +1659,10 @@ function desenharCards() {
 
   if (cardAdd) grid.appendChild(cardAdd);
 
+  // Remove qualquer botão "Carregar mais" antigo antes de decidir se cria um novo
+  const wrapAntigo = grid.parentNode.querySelector('.carregar-mais-wrap');
+  if (wrapAntigo) wrapAntigo.remove();
+
   // Botão "Carregar mais", só aparece se ainda houver itens não exibidos
   const restantes = _todasSolicitacoes.length - _cardsExibidos;
   if (restantes > 0) {
@@ -1666,9 +1670,6 @@ function desenharCards() {
     wrapBtn.className = 'carregar-mais-wrap';
     wrapBtn.innerHTML = `<button class="btn-carregar-mais" onclick="carregarMaisCards()">Carregar mais (${restantes} restante${restantes > 1 ? 's' : ''})</button>`;
     grid.parentNode.insertBefore(wrapBtn, grid.nextSibling);
-  } else {
-    const wrapAntigo = grid.parentNode.querySelector('.carregar-mais-wrap');
-    if (wrapAntigo) wrapAntigo.remove();
   }
 }
 
