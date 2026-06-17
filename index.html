@@ -3714,19 +3714,48 @@ async function gerarQRCode(solId, nome, endereco) {
   const url = `${window.location.origin}${window.location.pathname}?sol=${solId}`;
 
   document.getElementById('qrNome').textContent = nome;
-  document.getElementById('qrEnd').textContent = endereco;
+  document.getElementById('qrEnd').textContent = endereco || '';
 
-  // Gera QR Code no canvas
   const canvas = document.getElementById('qrCanvas');
-  try {
-    await QRCode.toCanvas(canvas, url, {
-      width: 200,
-      margin: 2,
-      color: { dark: '#1A3C8F', light: '#FFFFFF' }
-    });
-  } catch(e) { console.error('QR erro:', e); }
+  const ctx = canvas.getContext('2d');
+  canvas.width = 200;
+  canvas.height = 200;
+  ctx.clearRect(0,0,200,200);
 
-  abrirModal('modal-qr');
+  // Tenta QRCode.js primeiro
+  if (typeof QRCode !== 'undefined') {
+    try {
+      await QRCode.toCanvas(canvas, url, {
+        width: 200, margin: 2,
+        color: { dark: '#1A3C8F', light: '#FFFFFF' }
+      });
+      abrirModal('modal-qr');
+      return;
+    } catch(e) { console.warn('QRCode.toCanvas falhou:', e); }
+  }
+
+  // Fallback: usa API externa do Google Charts
+  const imgUrl = `https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=${encodeURIComponent(url)}&chco=1A3C8F`;
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.onload = () => {
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(0,0,200,200);
+    ctx.drawImage(img, 0, 0, 200, 200);
+    abrirModal('modal-qr');
+  };
+  img.onerror = () => {
+    // Último fallback: mostra link
+    ctx.fillStyle = '#1A3C8F';
+    ctx.fillRect(0,0,200,200);
+    ctx.fillStyle = '#fff';
+    ctx.font = '12px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('QR indisponível', 100, 95);
+    ctx.fillText('Use o botão WhatsApp', 100, 115);
+    abrirModal('modal-qr');
+  };
+  img.src = imgUrl;
 }
 
 function compartilharWhatsApp() {
