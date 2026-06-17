@@ -706,6 +706,19 @@ textarea.form-control { resize: vertical; min-height: 88px; }
     <h2>Veja quem precisa perto de você</h2>
     <p>Pins vermelhos são urgentes. Clique em qualquer pin para ver os detalhes e confirmar presença.</p>
   </div>
+  <div class="busca-wrap">
+    <div class="busca-row">
+      <input class="busca-input" id="buscaMapaInput" placeholder="🔍  Buscar cidade, bairro ou endereço..." oninput="buscarNoMapa(this.value)">
+      <button class="busca-btn" onclick="buscarNoMapa(document.getElementById('buscaMapaInput').value)">Ver no mapa</button>
+    </div>
+    <div class="filtros">
+      <button class="filtro ativo" onclick="filtrar(this)">Todos</button>
+      <button class="filtro" onclick="filtrar(this)">🧹 Limpeza</button>
+      <button class="filtro" onclick="filtrar(this)">📦 Móveis</button>
+      <button class="filtro" onclick="filtrar(this)">🛒 Mantimentos</button>
+      <button class="filtro" onclick="filtrar(this)">🚨 Urgente</button>
+    </div>
+  </div>
   <div class="mapa-wrap">
     <div class="mapa-container">
       <div id="mapa-leaflet" style="height:460px;"></div>
@@ -745,19 +758,6 @@ textarea.form-control { resize: vertical; min-height: 88px; }
     <div class="eyebrow eyebrow-red">Ao vivo agora</div>
     <h2>Quem precisa de ajuda</h2>
     <p>Encontre pessoas próximas que precisam de voluntários agora.</p>
-  </div>
-  <div class="busca-wrap">
-    <div class="busca-row">
-      <input class="busca-input" placeholder="🔍  Buscar cidade, bairro ou endereço...">
-      <button class="busca-btn" onclick="toast('🗺️ Mapa em tempo real em breve!')">Ver no mapa</button>
-    </div>
-    <div class="filtros">
-      <button class="filtro ativo" onclick="filtrar(this)">Todos</button>
-      <button class="filtro" onclick="filtrar(this)">🧹 Limpeza</button>
-      <button class="filtro" onclick="filtrar(this)">📦 Móveis</button>
-      <button class="filtro" onclick="filtrar(this)">🛒 Mantimentos</button>
-      <button class="filtro" onclick="filtrar(this)">🚨 Urgente</button>
-    </div>
   </div>
   <div class="cards" id="cardsGrid">
   <!-- Cards carregados dinamicamente pelo Supabase -->
@@ -1416,6 +1416,48 @@ function submeter(id,msg){
 function toggleChk(el){el.classList.toggle('ativo');}
 function selUrg(el,c){el.closest('.urgencia-sel').querySelectorAll('.urg').forEach(i=>i.classList.remove('ativo'));el.classList.add('ativo');}
 function filtrar(btn){document.querySelectorAll('.filtro').forEach(b=>b.classList.remove('ativo'));btn.classList.add('ativo');}
+
+// ── BUSCA NO MAPA ──
+async function buscarNoMapa(valor) {
+  const termo = valor.trim().toLowerCase();
+  if (!termo) return;
+
+  // Garante que o mapa foi iniciado
+  initMapa();
+  await new Promise(r => setTimeout(r, 200));
+  mapaObj.invalidateSize();
+
+  // Procura primeiro nos pontos já carregados (cidade, endereço, nome)
+  const encontrado = pontosMapa.findIndex(p =>
+    p.cidade?.toLowerCase().includes(termo) ||
+    p.endereco?.toLowerCase().includes(termo) ||
+    p.nome?.toLowerCase().includes(termo)
+  );
+
+  if (encontrado >= 0) {
+    mapaFocarPonto(encontrado);
+    toast(`📍 Encontrado: ${pontosMapa[encontrado].nome}`, 'ok');
+    return;
+  }
+
+  // Se não achou nas solicitações, busca a cidade/endereço no OpenStreetMap
+  try {
+    const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(termo)}&format=json&limit=1`);
+    const data = await res.json();
+    if (data.length) {
+      const { lat, lon } = data[0];
+      document.getElementById('mapa').scrollIntoView({behavior:'smooth'});
+      setTimeout(() => {
+        mapaObj.setView([parseFloat(lat), parseFloat(lon)], 13, {animate:true});
+      }, 400);
+      toast('📍 Localização encontrada no mapa!', 'ok');
+    } else {
+      toast('⚠️ Nenhum resultado encontrado.');
+    }
+  } catch(e) {
+    toast('⚠️ Erro ao buscar localização.');
+  }
+}
 
 let tt;
 function toast(msg,tipo=''){
