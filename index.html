@@ -3200,6 +3200,7 @@ function exibirEstrelasDetalhe(media, total) {
     <div class="vol-tab active" onclick="volAba('confirmadas')">🙋 Confirmadas</div>
     <div class="vol-tab" onclick="volAba('historico')">✅ Histórico</div>
     <div class="vol-tab" onclick="volAba('avaliacoes')">⭐ Avaliações</div>
+    <div class="vol-tab" onclick="volAba('minhas')">🏠 Minhas</div>
     <div class="vol-tab" onclick="volAba('perfil')">👤 Perfil</div>
   </div>
 
@@ -3214,6 +3215,13 @@ function exibirEstrelasDetalhe(media, total) {
       </div>
       <div id="lista-confirmadas">
         <div class="vol-empty"><div class="ve-icon">🙋</div><p>Você ainda não confirmou presença em nenhuma solicitação.</p></div>
+      </div>
+    </div>
+
+    <!-- MINHAS SOLICITAÇÕES -->
+    <div class="vol-tab-content" id="vol-minhas">
+      <div id="lista-minhas">
+        <div class="vol-empty"><div class="ve-icon">🏠</div><p>Suas solicitações de ajuda aparecerão aqui.</p></div>
       </div>
     </div>
 
@@ -3287,6 +3295,75 @@ async function abrirPainelVoluntario() {
   await carregarDadosVoluntario();
 }
 
+async function carregarMinhasSolicitacoes() {
+  const el = document.getElementById('lista-minhas');
+  if (!el) return;
+  el.innerHTML = '<div class="vol-empty"><div class="ve-icon">⏳</div><p>Carregando...</p></div>';
+
+  try {
+    const email = usuarioAtual?.user?.email;
+    if (!email) return;
+
+    const sols = await sbFetch(`solicitacoes?email_dono=eq.${encodeURIComponent(email)}&order=criado_em.desc&select=*`);
+
+    if (!sols.length) {
+      el.innerHTML = '<div class="vol-empty"><div class="ve-icon">🏠</div><p>Você ainda não cadastrou nenhuma solicitação de ajuda.</p></div>';
+      return;
+    }
+
+    el.innerHTML = sols.map(s => {
+      const ativa = s.ativo && new Date(s.expira_em) > new Date();
+      const exp = calcularExpiracao(s.expira_em);
+      const urg = s.urgencia === 'vermelho' ? '🔴' : s.urgencia === 'amarelo' ? '🟡' : '🟢';
+      return `<div class="vol-item">
+        ${s.foto_url ? `<img src="${s.foto_url}" style="width:100%;height:120px;object-fit:cover;border-radius:10px;margin-bottom:10px;">` : ''}
+        <div class="vol-item-nome">${s.nome} ${urg}</div>
+        <div class="vol-item-local">📍 ${s.cidade}, ${s.estado}</div>
+        <div style="font-size:0.75rem;color:#475569;margin-bottom:6px;">${s.endereco || ''}</div>
+        <div class="vol-item-tags">${(s.tipos_ajuda||[]).map(t=>`<span class="tag">${t}</span>`).join('')}</div>
+        <div class="vol-item-footer" style="margin-top:8px;">
+          <span class="vol-status ${ativa ? 'vs-confirmado' : 'vs-concluido'}">${ativa ? '✅ Ativa' : '⏰ Expirada'}</span>
+          <span style="font-size:0.72rem;color:#64748b;">${ativa ? exp : new Date(s.criado_em).toLocaleDateString('pt-BR')}</span>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:10px;">
+          <button onclick="gerarQRCode('${s.id}','${s.nome}','${(s.endereco||'').replace(/'/g,"\'")}');fecharPainelVoluntario();"
+            style="flex:1;padding:9px;border-radius:9px;border:1.5px solid #c7d2fe;background:#EEF2FF;color:var(--azul);font-size:0.8rem;font-weight:700;cursor:pointer;transition:all .2s;">
+            📱 Ver QR Code
+          </button>
+          ${ativa ? `<button onclick="reativarDoPainel('${s.id}')"
+            style="flex:1;padding:9px;border-radius:9px;border:1.5px solid #A7F3D0;background:#ECFDF5;color:#15803D;font-size:0.8rem;font-weight:700;cursor:pointer;">
+            🔁 Reativar
+          </button>` : `<button onclick="reativarDoPainel('${s.id}')"
+            style="flex:1;padding:9px;border-radius:9px;border:1.5px solid #A7F3D0;background:#ECFDF5;color:#15803D;font-size:0.8rem;font-weight:700;cursor:pointer;">
+            🔁 Reativar
+          </button>`}
+        </div>
+      </div>`;
+    }).join('');
+
+  } catch(e) {
+    el.innerHTML = '<div class="vol-empty"><div class="ve-icon">⚠️</div><p>Erro ao carregar. Tente novamente.</p></div>';
+    console.warn('Erro minhas solicitações:', e);
+  }
+}
+
+async function reativarDoPainel(solId) {
+  try {
+    await sbFetch(`solicitacoes?id=eq.${solId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({
+        ativo: true,
+        expira_em: new Date(Date.now() + 24*60*60*1000).toISOString()
+      })
+    });
+    toast('✅ Solicitação reativada por mais 24h!', 'ok');
+    carregarMinhasSolicitacoes();
+    carregarSolicitacoes();
+  } catch(e) {
+    toast('⚠️ Erro ao reativar. Tente novamente.');
+  }
+}
+
 async function cancelarPresencaPainel(confId, solId) {
   if (!confirm('Tem certeza que deseja cancelar sua confirmação de presença?')) return;
 
@@ -3351,9 +3428,10 @@ function fecharPainelVoluntario() {
 function volAba(aba) {
   document.querySelectorAll('.vol-tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.vol-tab-content').forEach(c => c.classList.remove('active'));
-  const idx = ['confirmadas','historico','avaliacoes','perfil'].indexOf(aba);
+  const idx = ['confirmadas','historico','avaliacoes','minhas','perfil'].indexOf(aba);
   document.querySelectorAll('.vol-tab')[idx]?.classList.add('active');
   document.getElementById('vol-' + aba)?.classList.add('active');
+  if (aba === 'minhas') carregarMinhasSolicitacoes();
 }
 
 async function carregarDadosVoluntario() {
