@@ -139,6 +139,38 @@ tbody tr:last-child td{border-bottom:none;}
 .badge-azul{background:#0c1a3d;color:#93C5FD;}
 .badge-cinza{background:#1e2535;color:#94a3b8;}
 
+/* DADOS: MONITORAMENTO */
+.dados-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:18px;margin-bottom:24px;}
+.dados-card{background:#0d1117;border:1px solid #1e2535;border-radius:14px;padding:20px;}
+.dados-card-header{display:flex;align-items:center;gap:10px;margin-bottom:16px;}
+.dados-card-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.dados-card-titulo{font-family:'Montserrat',sans-serif;font-weight:700;font-size:0.9rem;color:#fff;}
+.dados-card-subtitulo{font-size:0.72rem;color:#475569;}
+.dados-barra-wrap{margin:10px 0 6px;}
+.dados-barra-label{display:flex;justify-content:space-between;font-size:0.75rem;color:#64748b;margin-bottom:5px;}
+.dados-barra-bg{background:#1e2535;border-radius:99px;height:8px;overflow:hidden;}
+.dados-barra-fill{height:8px;border-radius:99px;transition:width .4s;}
+.dados-barra-ok{background:#22c55e;}
+.dados-barra-warn{background:#f59e0b;}
+.dados-barra-crit{background:#ef4444;}
+.dados-stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;}
+.dados-stat{background:#161b27;border-radius:8px;padding:8px 10px;}
+.dados-stat-label{font-size:0.7rem;color:#475569;margin-bottom:2px;}
+.dados-stat-val{font-size:0.88rem;font-weight:700;color:#e2e8f0;}
+.dados-tabela-rows{margin-top:12px;}
+.dados-tabela-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid #1e2535;font-size:0.78rem;}
+.dados-tabela-row:last-child{border-bottom:none;}
+.dados-tabela-nome{color:#94a3b8;}
+.dados-tabela-num{color:#e2e8f0;font-weight:600;}
+.dados-alerta{background:#450a0a;border:1px solid #7f1d1d;border-radius:8px;padding:10px 12px;font-size:0.78rem;color:#FCA5A5;margin-top:12px;}
+.dados-alerta-warn{background:#422006;border-color:#78350f;color:#FDE68A;}
+.dados-nota{background:#0c1a3d;border:1px solid #1e3a8a;border-radius:8px;padding:10px 12px;font-size:0.75rem;color:#93C5FD;margin-top:12px;}
+.dados-atualizar{display:flex;align-items:center;gap:12px;margin-bottom:20px;}
+.dados-atualizar-btn{background:transparent;border:1px solid #1e2535;color:#e2e8f0;border-radius:10px;padding:9px 18px;font-size:0.82rem;font-weight:600;cursor:pointer;transition:all .15s;}
+.dados-atualizar-btn:hover{border-color:#2255C4;color:#93C5FD;}
+.dados-atualizar-btn:disabled{opacity:0.5;cursor:wait;}
+.dados-timestamp{font-size:0.72rem;color:#475569;}
+
 /* ACTION BUTTONS */
 .btn-action{
   padding:5px 12px;border-radius:7px;border:none;cursor:pointer;
@@ -244,6 +276,9 @@ tbody tr:last-child td{border-bottom:none;}
       </div>
       <div class="nav-item" data-page="pontosapoio" onclick="irPara('pontosapoio')">
         <span class="ni-icon">📍</span> Pontos de Apoio
+      </div>
+      <div class="nav-item" data-page="dados" onclick="irPara('dados')">
+        <span class="ni-icon">📊</span> Dados
       </div>
       <div class="nav-item" onclick="window.open('https://sos-ajuda-ai.vercel.app','_blank')">
         <span class="ni-icon">🌐</span> Ver site
@@ -479,6 +514,24 @@ tbody tr:last-child td{border-bottom:none;}
             <tr class="loading-row"><td colspan="6">⏳ Carregando...</td></tr>
           </tbody>
         </table>
+      </div>
+    </div>
+
+    <!-- DADOS: MONITORAMENTO DE USO -->
+    <div class="page" id="page-dados">
+      <div class="page-title">Dados e Limites</div>
+      <div class="page-sub">Monitoramento de uso real de cada plataforma integrada ao site.</div>
+
+      <div class="dados-atualizar">
+        <button class="dados-atualizar-btn" id="btnAtualizarDados" onclick="carregarDadosMonitoramento()">🔄 Atualizar agora</button>
+        <span class="dados-timestamp" id="dadosTimestamp">Nunca atualizado nesta sessão</span>
+      </div>
+
+      <div class="dados-grid" id="dadosGrid">
+        <!-- preenchido via JS -->
+        <div class="dados-card" style="grid-column:1/-1;text-align:center;padding:48px;color:#475569;">
+          Clique em "Atualizar agora" para carregar os dados de uso.
+        </div>
       </div>
     </div>
 
@@ -825,6 +878,168 @@ function initMapaAdmin() {
 }
 
 // ── NAVEGAÇÃO ──
+// ── MONITORAMENTO DE DADOS ──
+async function carregarDadosMonitoramento() {
+  const btn = document.getElementById('btnAtualizarDados');
+  const ts = document.getElementById('dadosTimestamp');
+  const grid = document.getElementById('dadosGrid');
+
+  btn.disabled = true;
+  btn.textContent = '⏳ Consultando...';
+  grid.innerHTML = `<div class="dados-card" style="grid-column:1/-1;text-align:center;padding:48px;color:#475569;">⏳ Consultando os serviços...</div>`;
+
+  try {
+    const res = await fetch(`${SB_URL}/functions/v1/monitor-uso`, {
+      headers: { 'Authorization': 'Bearer ' + SB_KEY, 'Content-Type': 'application/json' }
+    });
+    if (!res.ok) throw new Error(`Erro ${res.status}: ${await res.text()}`);
+    const dados = await res.json();
+
+    ts.textContent = `Atualizado em ${new Date(dados.timestamp).toLocaleString('pt-BR')}`;
+    renderizarCardsDados(dados);
+  } catch(e) {
+    grid.innerHTML = `<div class="dados-card" style="grid-column:1/-1;text-align:center;padding:32px;">
+      <div style="color:#FCA5A5;font-weight:700;margin-bottom:8px;">⚠️ Erro ao consultar os dados</div>
+      <div style="color:#64748b;font-size:0.8rem;">${e.message}</div>
+      <div style="color:#475569;font-size:0.75rem;margin-top:12px;">Verifique se a Edge Function "monitor-uso" está criada e as variáveis de ambiente estão configuradas.</div>
+    </div>`;
+    ts.textContent = 'Erro na última consulta';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🔄 Atualizar agora';
+  }
+}
+
+function barraClasse(pct) {
+  if (pct >= 90) return 'dados-barra-crit';
+  if (pct >= 70) return 'dados-barra-warn';
+  return 'dados-barra-ok';
+}
+
+function alertaHtml(pct, servico) {
+  if (pct >= 90) return `<div class="dados-alerta">⚠️ CRÍTICO — ${servico} está em ${pct}% do limite. Ação imediata necessária.</div>`;
+  if (pct >= 70) return `<div class="dados-alerta dados-alerta-warn">⚠️ Atenção — ${servico} está em ${pct}% do limite. Considere fazer upgrade em breve.</div>`;
+  return '';
+}
+
+function renderizarCardsDados(dados) {
+  const grid = document.getElementById('dadosGrid');
+  let html = '';
+
+  // ── SUPABASE ──
+  if (dados.supabase?.erro) {
+    html += cardErro('Supabase (banco de dados)', '🗄️', '#1A3C8F', dados.supabase.erro);
+  } else {
+    const sb = dados.supabase;
+    const pctBanco = sb.banco_pct_usado;
+    const pctBanda = sb.banda_mb_usada ? Math.round(sb.banda_mb_usada / sb.banda_mb_limite * 100) : null;
+
+    let tabelasHtml = '';
+    if (sb.registros_por_tabela) {
+      Object.entries(sb.registros_por_tabela).forEach(([tabela, total]) => {
+        tabelasHtml += `<div class="dados-tabela-row">
+          <span class="dados-tabela-nome">${tabela}</span>
+          <span class="dados-tabela-num">${total?.toLocaleString('pt-BR') ?? '—'}</span>
+        </div>`;
+      });
+    }
+
+    html += `<div class="dados-card">
+      <div class="dados-card-header">
+        <div class="dados-card-icon" style="background:#0c1a3d;">🗄️</div>
+        <div>
+          <div class="dados-card-titulo">Supabase</div>
+          <div class="dados-card-subtitulo">Banco de dados e banda</div>
+        </div>
+      </div>
+      <div class="dados-barra-wrap">
+        <div class="dados-barra-label"><span>Banco de dados</span><span>${sb.banco_mb_usado} MB / ${sb.banco_mb_limite} MB</span></div>
+        <div class="dados-barra-bg"><div class="dados-barra-fill ${barraClasse(pctBanco)}" style="width:${Math.min(pctBanco,100)}%"></div></div>
+      </div>
+      ${pctBanda !== null ? `<div class="dados-barra-wrap">
+        <div class="dados-barra-label"><span>Banda (egress)</span><span>${sb.banda_mb_usada} MB / ${sb.banda_mb_limite} MB</span></div>
+        <div class="dados-barra-bg"><div class="dados-barra-fill ${barraClasse(pctBanda)}" style="width:${Math.min(pctBanda,100)}%"></div></div>
+      </div>` : ''}
+      ${alertaHtml(pctBanco, 'Supabase banco')}
+      <div style="margin-top:14px;font-size:0.75rem;color:#64748b;margin-bottom:6px;">Registros por tabela</div>
+      <div class="dados-tabela-rows">${tabelasHtml}</div>
+      ${!sb.banda_mb_usada ? `<div class="dados-nota">ℹ️ Para monitorar banda em tempo real, configure também a variável SUPABASE_PAT e SUPABASE_PROJECT_REF.</div>` : ''}
+    </div>`;
+  }
+
+  // ── CLOUDINARY ──
+  if (dados.cloudinary?.erro) {
+    html += cardErro('Cloudinary (imagens)', '🖼️', '#0f2820', dados.cloudinary.erro);
+  } else {
+    const cl = dados.cloudinary;
+    const pctCred = cl.creditos_pct_usado;
+
+    html += `<div class="dados-card">
+      <div class="dados-card-header">
+        <div class="dados-card-icon" style="background:#0f2820;">🖼️</div>
+        <div>
+          <div class="dados-card-titulo">Cloudinary</div>
+          <div class="dados-card-subtitulo">Armazenamento de imagens — plano ${cl.plano}</div>
+        </div>
+      </div>
+      <div class="dados-barra-wrap">
+        <div class="dados-barra-label"><span>Créditos usados</span><span>${cl.creditos_usados?.toFixed(2)} / ${cl.creditos_limite}</span></div>
+        <div class="dados-barra-bg"><div class="dados-barra-fill ${barraClasse(pctCred)}" style="width:${Math.min(pctCred,100)}%"></div></div>
+      </div>
+      ${alertaHtml(pctCred, 'Cloudinary')}
+      <div class="dados-stat-grid">
+        <div class="dados-stat"><div class="dados-stat-label">Total de imagens</div><div class="dados-stat-val">${cl.total_recursos?.toLocaleString('pt-BR')}</div></div>
+        <div class="dados-stat"><div class="dados-stat-label">Armazenamento</div><div class="dados-stat-val">${cl.storage_mb_usado} MB</div></div>
+        <div class="dados-stat"><div class="dados-stat-label">Banda usada</div><div class="dados-stat-val">${cl.banda_mb_usada} MB</div></div>
+        <div class="dados-stat"><div class="dados-stat-label">Transformações</div><div class="dados-stat-val">${cl.transformacoes_usadas?.toLocaleString('pt-BR')}</div></div>
+      </div>
+    </div>`;
+  }
+
+  // ── VERCEL ──
+  if (dados.vercel?.erro) {
+    html += cardErro('Vercel (hospedagem)', '▲', '#1a0a2e', dados.vercel.erro);
+  } else {
+    const vr = dados.vercel;
+    const ultimo = vr.ultimo_deploy;
+
+    html += `<div class="dados-card">
+      <div class="dados-card-header">
+        <div class="dados-card-icon" style="background:#1a1a1a;">▲</div>
+        <div>
+          <div class="dados-card-titulo">Vercel</div>
+          <div class="dados-card-subtitulo">Hospedagem e deploy</div>
+        </div>
+      </div>
+      <div class="dados-stat-grid">
+        <div class="dados-stat"><div class="dados-stat-label">Projetos ativos</div><div class="dados-stat-val">${vr.total_projetos}</div></div>
+        <div class="dados-stat"><div class="dados-stat-label">Limite de banda</div><div class="dados-stat-val">${vr.banda_gb_limite} GB/mês</div></div>
+        <div class="dados-stat" style="grid-column:1/-1;">
+          <div class="dados-stat-label">Último deploy em produção</div>
+          <div class="dados-stat-val">${ultimo ? `${ultimo.nome_projeto} — ${new Date(ultimo.data).toLocaleString('pt-BR')} (${ultimo.estado})` : '—'}</div>
+        </div>
+      </div>
+      <div class="dados-nota">${vr.nota}</div>
+    </div>`;
+  }
+
+  grid.innerHTML = html;
+}
+
+function cardErro(nome, icone, iconeBg, erro) {
+  return `<div class="dados-card">
+    <div class="dados-card-header">
+      <div class="dados-card-icon" style="background:${iconeBg};">${icone}</div>
+      <div>
+        <div class="dados-card-titulo">${nome}</div>
+        <div class="dados-card-subtitulo">Erro ao consultar</div>
+      </div>
+    </div>
+    <div class="dados-alerta">⚠️ ${erro}</div>
+    <div style="font-size:0.73rem;color:#475569;margin-top:8px;">Verifique se as variáveis de ambiente da Edge Function estão configuradas corretamente.</div>
+  </div>`;
+}
+
 function irPara(pagina) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
@@ -834,6 +1049,7 @@ function irPara(pagina) {
   if (pagina === 'confirmacoes') carregarConfirmacoes();
   if (pagina === 'prefeituras') carregarPrefeituras();
   if (pagina === 'pontosapoio') carregarPontosApoioAdmin();
+  if (pagina === 'dados') {} // carregamento manual via botão — não busca automaticamente
 }
 
 // ── FILTROS ──
