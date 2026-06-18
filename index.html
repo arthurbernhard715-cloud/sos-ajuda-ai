@@ -1497,6 +1497,30 @@ textarea.form-control { resize: vertical; min-height: 88px; }
 </div>
 
 <!-- DETALHE CARD -->
+<!-- MODAL: DETALHE PONTO DE APOIO -->
+<div class="modal-overlay" id="modal-detalhe-ponto">
+  <div class="modal">
+    <button class="modal-close" onclick="fecharModal('modal-detalhe-ponto')">✕</button>
+    <div id="dp-foto-wrap" style="display:none;height:160px;border-radius:12px;overflow:hidden;margin-bottom:18px;">
+      <img id="dp-foto" src="" alt="Foto do local" style="width:100%;height:100%;object-fit:cover;">
+    </div>
+    <div id="dp-sem-foto" style="height:120px;background:linear-gradient(135deg,#78350f,#422006);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:3rem;margin-bottom:18px;">
+      <span id="dp-icon">📦</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+      <h2 id="dp-nome" style="margin:0;flex:1;">—</h2>
+      <span id="dp-verificado" style="font-size:0.75rem;font-weight:700;padding:4px 10px;border-radius:6px;"></span>
+    </div>
+    <p style="font-size:.83rem;color:var(--cinza-t);margin:4px 0 10px" id="dp-local">—</p>
+    <p style="font-size:.87rem;color:#475569;line-height:1.6;margin-bottom:14px" id="dp-desc"></p>
+    <div id="dp-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;"></div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="fecharModal('modal-detalhe-ponto')">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: DETALHE SOLICITAÇÃO -->
 <div class="modal-overlay" id="modal-detalhe">
   <div class="modal">
     <button class="modal-close" onclick="fecharModal('modal-detalhe')">✕</button>
@@ -2213,7 +2237,8 @@ function renderizarPinsApoio(pontosApoio) {
           <div style="font-size:0.78rem;color:#64748b;margin-bottom:4px;">📍 ${escapeHtml(p.endereco)}, ${escapeHtml(p.cidade)}</div>
           ${infoExtra}
           ${p.descricao ? `<div style="font-size:0.78rem;color:#64748b;margin-bottom:8px;">${escapeHtml(p.descricao)}</div>` : ''}
-          <div style="font-size:0.72rem;color:${p.verificado ? '#16a34a' : '#94a3b8'};font-weight:600;">${p.verificado ? '✅ Verificado' : '⏳ Aguardando verificação'}</div>
+          <div style="font-size:0.72rem;color:${p.verificado ? '#16a34a' : '#94a3b8'};font-weight:600;margin-bottom:10px;">${p.verificado ? '✅ Verificado' : '⏳ Aguardando verificação'}</div>
+          <button onclick="abrirDetalhePonto(${i})" style="width:100%;background:${vis.cor};color:#fff;border:none;border-radius:8px;padding:8px;font-weight:700;font-size:0.8rem;cursor:pointer;font-family:'Montserrat',sans-serif;">Ver detalhes</button>
         </div>
       `);
     marcadoresApoio.push(m);
@@ -2244,6 +2269,65 @@ function calcularExpiracao(expiraEm) {
 }
 
 // ── ABRIR DETALHE REAL ──
+function abrirDetalhePonto(i) {
+  const p = pontosApoioMapa[i];
+  if (!p) return;
+
+  const vis = APOIO_VISUAL[p.tipo] || APOIO_VISUAL.doacoes_mantimentos;
+
+  // Foto ou ícone
+  const fotoWrap = document.getElementById('dp-foto-wrap');
+  const fotoImg  = document.getElementById('dp-foto');
+  const semFoto  = document.getElementById('dp-sem-foto');
+  if (p.foto_url) {
+    fotoImg.src = p.foto_url;
+    fotoWrap.style.display = 'block';
+    semFoto.style.display  = 'none';
+  } else {
+    fotoWrap.style.display = 'none';
+    semFoto.style.display  = 'flex';
+    document.getElementById('dp-icon').textContent = vis.emoji;
+  }
+
+  document.getElementById('dp-nome').textContent = p.nome;
+  document.getElementById('dp-local').textContent = `📍 ${p.cidade}, ${p.estado} — ${p.endereco}`;
+  document.getElementById('dp-desc').textContent  = p.descricao || '';
+
+  // Selo de verificado
+  const seloBadge = document.getElementById('dp-verificado');
+  if (p.verificado) {
+    seloBadge.textContent = '✅ Verificado';
+    seloBadge.style.cssText = 'background:#052e16;color:#86EFAC;font-size:0.75rem;font-weight:700;padding:4px 10px;border-radius:6px;';
+  } else {
+    seloBadge.textContent = '⏳ Não verificado';
+    seloBadge.style.cssText = 'background:#1e2535;color:#94a3b8;font-size:0.75rem;font-weight:700;padding:4px 10px;border-radius:6px;';
+  }
+
+  // Grid de informações dinâmicas
+  const grid = document.getElementById('dp-grid');
+  const cel = (label, valor) => `
+    <div style="background:var(--cinza-f);padding:13px;border-radius:10px;">
+      <div style="font-size:.72rem;font-weight:700;color:var(--cinza-t);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px;">${label}</div>
+      <div style="font-size:.9rem;font-weight:600;color:var(--azul);">${valor}</div>
+    </div>`;
+
+  let celulas = cel('Tipo', vis.label);
+
+  if (p.tipo === 'abrigo' && p.capacidade_total) {
+    const livres = Math.max(p.capacidade_total - (p.vagas_ocupadas || 0), 0);
+    celulas += cel('Vagas disponíveis', `${livres} de ${p.capacidade_total}`);
+  }
+  if (p.tipo === 'doacoes_mantimentos') {
+    if (p.horario_funcionamento) celulas += cel('Horário', p.horario_funcionamento);
+    if (p.itens_aceitos?.length)  celulas += cel('Aceita', p.itens_aceitos.join(', '));
+  }
+  if (p.telefone_contato) celulas += cel('Contato', p.telefone_contato);
+
+  grid.innerHTML = celulas;
+
+  abrirModal('modal-detalhe-ponto');
+}
+
 function abrirDetalheReal(s) {
   if (typeof s === 'string') s = JSON.parse(s);
   document.getElementById('d-icon').textContent = '🏠';
