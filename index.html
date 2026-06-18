@@ -961,7 +961,7 @@ textarea.form-control { resize: vertical; min-height: 88px; }
 
     <!-- Campos específicos: ABRIGO -->
     <div class="form-group" id="camposPontoAbrigo">
-      <label>Capacidade do abrigo</label>
+      <label>Capacidade do abrigo (opcional)</label>
       <div style="display:flex;gap:8px;align-items:center;">
         <input class="form-control" id="pontoCapacidadeInput" type="number" min="1" placeholder="Total de pessoas" style="flex:1;">
         <input class="form-control" id="pontoVagasOcupadasInput" type="number" min="0" placeholder="Já ocupadas (opcional)" style="flex:1;">
@@ -1746,9 +1746,8 @@ async function salvarPontoApoio() {
   if (_tipoPontoSelecionado === 'abrigo') {
     const cap = parseInt(document.getElementById('pontoCapacidadeInput').value, 10);
     const ocup = parseInt(document.getElementById('pontoVagasOcupadasInput').value, 10);
-    if (!Number.isFinite(cap) || cap <= 0) { toast('⚠️ Informe a capacidade total do abrigo.'); return; }
-    payload.capacidade_total = cap;
-    payload.vagas_ocupadas = Number.isFinite(ocup) ? ocup : 0;
+    payload.capacidade_total = Number.isFinite(cap) && cap > 0 ? cap : null;
+    payload.vagas_ocupadas = Number.isFinite(ocup) && ocup >= 0 ? ocup : 0;
   } else if (_tipoPontoSelecionado === 'doacoes_mantimentos') {
     payload.horario_funcionamento = document.getElementById('pontoHorarioInput').value.trim() || null;
     const itens = Array.from(document.querySelectorAll('#pontoItensAceitos .chk.ativo')).map(c => c.textContent.trim());
@@ -2097,8 +2096,8 @@ let pontosApoioMapa = [];
 let marcadoresApoio = [];
 
 const APOIO_VISUAL = {
-  abrigo:               { cor: '#1A3C8F', emoji: '🏠', label: 'Abrigo' },
-  doacoes_mantimentos:  { cor: '#BE185D', emoji: '📦❤️', label: 'Doações e Mantimentos' }
+  abrigo:               { cor: '#059669', emoji: '🏠', label: 'Abrigo' },
+  doacoes_mantimentos:  { cor: '#7C3AED', emoji: '📦❤️', label: 'Doações e Mantimentos' }
 };
 
 function renderizarMapaPins(solicitacoes, pontosApoio) {
@@ -2169,8 +2168,14 @@ function renderizarPinsApoio(pontosApoio) {
     const selo = p.verificado ? '✅' : '';
     const icon = L.divIcon({
       className: '',
-      html: `<div style="width:36px;height:36px;border-radius:50%;background:${vis.cor};border:3px solid #fff;box-shadow:0 3px 10px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;"><span style="font-size:13px">${vis.emoji}</span></div>`,
-      iconSize:[36,36], iconAnchor:[18,18], popupAnchor:[0,-20]
+      html: `
+        <div style="width:52px;height:52px;display:flex;align-items:center;justify-content:center;position:relative;">
+          <div style="position:absolute;width:52px;height:52px;border-radius:50%;background:${vis.cor};opacity:0.25;"></div>
+          <div style="width:42px;height:42px;border-radius:50%;background:${vis.cor};border:3px solid #fff;box-shadow:0 4px 14px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;position:relative;z-index:1;">
+            <span style="font-size:18px;line-height:1;">${vis.emoji}</span>
+          </div>
+        </div>`,
+      iconSize:[52,52], iconAnchor:[26,26], popupAnchor:[0,-30]
     });
 
     let infoExtra = '';

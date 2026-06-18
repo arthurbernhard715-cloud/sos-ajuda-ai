@@ -464,8 +464,9 @@ function renderPontosApoioPref() {
 
     let detalhes = '';
     if (p.tipo === 'abrigo') {
-      const livres = Math.max((p.capacidade_total || 0) - (p.vagas_ocupadas || 0), 0);
-      detalhes = `🛏️ ${livres}/${p.capacidade_total || '—'} vagas livres`;
+      detalhes = p.capacidade_total
+        ? `🛏️ ${Math.max(p.capacidade_total - (p.vagas_ocupadas || 0), 0)}/${p.capacidade_total} vagas livres`
+        : 'Capacidade não informada';
     } else if (p.tipo === 'doacoes_mantimentos') {
       const partes = [];
       if (p.horario_funcionamento) partes.push(p.horario_funcionamento);
