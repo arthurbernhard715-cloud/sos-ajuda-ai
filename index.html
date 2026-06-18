@@ -2096,8 +2096,8 @@ let pontosApoioMapa = [];
 let marcadoresApoio = [];
 
 const APOIO_VISUAL = {
-  abrigo:               { cor: '#059669', emoji: '🏠', label: 'Abrigo' },
-  doacoes_mantimentos:  { cor: '#7C3AED', emoji: '📦❤️', label: 'Doações e Mantimentos' }
+  abrigo:               { cor: '#D97706', borda: '#78350F', emoji: '🏠', label: 'Abrigo' },
+  doacoes_mantimentos:  { cor: '#EA580C', borda: '#7C2D12', emoji: '📦', label: 'Doações e Mantimentos' }
 };
 
 function renderizarMapaPins(solicitacoes, pontosApoio) {
@@ -2169,13 +2169,14 @@ function renderizarPinsApoio(pontosApoio) {
     const icon = L.divIcon({
       className: '',
       html: `
-        <div style="width:52px;height:52px;display:flex;align-items:center;justify-content:center;position:relative;">
-          <div style="position:absolute;width:52px;height:52px;border-radius:50%;background:${vis.cor};opacity:0.25;"></div>
-          <div style="width:42px;height:42px;border-radius:50%;background:${vis.cor};border:3px solid #fff;box-shadow:0 4px 14px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;position:relative;z-index:1;">
-            <span style="font-size:18px;line-height:1;">${vis.emoji}</span>
-          </div>
+        <div style="width:64px;height:72px;display:flex;align-items:flex-start;justify-content:center;filter:drop-shadow(0 4px 8px rgba(0,0,0,0.45));">
+          <svg width="64" height="72" viewBox="0 0 64 72">
+            <path d="M32 2 L58 14 L58 36 C58 54 46 64 32 70 C18 64 6 54 6 36 L6 14 Z" fill="${vis.cor}" stroke="#fff" stroke-width="4"/>
+            <path d="M32 2 L58 14 L58 36 C58 54 46 64 32 70 C18 64 6 54 6 36 L6 14 Z" fill="none" stroke="${vis.borda}" stroke-width="1.5"/>
+            <text x="32" y="33" text-anchor="middle" dominant-baseline="central" style="font-size:24px;">${vis.emoji}</text>
+          </svg>
         </div>`,
-      iconSize:[52,52], iconAnchor:[26,26], popupAnchor:[0,-30]
+      iconSize:[64,72], iconAnchor:[32,70], popupAnchor:[0,-66]
     });
 
     let infoExtra = '';
