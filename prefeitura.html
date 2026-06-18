@@ -286,6 +286,29 @@ tbody tr:last-child td{border-bottom:none;}
       </table>
     </div>
 
+    <!-- PONTOS DE APOIO -->
+    <div class="tabela-card">
+      <div class="tabela-header">
+        <h3 id="pontosApoioTitulo">📍 Pontos de apoio</h3>
+        <span style="font-size:0.75rem;color:#475569;" id="pontosApoioContagem">—</span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Tipo</th>
+            <th>Nome / Local</th>
+            <th>Endereço</th>
+            <th>Detalhes</th>
+            <th>Status</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody id="tbody-pontos-apoio-pref">
+          <tr><td colspan="6" style="text-align:center;padding:32px;color:#475569;">⏳ Carregando...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
   </main>
 </div>
 
@@ -391,6 +414,92 @@ async function sbFetch(endpoint) {
   return text ? JSON.parse(text) : [];
 }
 
+async function sbPatch(endpoint, body) {
+  await fetch(SB_URL + '/rest/v1/' + endpoint, {
+    method: 'PATCH',
+    headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+    body: JSON.stringify(body)
+  });
+}
+
+let _pontosApoioPref = [];
+
+async function carregarPontosApoioPref() {
+  if (!_cidadeAtual) return;
+  try {
+    const cidadeEsc = encodeURIComponent(_cidadeAtual.cidade);
+    _pontosApoioPref = await sbFetch(`pontos_apoio?cidade=eq.${cidadeEsc}&order=criado_em.desc&select=*`);
+    document.getElementById('pontosApoioTitulo').textContent = `📍 Pontos de apoio em ${_cidadeAtual.cidade}`;
+    renderPontosApoioPref();
+  } catch(e) {
+    console.error('Erro ao carregar pontos de apoio:', e);
+  }
+}
+
+function renderPontosApoioPref() {
+  const tbody = document.getElementById('tbody-pontos-apoio-pref');
+  const contagem = document.getElementById('pontosApoioContagem');
+  if (!tbody) return;
+
+  const pendentes = _pontosApoioPref.filter(p => !p.verificado).length;
+  if (contagem) contagem.textContent = `${_pontosApoioPref.length} ponto(s) · ${pendentes} pendente(s)`;
+
+  if (!_pontosApoioPref.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:32px;color:#475569;">Nenhum ponto de apoio cadastrado nesta cidade ainda.</td></tr>';
+    return;
+  }
+
+  const visualTipo = {
+    abrigo:      { emoji: '🏠', label: 'Abrigo' },
+    mantimentos: { emoji: '📦', label: 'Mantimentos' },
+    doacoes:     { emoji: '❤️', label: 'Doações' }
+  };
+
+  tbody.innerHTML = _pontosApoioPref.map(p => {
+    const vis = visualTipo[p.tipo] || { emoji: '📍', label: p.tipo };
+    const status = !p.ativo
+      ? '<span style="color:#64748b;">Inativo</span>'
+      : p.verificado
+        ? '<span style="color:#86EFAC;">✅ Verificado</span>'
+        : '<span style="color:#FCA5A5;">⏳ Pendente</span>';
+
+    let detalhes = '';
+    if (p.tipo === 'abrigo') {
+      const livres = Math.max((p.capacidade_total || 0) - (p.vagas_ocupadas || 0), 0);
+      detalhes = `🛏️ ${livres}/${p.capacidade_total || '—'} vagas livres`;
+    } else if (p.tipo === 'mantimentos') {
+      detalhes = p.horario_funcionamento || '—';
+    } else if (p.tipo === 'doacoes') {
+      detalhes = (p.itens_aceitos || []).join(', ') || '—';
+    }
+
+    return `<tr>
+      <td>${vis.emoji} ${vis.label}</td>
+      <td>${p.nome}</td>
+      <td style="font-size:0.8rem;color:#94a3b8;">${p.endereco}</td>
+      <td style="font-size:0.78rem;color:#94a3b8;">${detalhes}</td>
+      <td>${status}</td>
+      <td>${!p.verificado
+        ? `<button class="btn-logout" style="border-color:#86EFAC;color:#86EFAC;" onclick="verificarPontoApoioPref('${p.id}')">✅ Verificar</button>`
+        : '—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+async function verificarPontoApoioPref(id) {
+  try {
+    await sbPatch(`pontos_apoio?id=eq.${id}`, {
+      verificado: true,
+      verificado_por: `Prefeitura de ${_cidadeAtual.cidade}`,
+      verificado_em: new Date().toISOString()
+    });
+    toast('✅ Ponto verificado!');
+    await carregarPontosApoioPref();
+  } catch(e) {
+    toast('⚠️ Erro ao verificar o ponto.');
+  }
+}
+
 // ── CARREGAR DADOS ──
 async function carregarDados() {
   if (!_cidadeAtual) return;
@@ -423,6 +532,7 @@ async function carregarDados() {
     renderHistorico(sols);
     renderTabela(sols);
     atualizarMapa(sols);
+    carregarPontosApoioPref();
 
   } catch(e) {
     console.error('Erro:', e);

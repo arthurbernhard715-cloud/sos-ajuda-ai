@@ -242,6 +242,9 @@ tbody tr:last-child td{border-bottom:none;}
       <div class="nav-item" data-page="prefeituras" onclick="irPara('prefeituras')">
         <span class="ni-icon">🏛️</span> Prefeituras
       </div>
+      <div class="nav-item" data-page="pontosapoio" onclick="irPara('pontosapoio')">
+        <span class="ni-icon">📍</span> Pontos de Apoio
+      </div>
       <div class="nav-item" onclick="window.open('https://sos-ajuda-ai.vercel.app','_blank')">
         <span class="ni-icon">🌐</span> Ver site
       </div>
@@ -433,6 +436,47 @@ tbody tr:last-child td{border-bottom:none;}
             </tr>
           </thead>
           <tbody id="tbody-pref">
+            <tr class="loading-row"><td colspan="6">⏳ Carregando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- PONTOS DE APOIO -->
+    <div class="page" id="page-pontosapoio">
+      <div class="page-title">Pontos de Apoio</div>
+      <div class="page-sub">Verifique abrigos, pontos de mantimentos e de doações cadastrados pela comunidade.</div>
+
+      <div class="table-wrap">
+        <div class="table-header">
+          <div class="table-title">📍 Pontos cadastrados</div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <select id="filtroTipoPontoAdmin" class="table-search" style="cursor:pointer;" onchange="renderPontosApoioAdmin()">
+              <option value="">Todos os tipos</option>
+              <option value="abrigo">🏠 Abrigo</option>
+              <option value="mantimentos">📦 Mantimentos</option>
+              <option value="doacoes">❤️ Doações</option>
+            </select>
+            <select id="filtroStatusPontoAdmin" class="table-search" style="cursor:pointer;" onchange="renderPontosApoioAdmin()">
+              <option value="">Todos os status</option>
+              <option value="pendente">⏳ Pendentes</option>
+              <option value="verificado">✅ Verificados</option>
+            </select>
+            <input class="table-search" placeholder="🔍 Buscar..." oninput="filtrarTabela('pontosapoio',this.value)">
+          </div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Tipo</th>
+              <th>Nome / Local</th>
+              <th>Endereço</th>
+              <th>Detalhes</th>
+              <th>Status</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-pontosapoio">
             <tr class="loading-row"><td colspan="6">⏳ Carregando...</td></tr>
           </tbody>
         </table>
@@ -790,6 +834,7 @@ function irPara(pagina) {
   if (pagina === 'mapa') setTimeout(initMapaAdmin, 200);
   if (pagina === 'confirmacoes') carregarConfirmacoes();
   if (pagina === 'prefeituras') carregarPrefeituras();
+  if (pagina === 'pontosapoio') carregarPontosApoioAdmin();
 }
 
 // ── FILTROS ──
@@ -799,6 +844,7 @@ function filtrarTabela(tipo, valor) {
   if (tipo === 'vol') renderVoluntarios(v);
   if (tipo === 'conf') renderConfirmacoes(v);
   if (tipo === 'pref') renderPrefeituras(v);
+  if (tipo === 'pontosapoio') renderPontosApoioAdmin(v);
 }
 
 // ── PREFEITURAS ──
@@ -862,6 +908,112 @@ function renderPrefeituras(filtro='') {
       </td>
     </tr>`;
   }).join('');
+}
+
+// ── PONTOS DE APOIO ──
+let dadosPontosApoio = [];
+
+async function carregarPontosApoioAdmin() {
+  try {
+    dadosPontosApoio = await sbFetch('pontos_apoio?order=criado_em.desc&select=*');
+    renderPontosApoioAdmin();
+  } catch(e) { toast('Erro ao carregar pontos de apoio: ' + e.message, 'err'); }
+}
+
+function renderPontosApoioAdmin(filtro='') {
+  const tbody = document.getElementById('tbody-pontosapoio');
+  if (!tbody) return;
+
+  const tipoSel = document.getElementById('filtroTipoPontoAdmin')?.value || '';
+  const statusSel = document.getElementById('filtroStatusPontoAdmin')?.value || '';
+
+  let lista = dadosPontosApoio;
+  if (tipoSel) lista = lista.filter(p => p.tipo === tipoSel);
+  if (statusSel === 'pendente') lista = lista.filter(p => !p.verificado);
+  if (statusSel === 'verificado') lista = lista.filter(p => p.verificado);
+  if (filtro) lista = lista.filter(p =>
+    p.nome?.toLowerCase().includes(filtro) ||
+    p.cidade?.toLowerCase().includes(filtro) ||
+    p.endereco?.toLowerCase().includes(filtro)
+  );
+
+  if (!lista.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:32px;color:#475569;">Nenhum ponto encontrado</td></tr>';
+    return;
+  }
+
+  const visualTipo = {
+    abrigo:      { emoji: '🏠', label: 'Abrigo' },
+    mantimentos: { emoji: '📦', label: 'Mantimentos' },
+    doacoes:     { emoji: '❤️', label: 'Doações' }
+  };
+
+  tbody.innerHTML = lista.map(p => {
+    const vis = visualTipo[p.tipo] || { emoji: '📍', label: p.tipo };
+    const status = !p.ativo
+      ? '<span class="badge badge-cinza">Inativo</span>'
+      : p.verificado
+        ? '<span class="badge badge-verde">✅ Verificado</span>'
+        : '<span class="badge badge-verm">⏳ Pendente</span>';
+
+    let detalhes = '';
+    if (p.tipo === 'abrigo') {
+      const livres = Math.max((p.capacidade_total || 0) - (p.vagas_ocupadas || 0), 0);
+      detalhes = `🛏️ ${livres}/${p.capacidade_total || '—'} vagas livres`;
+    } else if (p.tipo === 'mantimentos') {
+      detalhes = p.horario_funcionamento ? `🕒 ${p.horario_funcionamento}` : '—';
+    } else if (p.tipo === 'doacoes') {
+      detalhes = (p.itens_aceitos || []).join(', ') || '—';
+    }
+
+    return `<tr>
+      <td><strong style="color:#fff">${vis.emoji} ${vis.label}</strong></td>
+      <td>
+        <div style="font-size:0.82rem;color:#fff">${p.nome}</div>
+        <div style="font-size:0.72rem;color:#475569">${p.telefone_contato || ''}</div>
+      </td>
+      <td style="font-size:0.8rem">${p.endereco}<br><span style="color:#475569">${p.cidade}, ${p.estado}</span></td>
+      <td style="font-size:0.78rem;color:#94a3b8">${detalhes}</td>
+      <td>${status}</td>
+      <td>
+        <div class="actions-cell">
+          ${!p.verificado
+            ? `<button class="btn-action btn-reativar-admin" onclick="verificarPontoApoio('${p.id}')">✅ Verificar</button>`
+            : ''}
+          ${p.ativo
+            ? `<button class="btn-action btn-ver" onclick="togglePontoApoio('${p.id}',false)">⏸️ Desativar</button>`
+            : `<button class="btn-action btn-reativar-admin" onclick="togglePontoApoio('${p.id}',true)">▶️ Ativar</button>`}
+          <button class="btn-action btn-del" onclick="confirmarDelete('pontosapoio','${p.id}','${p.nome.replace(/'/g,"\\'")}')">🗑️</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+async function verificarPontoApoio(id) {
+  try {
+    const token = usuarioAtual?.access_token || SB_KEY;
+    await fetch(`${SB_URL}/rest/v1/pontos_apoio?id=eq.${id}`, {
+      method: 'PATCH',
+      headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+      body: JSON.stringify({ verificado: true, verificado_por: usuarioAtual?.email || 'admin', verificado_em: new Date().toISOString() })
+    });
+    toast('✅ Ponto verificado!', 'ok');
+    await carregarPontosApoioAdmin();
+  } catch(e) { toast('Erro: ' + e.message, 'err'); }
+}
+
+async function togglePontoApoio(id, ativo) {
+  try {
+    const token = usuarioAtual?.access_token || SB_KEY;
+    await fetch(`${SB_URL}/rest/v1/pontos_apoio?id=eq.${id}`, {
+      method: 'PATCH',
+      headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+      body: JSON.stringify({ ativo })
+    });
+    toast(ativo ? '▶️ Ponto reativado!' : '⏸️ Ponto desativado!', 'ok');
+    await carregarPontosApoioAdmin();
+  } catch(e) { toast('Erro: ' + e.message, 'err'); }
 }
 
 // ── CRIPTOGRAFIA DE SENHA ──
@@ -1134,7 +1286,7 @@ function confirmarDelete(tipo, id, nome) {
   document.getElementById('modalConfirmMsg').textContent = `Excluir "${nome}"? Esta ação não pode ser desfeita.`;
   deleteCallback = async () => {
     try {
-      const tabela = tipo === 'sol' ? 'solicitacoes' : tipo === 'vol' ? 'voluntarios' : tipo === 'conf' ? 'confirmacoes' : 'prefeituras';
+      const tabela = tipo === 'sol' ? 'solicitacoes' : tipo === 'vol' ? 'voluntarios' : tipo === 'conf' ? 'confirmacoes' : tipo === 'pontosapoio' ? 'pontos_apoio' : 'prefeituras';
       const token = usuarioAtual?.access_token || SB_KEY;
       const delRes = await fetch(`${SB_URL}/rest/v1/${tabela}?id=eq.${id}`, {
         method: 'DELETE',
@@ -1151,7 +1303,7 @@ function confirmarDelete(tipo, id, nome) {
       }
       toast('🗑️ Excluído com sucesso!', 'ok');
       fecharConfirm();
-      await carregarDados();
+      if (tipo === 'pontosapoio') { await carregarPontosApoioAdmin(); } else { await carregarDados(); }
     } catch(e) { toast('Erro: ' + e.message, 'err'); }
   };
   document.getElementById('btnConfirmDel').onclick = deleteCallback;
