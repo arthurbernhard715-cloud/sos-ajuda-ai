@@ -976,6 +976,27 @@ textarea.form-control { resize: vertical; min-height: 88px; }
       </div>
     </div>
 
+    <!-- Foto do local -->
+    <div class="form-group">
+      <label>📷 Foto do local (opcional)</label>
+      <div class="foto-upload-area" onclick="document.getElementById('ponto-fotoInput').click()">
+        <input type="file" id="ponto-fotoInput" accept="image/*" onchange="previsualizarFoto(this,'ponto-')">
+        <div class="foto-upload-icon">📸</div>
+        <div class="foto-upload-txt">
+          <strong>Clique para adicionar uma foto</strong><br>
+          JPG, PNG ou HEIC — máx. 10MB
+        </div>
+      </div>
+      <div class="foto-dica">
+        💡 <span>Uma foto da fachada ou entrada ajuda quem for procurar este local a reconhecê-lo.</span>
+      </div>
+      <div class="foto-uploading" id="ponto-fotoUploading">⏳ Enviando foto...</div>
+      <div class="foto-preview-wrap" id="ponto-fotoPreviewWrap">
+        <img id="ponto-fotoPreview" src="" alt="Preview">
+        <button class="foto-preview-remove" onclick="removerFoto('ponto-')" title="Remover foto">✕</button>
+      </div>
+    </div>
+
     <div class="form-group">
       <label>Descrição adicional (opcional)</label>
       <textarea class="form-control" id="pontoDescricaoInput" placeholder="Alguma informação extra que ajude quem for procurar este local..."></textarea>
@@ -1567,6 +1588,7 @@ function abrirModalPontoApoio() {
   document.getElementById('pontoVagasOcupadasInput').value = '';
   document.getElementById('pontoHorarioInput').value = '';
   document.querySelectorAll('#pontoItensAceitos .chk').forEach(c => c.classList.remove('ativo'));
+  removerFoto('ponto-');
   _pontoLatSelecionada = null;
   _pontoLngSelecionada = null;
   selecionarTipoPonto('abrigo');
@@ -1653,6 +1675,7 @@ async function salvarPontoApoio() {
     lat: lat || null, lng: lng || null,
     descricao: descricao || null,
     telefone_contato: telefone || null,
+    foto_url: _fotoUrlPonto || null,
     verificado: false,
     ativo: true,
     criado_por_uid: usuarioAtual?.id || null
@@ -2105,6 +2128,7 @@ function renderizarPinsApoio(pontosApoio) {
       .addTo(mapaObj)
       .bindPopup(`
         <div style="font-family:'Inter',sans-serif;min-width:190px;">
+          ${p.foto_url ? `<img src="${p.foto_url}" alt="Foto do local" style="width:100%;height:110px;object-fit:cover;border-radius:8px;margin-bottom:8px;">` : ''}
           <div style="font-weight:700;color:${vis.cor};font-size:0.92rem;margin-bottom:4px;">${vis.emoji} ${escapeHtml(p.nome)} ${selo}</div>
           <div style="font-size:0.78rem;color:#64748b;margin-bottom:4px;">📍 ${escapeHtml(p.endereco)}, ${escapeHtml(p.cidade)}</div>
           ${infoExtra}
@@ -4132,8 +4156,10 @@ async function salvarPerfil() {
 const CLOUDINARY_URL = "https://api.cloudinary.com/v1_1/dih2l3gi1/image/upload";
 const CLOUDINARY_PRESET = "sos ajuda ai";
 let _fotoUrl = null;
+let _fotoUrlPonto = null;
 
-function previsualizarFoto(input) {
+function previsualizarFoto(input, prefixo) {
+  prefixo = prefixo || '';
   const file = input.files[0];
   if (!file) return;
 
@@ -4147,19 +4173,20 @@ function previsualizarFoto(input) {
   // Mostra preview local
   const reader = new FileReader();
   reader.onload = (e) => {
-    document.getElementById('fotoPreview').src = e.target.result;
-    document.getElementById('fotoPreviewWrap').style.display = 'block';
+    document.getElementById(prefixo + 'fotoPreview').src = e.target.result;
+    document.getElementById(prefixo + 'fotoPreviewWrap').style.display = 'block';
   };
   reader.readAsDataURL(file);
 
   // Faz upload para Cloudinary
-  uploadFotoCloudinary(file);
+  uploadFotoCloudinary(file, prefixo);
 }
 
-async function uploadFotoCloudinary(file) {
-  const uploading = document.getElementById('fotoUploading');
+async function uploadFotoCloudinary(file, prefixo) {
+  prefixo = prefixo || '';
+  const uploading = document.getElementById(prefixo + 'fotoUploading');
   uploading.style.display = 'block';
-  _fotoUrl = null;
+  if (prefixo === 'ponto-') { _fotoUrlPonto = null; } else { _fotoUrl = null; }
 
   try {
     const formData = new FormData();
@@ -4174,22 +4201,23 @@ async function uploadFotoCloudinary(file) {
 
     if (!res.ok) throw new Error('Erro no upload');
     const data = await res.json();
-    _fotoUrl = data.secure_url;
+    if (prefixo === 'ponto-') { _fotoUrlPonto = data.secure_url; } else { _fotoUrl = data.secure_url; }
     uploading.style.display = 'none';
     toast('✅ Foto enviada com sucesso!', 'ok');
   } catch(e) {
     uploading.style.display = 'none';
     toast('⚠️ Erro ao enviar foto. Tente novamente.');
-    removerFoto();
+    removerFoto(prefixo);
     console.error(e);
   }
 }
 
-function removerFoto() {
-  _fotoUrl = null;
-  document.getElementById('fotoInput').value = '';
-  document.getElementById('fotoPreviewWrap').style.display = 'none';
-  document.getElementById('fotoPreview').src = '';
+function removerFoto(prefixo) {
+  prefixo = prefixo || '';
+  if (prefixo === 'ponto-') { _fotoUrlPonto = null; } else { _fotoUrl = null; }
+  document.getElementById(prefixo + 'fotoInput').value = '';
+  document.getElementById(prefixo + 'fotoPreviewWrap').style.display = 'none';
+  document.getElementById(prefixo + 'fotoPreview').src = '';
 }
 </script>
 

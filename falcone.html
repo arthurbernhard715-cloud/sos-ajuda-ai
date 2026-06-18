@@ -968,8 +968,13 @@ function renderPontosApoioAdmin(filtro='') {
     return `<tr>
       <td><strong style="color:#fff">${vis.emoji} ${vis.label}</strong></td>
       <td>
-        <div style="font-size:0.82rem;color:#fff">${p.nome}</div>
-        <div style="font-size:0.72rem;color:#475569">${p.telefone_contato || ''}</div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          ${p.foto_url ? `<img src="${p.foto_url}" alt="Foto" onclick="window.open('${p.foto_url}','_blank')" style="width:36px;height:36px;object-fit:cover;border-radius:6px;cursor:pointer;flex-shrink:0;" title="Ver foto em tamanho real">` : ''}
+          <div>
+            <div style="font-size:0.82rem;color:#fff">${p.nome}</div>
+            <div style="font-size:0.72rem;color:#475569">${p.telefone_contato || ''}</div>
+          </div>
+        </div>
       </td>
       <td style="font-size:0.8rem">${p.endereco}<br><span style="color:#475569">${p.cidade}, ${p.estado}</span></td>
       <td style="font-size:0.78rem;color:#94a3b8">${detalhes}</td>

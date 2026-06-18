@@ -475,7 +475,7 @@ function renderPontosApoioPref() {
 
     return `<tr>
       <td>${vis.emoji} ${vis.label}</td>
-      <td>${p.nome}</td>
+      <td>${p.nome} ${p.foto_url ? `<a href="${p.foto_url}" target="_blank" style="color:#2255C4;font-size:0.75rem;text-decoration:none;">📷 ver foto</a>` : ''}</td>
       <td style="font-size:0.8rem;color:#94a3b8;">${p.endereco}</td>
       <td style="font-size:0.78rem;color:#94a3b8;">${detalhes}</td>
       <td>${status}</td>
