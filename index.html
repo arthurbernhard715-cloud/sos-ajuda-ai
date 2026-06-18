@@ -145,6 +145,18 @@ nav.scrolled {
 .filtro { background: #fff; border: 1.5px solid var(--cinza-b); color: #475569; border-radius: 99px; padding: 6px 16px; font-size: .82rem; font-weight: 600; cursor: pointer; transition: all .15s; }
 .filtro:hover { border-color: var(--azul-med); color: var(--azul); }
 .filtro.ativo { background: var(--azul); border-color: var(--azul); color: #fff; }
+.filtros-apoio { margin-top: 10px; align-items: center; }
+.filtros-apoio-label { font-size: .8rem; color: #64748b; font-weight: 600; margin-right: 2px; }
+.filtro-apoio { background: #fff; border: 1.5px dashed var(--cinza-b); color: #475569; border-radius: 99px; padding: 5px 14px; font-size: .8rem; font-weight: 600; cursor: pointer; transition: all .15s; }
+.filtro-apoio:hover { border-color: #C9A227; color: #C9A227; }
+.filtro-apoio.ativo { background: #C9A227; border-color: #C9A227; border-style: solid; color: #fff; }
+.btn-cadastrar-ponto {
+  display: block; margin: 14px auto 0; background: #fff; color: #C9A227;
+  border: 1.5px solid #C9A227; border-radius: 12px; padding: 11px 20px;
+  font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: .85rem;
+  cursor: pointer; transition: all .2s;
+}
+.btn-cadastrar-ponto:hover { background: #C9A227; color: #fff; }
 .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px,1fr)); gap: 20px; max-width: 1100px; margin: 0 auto; }
 .carregar-mais-wrap { display: flex; justify-content: center; max-width: 1100px; margin: 28px auto 0; }
 .btn-carregar-mais { background: #fff; color: #1A3C8F; border: 1.5px solid #1A3C8F; border-radius: 99px; padding: 12px 28px; font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 0.9rem; cursor: pointer; transition: background .2s, color .2s; }
@@ -738,6 +750,15 @@ textarea.form-control { resize: vertical; min-height: 88px; }
       <button class="filtro" onclick="filtrar(this)">🛒 Mantimentos</button>
       <button class="filtro" onclick="filtrar(this)">🚨 Urgente</button>
     </div>
+    <div class="filtros filtros-apoio">
+      <span class="filtros-apoio-label">Pontos de apoio:</span>
+      <button class="filtro-apoio ativo" data-tipo="todos" onclick="filtrarPinsApoio(this)">Todos</button>
+      <button class="filtro-apoio" data-tipo="abrigo" onclick="filtrarPinsApoio(this)">🏠 Abrigos</button>
+      <button class="filtro-apoio" data-tipo="mantimentos" onclick="filtrarPinsApoio(this)">📦 Mantimentos</button>
+      <button class="filtro-apoio" data-tipo="doacoes" onclick="filtrarPinsApoio(this)">❤️ Doações</button>
+      <button class="filtro-apoio" data-tipo="nenhum" onclick="filtrarPinsApoio(this)">🚫 Ocultar</button>
+    </div>
+    <button class="btn-cadastrar-ponto" onclick="abrirModalPontoApoio()">➕ Cadastrar ponto de apoio (abrigo, mantimentos ou doações)</button>
   </div>
   <div class="mapa-wrap">
     <div class="mapa-container">
@@ -890,6 +911,85 @@ textarea.form-control { resize: vertical; min-height: 88px; }
     </div>
 
     <p style="font-size:0.78rem;color:var(--cinza-t);">Abra o app do seu banco, escolha Pix, escaneie o QR Code ou cole a chave acima. Chave do tipo <strong>aleatória</strong>.</p>
+  </div>
+</div>
+
+<!-- MODAL: PONTO DE APOIO (abrigo, mantimentos, doações) -->
+<div class="modal-overlay" id="modal-ponto-apoio">
+  <div class="modal">
+    <button class="modal-close" onclick="fecharModal('modal-ponto-apoio')">✕</button>
+    <h2>📍 Cadastrar ponto de apoio</h2>
+    <p class="modal-sub">Ajude a mapear locais de abrigo, entrega de mantimentos ou recebimento de doações. Pontos novos ficam marcados como "não verificado" até serem confirmados.</p>
+
+    <div class="form-group">
+      <label>Tipo de ponto</label>
+      <div class="urgencia-sel">
+        <div class="urg amarelo ativo" id="tipoPontoAbrigo" onclick="selecionarTipoPonto('abrigo')">🏠 Abrigo</div>
+        <div class="urg verde" id="tipoPontoMantimentos" onclick="selecionarTipoPonto('mantimentos')">📦 Mantimentos</div>
+        <div class="urg vermelho" id="tipoPontoDoacoes" onclick="selecionarTipoPonto('doacoes')">❤️ Doações</div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Nome do local ou responsável</label>
+      <input class="form-control" id="pontoNomeInput" placeholder="Ex: Igreja Matriz, João Silva...">
+    </div>
+
+    <div class="form-group">
+      <label>📍 Endereço</label>
+      <button type="button" class="btn-localizacao" id="btnLocalizacaoPonto" onclick="usarLocalizacaoAtualPonto()" style="margin-bottom:8px;">
+        📍 Usar minha localização atual (GPS)
+      </button>
+      <input class="form-control" id="pontoEnderecoInput" placeholder="Rua, número, bairro...">
+      <div style="display:flex;gap:8px;margin-top:8px;">
+        <input class="form-control" id="pontoCidadeInput" placeholder="Cidade" style="flex:2;">
+        <input class="form-control" id="pontoEstadoInput" placeholder="UF" maxlength="2" style="flex:1;" value="RS">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Telefone de contato (opcional)</label>
+      <input class="form-control" id="pontoTelefoneInput" placeholder="(51) 9....">
+    </div>
+
+    <!-- Campos específicos: ABRIGO -->
+    <div class="form-group" id="camposPontoAbrigo">
+      <label>Capacidade do abrigo</label>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input class="form-control" id="pontoCapacidadeInput" type="number" min="1" placeholder="Total de pessoas" style="flex:1;">
+        <input class="form-control" id="pontoVagasOcupadasInput" type="number" min="0" placeholder="Já ocupadas (opcional)" style="flex:1;">
+      </div>
+    </div>
+
+    <!-- Campos específicos: MANTIMENTOS -->
+    <div class="form-group" id="camposPontoMantimentos" style="display:none;">
+      <label>Horário de funcionamento</label>
+      <input class="form-control" id="pontoHorarioInput" placeholder="Ex: Seg a Sáb, 8h às 18h">
+    </div>
+
+    <!-- Campos específicos: DOAÇÕES -->
+    <div class="form-group" id="camposPontoDoacoes" style="display:none;">
+      <label>O que esse ponto aceita receber?</label>
+      <div class="checkbox-group" id="pontoItensAceitos">
+        <div class="chk" onclick="toggleChk(this)">👕 Roupas</div>
+        <div class="chk" onclick="toggleChk(this)">💧 Água</div>
+        <div class="chk" onclick="toggleChk(this)">🍚 Alimentos</div>
+        <div class="chk" onclick="toggleChk(this)">🧼 Higiene</div>
+        <div class="chk" onclick="toggleChk(this)">🐾 Ração</div>
+        <div class="chk" onclick="toggleChk(this)">💊 Medicamentos</div>
+        <div class="chk" onclick="toggleChk(this)">🛏️ Roupa de cama/cobertor</div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Descrição adicional (opcional)</label>
+      <textarea class="form-control" id="pontoDescricaoInput" placeholder="Alguma informação extra que ajude quem for procurar este local..."></textarea>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="fecharModal('modal-ponto-apoio')">Cancelar</button>
+      <button class="btn-submit" onclick="salvarPontoApoio()">Cadastrar ponto</button>
+    </div>
   </div>
 </div>
 
@@ -1453,6 +1553,134 @@ function submeter(id,msg){
 }
 function toggleChk(el){el.classList.toggle('ativo');}
 function selUrg(el,c){el.closest('.urgencia-sel').querySelectorAll('.urg').forEach(i=>i.classList.remove('ativo'));el.classList.add('ativo');}
+
+// ── PONTOS DE APOIO: cadastro ──
+let _tipoPontoSelecionado = 'abrigo';
+let _pontoLatSelecionada = null;
+let _pontoLngSelecionada = null;
+
+function abrirModalPontoApoio() {
+  if (!usuarioAtual) { abrirModal('modal-auth'); return; }
+  // Reseta o formulário
+  document.getElementById('pontoNomeInput').value = '';
+  document.getElementById('pontoEnderecoInput').value = '';
+  document.getElementById('pontoCidadeInput').value = '';
+  document.getElementById('pontoEstadoInput').value = 'RS';
+  document.getElementById('pontoTelefoneInput').value = '';
+  document.getElementById('pontoDescricaoInput').value = '';
+  document.getElementById('pontoCapacidadeInput').value = '';
+  document.getElementById('pontoVagasOcupadasInput').value = '';
+  document.getElementById('pontoHorarioInput').value = '';
+  document.querySelectorAll('#pontoItensAceitos .chk').forEach(c => c.classList.remove('ativo'));
+  _pontoLatSelecionada = null;
+  _pontoLngSelecionada = null;
+  selecionarTipoPonto('abrigo');
+  abrirModal('modal-ponto-apoio');
+}
+
+function selecionarTipoPonto(tipo) {
+  _tipoPontoSelecionado = tipo;
+  ['abrigo','mantimentos','doacoes'].forEach(t => {
+    document.getElementById('tipoPonto' + t.charAt(0).toUpperCase() + t.slice(1)).classList.toggle('ativo', t === tipo);
+    document.getElementById('camposPonto' + t.charAt(0).toUpperCase() + t.slice(1)).style.display = (t === tipo) ? 'block' : 'none';
+  });
+}
+
+async function usarLocalizacaoAtualPonto() {
+  const btn = document.getElementById('btnLocalizacaoPonto');
+  if (!navigator.geolocation) { toast('⚠️ GPS não disponível no seu navegador.'); return; }
+  btn.textContent = '⏳ Obtendo localização...';
+  btn.disabled = true;
+
+  navigator.geolocation.getCurrentPosition(async (pos) => {
+    try {
+      const { latitude, longitude } = pos.coords;
+      _pontoLatSelecionada = latitude;
+      _pontoLngSelecionada = longitude;
+
+      const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`);
+      const data = await res.json();
+      const addr = data.address || {};
+      const cidade = addr.city || addr.town || addr.village || '';
+      const mapaEst = {'Rio Grande do Sul':'RS','Santa Catarina':'SC','Paraná':'PR','São Paulo':'SP','Rio de Janeiro':'RJ'};
+      const estado = mapaEst[addr.state] || addr.state || 'RS';
+      const ruaNum = [addr.road, addr.house_number].filter(Boolean).join(', ');
+
+      if (ruaNum) document.getElementById('pontoEnderecoInput').value = ruaNum;
+      if (cidade) document.getElementById('pontoCidadeInput').value = cidade;
+      if (estado) document.getElementById('pontoEstadoInput').value = estado;
+
+      btn.textContent = '✅ Localização obtida!';
+      btn.style.background = '#ECFDF5'; btn.style.color = '#15803D'; btn.style.borderColor = '#A7F3D0';
+      toast('📍 Localização preenchida automaticamente!', 'ok');
+    } catch(e) {
+      toast('⚠️ Coordenadas obtidas, mas não consegui identificar o endereço completo. Preencha manualmente.');
+      btn.textContent = '📍 Usar minha localização atual (GPS)';
+      btn.disabled = false;
+    }
+  }, () => {
+    toast('⚠️ Não foi possível obter sua localização. Preencha o endereço manualmente.');
+    btn.textContent = '📍 Usar minha localização atual (GPS)';
+    btn.disabled = false;
+  });
+}
+
+async function salvarPontoApoio() {
+  const nome = document.getElementById('pontoNomeInput').value.trim();
+  const endereco = document.getElementById('pontoEnderecoInput').value.trim();
+  const cidade = document.getElementById('pontoCidadeInput').value.trim();
+  const estado = document.getElementById('pontoEstadoInput').value.trim().toUpperCase() || 'RS';
+  const telefone = document.getElementById('pontoTelefoneInput').value.trim();
+  const descricao = document.getElementById('pontoDescricaoInput').value.trim();
+
+  if (!nome) { toast('⚠️ Informe o nome do local ou responsável.'); return; }
+  if (!endereco || !cidade) { toast('⚠️ Informe endereço e cidade (ou use o GPS).'); return; }
+
+  // Se não usou o GPS, tenta geocodificar o endereço digitado
+  let lat = _pontoLatSelecionada, lng = _pontoLngSelecionada;
+  if (!lat || !lng) {
+    try {
+      const q = encodeURIComponent(`${endereco}, ${cidade}, ${estado}, Brasil`);
+      const geo = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1`);
+      const geoData = await geo.json();
+      if (geoData[0]) { lat = parseFloat(geoData[0].lat); lng = parseFloat(geoData[0].lon); }
+    } catch(e) { /* segue sem coordenadas, o ponto fica sem aparecer no mapa até ser corrigido */ }
+  }
+
+  const payload = {
+    tipo: _tipoPontoSelecionado,
+    nome, cidade, estado, endereco,
+    lat: lat || null, lng: lng || null,
+    descricao: descricao || null,
+    telefone_contato: telefone || null,
+    verificado: false,
+    ativo: true,
+    criado_por_uid: usuarioAtual?.id || null
+  };
+
+  if (_tipoPontoSelecionado === 'abrigo') {
+    const cap = parseInt(document.getElementById('pontoCapacidadeInput').value, 10);
+    const ocup = parseInt(document.getElementById('pontoVagasOcupadasInput').value, 10);
+    if (!Number.isFinite(cap) || cap <= 0) { toast('⚠️ Informe a capacidade total do abrigo.'); return; }
+    payload.capacidade_total = cap;
+    payload.vagas_ocupadas = Number.isFinite(ocup) ? ocup : 0;
+  } else if (_tipoPontoSelecionado === 'mantimentos') {
+    payload.horario_funcionamento = document.getElementById('pontoHorarioInput').value.trim() || null;
+  } else if (_tipoPontoSelecionado === 'doacoes') {
+    const itens = Array.from(document.querySelectorAll('#pontoItensAceitos .chk.ativo')).map(c => c.textContent.trim());
+    payload.itens_aceitos = itens.length ? itens : null;
+  }
+
+  try {
+    await sbFetch('pontos_apoio', { method: 'POST', body: JSON.stringify(payload) });
+    toast('✅ Ponto cadastrado! Ele aparecerá no mapa como "não verificado" até ser confirmado.', 'ok');
+    fecharModal('modal-ponto-apoio');
+    carregarSolicitacoes();
+  } catch(e) {
+    console.error('Erro ao salvar ponto de apoio:', e);
+    toast('⚠️ Erro ao cadastrar o ponto. Tente novamente.');
+  }
+}
 function filtrar(btn){document.querySelectorAll('.filtro').forEach(b=>b.classList.remove('ativo'));btn.classList.add('ativo');}
 
 // ── BUSCA NO MAPA ──
@@ -1663,22 +1891,41 @@ async function sbFetch(endpoint, options = {}) {
 }
 
 // ── CARREGAR SOLICITAÇÕES DO BANCO ──
+let _pontosApoio = [];
+
 async function carregarSolicitacoes() {
   try {
     const agora = new Date().toISOString();
-    const data = await sbFetch(`solicitacoes?ativo=eq.true&expira_em=gt.${agora}&order=criado_em.desc&select=*`);
+    const [data, apoio] = await Promise.all([
+      sbFetch(`solicitacoes?ativo=eq.true&expira_em=gt.${agora}&order=criado_em.desc&select=*`),
+      carregarPontosApoio()
+    ]);
     renderizarCards(data);
     atualizarContadorUrgentes(data);
     console.log(`✅ ${data.length} solicitações carregadas`);
     // Sempre tenta renderizar no mapa
     if (mapaObj) {
-      renderizarMapaPins(data);
+      renderizarMapaPins(data, apoio);
     } else {
       window._dadosPendentes = data;
+      window._dadosApoioPendentes = apoio;
     }
   } catch(e) {
     console.error('Erro ao carregar solicitações:', e);
     toast('⚠️ Erro ao carregar solicitações. Tente novamente.','');
+  }
+}
+
+// ── CARREGAR PONTOS DE APOIO (abrigo, mantimentos, doações) ──
+async function carregarPontosApoio() {
+  try {
+    const data = await sbFetch('pontos_apoio?ativo=eq.true&select=*');
+    _pontosApoio = data;
+    console.log(`✅ ${data.length} pontos de apoio carregados`);
+    return data;
+  } catch(e) {
+    console.error('Erro ao carregar pontos de apoio:', e);
+    return [];
   }
 }
 
@@ -1762,7 +2009,16 @@ function desenharCards() {
 }
 
 // ── RENDERIZAR PINS NO MAPA ──
-function renderizarMapaPins(solicitacoes) {
+let pontosApoioMapa = [];
+let marcadoresApoio = [];
+
+const APOIO_VISUAL = {
+  abrigo:       { cor: '#1A3C8F', emoji: '🏠', label: 'Abrigo' },
+  mantimentos:  { cor: '#D97706', emoji: '📦', label: 'Mantimentos' },
+  doacoes:      { cor: '#BE185D', emoji: '❤️', label: 'Doações' }
+};
+
+function renderizarMapaPins(solicitacoes, pontosApoio) {
   if (!mapaObj) return;
   // Limpa pins antigos
   marcadores.forEach(m => mapaObj.removeLayer(m));
@@ -1811,6 +2067,59 @@ function renderizarMapaPins(solicitacoes) {
       sidebar.appendChild(item);
     }
   });
+
+  renderizarPinsApoio(pontosApoio || []);
+}
+
+function renderizarPinsApoio(pontosApoio) {
+  marcadoresApoio.forEach(m => mapaObj.removeLayer(m));
+  marcadoresApoio = [];
+  pontosApoioMapa = pontosApoio.filter(p => p.lat && p.lng);
+
+  const filtroAtivo = window._filtroMapaApoio || 'todos';
+
+  pontosApoioMapa.forEach((p, i) => {
+    if (filtroAtivo === '__nenhum__') return;
+    if (filtroAtivo !== 'todos' && filtroAtivo !== p.tipo) return;
+
+    const vis = APOIO_VISUAL[p.tipo] || APOIO_VISUAL.doacoes;
+    const selo = p.verificado ? '✅' : '';
+    const icon = L.divIcon({
+      className: '',
+      html: `<div style="width:36px;height:36px;border-radius:50%;background:${vis.cor};border:3px solid #fff;box-shadow:0 3px 10px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;"><span style="font-size:15px">${vis.emoji}</span></div>`,
+      iconSize:[36,36], iconAnchor:[18,18], popupAnchor:[0,-20]
+    });
+
+    let infoExtra = '';
+    if (p.tipo === 'abrigo' && p.capacidade_total) {
+      const vagasLivres = Math.max(p.capacidade_total - (p.vagas_ocupadas || 0), 0);
+      infoExtra = `<div style="font-size:0.78rem;color:#64748b;margin-bottom:4px;">🛏️ ${vagasLivres} de ${p.capacidade_total} vagas livres</div>`;
+    } else if (p.tipo === 'mantimentos' && p.horario_funcionamento) {
+      infoExtra = `<div style="font-size:0.78rem;color:#64748b;margin-bottom:4px;">🕒 ${escapeHtml(p.horario_funcionamento)}</div>`;
+    } else if (p.tipo === 'doacoes' && p.itens_aceitos && p.itens_aceitos.length) {
+      infoExtra = `<div style="font-size:0.78rem;color:#64748b;margin-bottom:4px;">🏷️ Aceita: ${p.itens_aceitos.map(escapeHtml).join(', ')}</div>`;
+    }
+
+    const m = L.marker([p.lat, p.lng], {icon})
+      .addTo(mapaObj)
+      .bindPopup(`
+        <div style="font-family:'Inter',sans-serif;min-width:190px;">
+          <div style="font-weight:700;color:${vis.cor};font-size:0.92rem;margin-bottom:4px;">${vis.emoji} ${escapeHtml(p.nome)} ${selo}</div>
+          <div style="font-size:0.78rem;color:#64748b;margin-bottom:4px;">📍 ${escapeHtml(p.endereco)}, ${escapeHtml(p.cidade)}</div>
+          ${infoExtra}
+          ${p.descricao ? `<div style="font-size:0.78rem;color:#64748b;margin-bottom:8px;">${escapeHtml(p.descricao)}</div>` : ''}
+          <div style="font-size:0.72rem;color:${p.verificado ? '#16a34a' : '#94a3b8'};font-weight:600;">${p.verificado ? '✅ Verificado' : '⏳ Aguardando verificação'}</div>
+        </div>
+      `);
+    marcadoresApoio.push(m);
+  });
+}
+
+function filtrarPinsApoio(btn) {
+  document.querySelectorAll('.filtro-apoio').forEach(b => b.classList.remove('ativo'));
+  btn.classList.add('ativo');
+  window._filtroMapaApoio = btn.dataset.tipo === 'nenhum' ? '__nenhum__' : btn.dataset.tipo;
+  if (mapaObj) renderizarPinsApoio(pontosApoioMapa);
 }
 
 function atualizarContadorUrgentes(solicitacoes) {
