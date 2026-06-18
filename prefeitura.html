@@ -450,9 +450,8 @@ function renderPontosApoioPref() {
   }
 
   const visualTipo = {
-    abrigo:      { emoji: '🏠', label: 'Abrigo' },
-    mantimentos: { emoji: '📦', label: 'Mantimentos' },
-    doacoes:     { emoji: '❤️', label: 'Doações' }
+    abrigo:               { emoji: '🏠', label: 'Abrigo' },
+    doacoes_mantimentos:  { emoji: '📦❤️', label: 'Doações/Mantimentos' }
   };
 
   tbody.innerHTML = _pontosApoioPref.map(p => {
@@ -467,10 +466,11 @@ function renderPontosApoioPref() {
     if (p.tipo === 'abrigo') {
       const livres = Math.max((p.capacidade_total || 0) - (p.vagas_ocupadas || 0), 0);
       detalhes = `🛏️ ${livres}/${p.capacidade_total || '—'} vagas livres`;
-    } else if (p.tipo === 'mantimentos') {
-      detalhes = p.horario_funcionamento || '—';
-    } else if (p.tipo === 'doacoes') {
-      detalhes = (p.itens_aceitos || []).join(', ') || '—';
+    } else if (p.tipo === 'doacoes_mantimentos') {
+      const partes = [];
+      if (p.horario_funcionamento) partes.push(p.horario_funcionamento);
+      if (p.itens_aceitos && p.itens_aceitos.length) partes.push(p.itens_aceitos.join(', '));
+      detalhes = partes.length ? partes.join(' · ') : '—';
     }
 
     return `<tr>

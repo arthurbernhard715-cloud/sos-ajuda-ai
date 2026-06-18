@@ -445,7 +445,7 @@ tbody tr:last-child td{border-bottom:none;}
     <!-- PONTOS DE APOIO -->
     <div class="page" id="page-pontosapoio">
       <div class="page-title">Pontos de Apoio</div>
-      <div class="page-sub">Verifique abrigos, pontos de mantimentos e de doações cadastrados pela comunidade.</div>
+      <div class="page-sub">Verifique abrigos e pontos de doações/mantimentos cadastrados pela comunidade.</div>
 
       <div class="table-wrap">
         <div class="table-header">
@@ -454,8 +454,7 @@ tbody tr:last-child td{border-bottom:none;}
             <select id="filtroTipoPontoAdmin" class="table-search" style="cursor:pointer;" onchange="renderPontosApoioAdmin()">
               <option value="">Todos os tipos</option>
               <option value="abrigo">🏠 Abrigo</option>
-              <option value="mantimentos">📦 Mantimentos</option>
-              <option value="doacoes">❤️ Doações</option>
+              <option value="doacoes_mantimentos">📦❤️ Doações e Mantimentos</option>
             </select>
             <select id="filtroStatusPontoAdmin" class="table-search" style="cursor:pointer;" onchange="renderPontosApoioAdmin()">
               <option value="">Todos os status</option>
@@ -943,9 +942,8 @@ function renderPontosApoioAdmin(filtro='') {
   }
 
   const visualTipo = {
-    abrigo:      { emoji: '🏠', label: 'Abrigo' },
-    mantimentos: { emoji: '📦', label: 'Mantimentos' },
-    doacoes:     { emoji: '❤️', label: 'Doações' }
+    abrigo:               { emoji: '🏠', label: 'Abrigo' },
+    doacoes_mantimentos:  { emoji: '📦❤️', label: 'Doações/Mantimentos' }
   };
 
   tbody.innerHTML = lista.map(p => {
@@ -960,10 +958,11 @@ function renderPontosApoioAdmin(filtro='') {
     if (p.tipo === 'abrigo') {
       const livres = Math.max((p.capacidade_total || 0) - (p.vagas_ocupadas || 0), 0);
       detalhes = `🛏️ ${livres}/${p.capacidade_total || '—'} vagas livres`;
-    } else if (p.tipo === 'mantimentos') {
-      detalhes = p.horario_funcionamento ? `🕒 ${p.horario_funcionamento}` : '—';
-    } else if (p.tipo === 'doacoes') {
-      detalhes = (p.itens_aceitos || []).join(', ') || '—';
+    } else if (p.tipo === 'doacoes_mantimentos') {
+      const partes = [];
+      if (p.horario_funcionamento) partes.push(`🕒 ${p.horario_funcionamento}`);
+      if (p.itens_aceitos && p.itens_aceitos.length) partes.push(p.itens_aceitos.join(', '));
+      detalhes = partes.length ? partes.join(' · ') : '—';
     }
 
     return `<tr>
