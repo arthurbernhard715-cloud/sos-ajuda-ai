@@ -963,7 +963,7 @@ function renderizarCardsDados(dados) {
       ${alertaHtml(pctBanco, 'Supabase banco')}
       <div style="margin-top:14px;font-size:0.75rem;color:#64748b;margin-bottom:6px;">Registros por tabela</div>
       <div class="dados-tabela-rows">${tabelasHtml}</div>
-      ${!sb.banda_mb_usada ? `<div class="dados-nota">ℹ️ Para monitorar banda em tempo real, configure também a variável SUPABASE_PAT e SUPABASE_PROJECT_REF.</div>` : ''}
+      ${!sb.banda_mb_usada ? `<div class="dados-nota">ℹ️ Para monitorar banda em tempo real, configure também as variáveis SB_PAT e SB_PROJECT_REF nos Secrets da Edge Function.</div>` : ''}
     </div>`;
   }
 

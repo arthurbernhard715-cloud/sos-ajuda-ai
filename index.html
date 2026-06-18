@@ -157,6 +157,18 @@ nav.scrolled {
   cursor: pointer; transition: all .2s;
 }
 .btn-cadastrar-ponto:hover { background: #C9A227; color: #fff; }
+
+@keyframes pinPulsar {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.12); opacity: 0.85; }
+}
+.pin-apoio-pulsante {
+  animation: pinPulsar 1.6s ease-in-out infinite;
+  transform-origin: 50% 100%;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pin-apoio-pulsante { animation: none; }
+}
 .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px,1fr)); gap: 20px; max-width: 1100px; margin: 0 auto; }
 .carregar-mais-wrap { display: flex; justify-content: center; max-width: 1100px; margin: 28px auto 0; }
 .btn-carregar-mais { background: #fff; color: #1A3C8F; border: 1.5px solid #1A3C8F; border-radius: 99px; padding: 12px 28px; font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 0.9rem; cursor: pointer; transition: background .2s, color .2s; }
@@ -2169,7 +2181,7 @@ function renderizarPinsApoio(pontosApoio) {
     const icon = L.divIcon({
       className: '',
       html: `
-        <div style="width:64px;height:72px;display:flex;align-items:flex-start;justify-content:center;filter:drop-shadow(0 4px 8px rgba(0,0,0,0.45));">
+        <div class="pin-apoio-pulsante" style="width:64px;height:72px;display:flex;align-items:flex-start;justify-content:center;filter:drop-shadow(0 4px 8px rgba(0,0,0,0.45));">
           <svg width="64" height="72" viewBox="0 0 64 72">
             <path d="M32 2 L58 14 L58 36 C58 54 46 64 32 70 C18 64 6 54 6 36 L6 14 Z" fill="${vis.cor}" stroke="#fff" stroke-width="4"/>
             <path d="M32 2 L58 14 L58 36 C58 54 46 64 32 70 C18 64 6 54 6 36 L6 14 Z" fill="none" stroke="${vis.borda}" stroke-width="1.5"/>
