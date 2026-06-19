@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Denunciar Fraude — SOS Ajuda Aí</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@700;900&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Inter',sans-serif;background:#f8fafc;color:#1e293b;line-height:1.7;}
+.topo{background:#0F2460;padding:16px 5%;display:flex;align-items:center;justify-content:space-between;}
+.topo-logo{display:flex;align-items:center;gap:10px;text-decoration:none;}
+.topo-logo img{height:38px;}
+.topo-logo span{font-family:'Montserrat',sans-serif;font-weight:900;color:#fff;font-size:1.1rem;}
+.topo-voltar{color:#93C5FD;font-size:0.85rem;text-decoration:none;transition:color .2s;}
+.topo-voltar:hover{color:#fff;}
+.container{max-width:680px;margin:48px auto;padding:0 24px 80px;}
+.pagina-titulo{font-family:'Montserrat',sans-serif;font-weight:900;font-size:1.9rem;color:#0F2460;margin-bottom:8px;}
+.pagina-sub{font-size:0.92rem;color:#64748b;margin-bottom:40px;line-height:1.6;}
+.card{background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:28px;margin-bottom:20px;}
+.card h2{font-family:'Montserrat',sans-serif;font-weight:700;font-size:1rem;color:#0F2460;margin-bottom:16px;}
+.form-group{margin-bottom:18px;}
+.form-group label{display:block;font-size:0.82rem;font-weight:600;color:#475569;margin-bottom:6px;}
+.form-group input,.form-group textarea,.form-group select{
+  width:100%;padding:11px 14px;border:1.5px solid #e2e8f0;border-radius:10px;
+  font-family:'Inter',sans-serif;font-size:0.9rem;color:#1e293b;
+  background:#fff;transition:border-color .2s;resize:vertical;
+}
+.form-group input:focus,.form-group textarea:focus,.form-group select:focus{
+  outline:none;border-color:#1A3C8F;
+}
+.form-group textarea{min-height:120px;}
+.btn-enviar{width:100%;background:#D92B2B;color:#fff;border:none;border-radius:12px;
+  padding:14px;font-family:'Montserrat',sans-serif;font-weight:700;font-size:0.95rem;
+  cursor:pointer;transition:background .2s;}
+.btn-enviar:hover{background:#b91c1c;}
+.btn-enviar:disabled{background:#94a3b8;cursor:wait;}
+.aviso{background:#FEF2F2;border:1px solid #FECACA;border-radius:10px;padding:14px 16px;
+  font-size:0.83rem;color:#7f1d1d;margin-bottom:24px;line-height:1.6;}
+.aviso-azul{background:#EFF6FF;border:1px solid #BFDBFE;border-radius:10px;padding:14px 16px;
+  font-size:0.83rem;color:#1e3a8a;margin-top:20px;line-height:1.6;}
+.sucesso{display:none;background:#ECFDF5;border:1px solid #A7F3D0;border-radius:12px;
+  padding:24px;text-align:center;margin-top:20px;}
+.sucesso h3{font-family:'Montserrat',sans-serif;font-weight:700;color:#065f46;margin-bottom:8px;}
+.sucesso p{font-size:0.88rem;color:#047857;}
+.rodape{text-align:center;font-size:0.78rem;color:#94a3b8;margin-top:48px;padding-top:24px;border-top:1px solid #e2e8f0;}
+.rodape a{color:#64748b;text-decoration:none;}
+</style>
+</head>
+<body>
+<div class="topo">
+  <a href="index.html" class="topo-logo">
+    <img src="logo.png" alt="SOS Ajuda Aí">
+    <span>SOS Ajuda Aí</span>
+  </a>
+  <a href="index.html" class="topo-voltar">← Voltar ao site</a>
+</div>
+
+<div class="container">
+  <h1 class="pagina-titulo">🚨 Denunciar Fraude</h1>
+  <p class="pagina-sub">Ajude a manter a plataforma segura. Se você identificou uma solicitação falsa, um voluntário mal-intencionado ou qualquer outro tipo de uso indevido, reporte aqui.</p>
+
+  <div class="aviso">
+    <strong>Por que isso é importante?</strong> O SOS Ajuda Aí é usado em situações de emergência real. Informações falsas podem desviar recursos e voluntários de quem genuinamente precisa. Toda denúncia é analisada com seriedade.
+  </div>
+
+  <div class="card">
+    <h2>📋 Formulário de denúncia</h2>
+
+    <div class="form-group">
+      <label for="tipo-fraude">Tipo de fraude</label>
+      <select id="tipo-fraude">
+        <option value="">Selecione o tipo...</option>
+        <option value="solicitacao_falsa">Solicitação de ajuda falsa ou exagerada</option>
+        <option value="voluntario_mal_intencionado">Voluntário com comportamento suspeito ou abusivo</option>
+        <option value="ponto_apoio_falso">Ponto de apoio inexistente ou fraudulento</option>
+        <option value="coleta_dados">Coleta indevida de dados de vítimas</option>
+        <option value="assedio">Assédio ou comportamento inadequado</option>
+        <option value="outro">Outro tipo de fraude</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="descricao-fraude">Descrição da fraude <span style="color:#D92B2B">*</span></label>
+      <textarea id="descricao-fraude" placeholder="Descreva detalhadamente o que aconteceu. Inclua o nome da pessoa ou do local envolvido, data e qualquer outra informação relevante..."></textarea>
+    </div>
+
+    <div class="form-group">
+      <label for="link-fraude">Link ou identificador (opcional)</label>
+      <input type="text" id="link-fraude" placeholder="Ex: nome da solicitação, cidade, link da página...">
+    </div>
+
+    <div class="form-group">
+      <label for="nome-denunciante">Seu nome (opcional)</label>
+      <input type="text" id="nome-denunciante" placeholder="Pode ser anônimo">
+    </div>
+
+    <div class="form-group">
+      <label for="email-denunciante">Seu e-mail (opcional, para retorno)</label>
+      <input type="email" id="email-denunciante" placeholder="contato@exemplo.com">
+    </div>
+
+    <button class="btn-enviar" id="btn-enviar-denuncia" onclick="enviarDenuncia()">
+      🚨 Enviar denúncia
+    </button>
+
+    <div class="aviso-azul">
+      🔒 Suas informações de contato são opcionais e confidenciais. Nunca divulgamos o identidade de quem faz a denúncia. Todas as denúncias são analisadas pela equipe em até 48 horas.
+    </div>
+  </div>
+
+  <div class="sucesso" id="sucesso-denuncia">
+    <h3>✅ Denúncia recebida!</h3>
+    <p>Obrigado por ajudar a manter a plataforma segura. Nossa equipe vai analisar sua denúncia em até 48 horas. Se você deixou um e-mail de contato, retornaremos assim que possível.</p>
+  </div>
+
+  <div class="rodape">
+    <p>© 2026 SOS Ajuda Aí · <a href="privacidade.html">Privacidade</a> · <a href="termos.html">Termos</a> · <a href="index.html">Voltar ao site</a></p>
+  </div>
+</div>
+
+<script>
+function enviarDenuncia() {
+  const tipo = document.getElementById('tipo-fraude').value;
+  const desc = document.getElementById('descricao-fraude').value.trim();
+  const link = document.getElementById('link-fraude').value.trim();
+  const nome = document.getElementById('nome-denunciante').value.trim();
+  const email = document.getElementById('email-denunciante').value.trim();
+
+  if (!desc) {
+    alert('Por favor, descreva a fraude antes de enviar.');
+    return;
+  }
+
+  const btn = document.getElementById('btn-enviar-denuncia');
+  btn.disabled = true;
+  btn.textContent = '⏳ Enviando...';
+
+  // Monta o corpo do e-mail com todas as informações
+  const assunto = encodeURIComponent(`[DENÚNCIA] ${tipo || 'Fraude'} — SOS Ajuda Aí`);
+  const corpo = encodeURIComponent(
+    `TIPO DE FRAUDE: ${tipo || 'Não especificado'}\n\n` +
+    `DESCRIÇÃO:\n${desc}\n\n` +
+    `LINK/IDENTIFICADOR: ${link || 'Não informado'}\n\n` +
+    `DENUNCIANTE: ${nome || 'Anônimo'}\n` +
+    `E-MAIL PARA RETORNO: ${email || 'Não informado'}\n\n` +
+    `---\nEnviado via formulário de denúncia do SOS Ajuda Aí`
+  );
+
+  // Abre o cliente de e-mail com os dados preenchidos
+  window.location.href = `mailto:contato@sosajudaai.com.br?subject=${assunto}&body=${corpo}`;
+
+  // Mostra mensagem de sucesso após pequeno delay
+  setTimeout(() => {
+    btn.style.display = 'none';
+    document.getElementById('sucesso-denuncia').style.display = 'block';
+  }, 1500);
+}
+</script>
+</body>
+</html>

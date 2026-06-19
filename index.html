@@ -882,15 +882,52 @@ textarea.form-control { resize: vertical; min-height: 88px; }
       <p>Conectando quem precisa com quem quer ajudar, desde o Rio Grande do Sul para todo o Brasil.</p>
     </div>
     <div class="footer-col"><h4>Plataforma</h4><a href="#">Como funciona</a><a href="#">Ver solicitações</a><a href="#">Ranking de voluntários</a><a href="#">Painel para prefeituras</a></div>
-    <div class="footer-col"><h4>Segurança</h4><a href="#">Verificação de identidade</a><a href="#">Política de privacidade</a><a href="#">Termos de uso</a><a href="#">Denunciar fraude</a></div>
+    <div class="footer-col"><h4>Segurança</h4><a href="#" onclick="abrirModal('modal-verificacao');return false;">Verificação de identidade</a><a href="privacidade.html">Política de privacidade</a><a href="termos.html">Termos de uso</a><a href="denunciar.html">Denunciar fraude</a></div>
     <div class="footer-col"><h4>Contato</h4><a href="#">contato@sosajudaai.com.br</a><a href="#">WhatsApp</a><a href="#">Instagram</a><a href="#">Seja parceiro</a></div>
   </div>
   <div class="footer-bottom">
     <p>© 2025 SOS Ajuda Aí · Fundado por Arthur Bernhard · Sinimbu, RS · Feito com ❤️</p>
-    <p><a href="#">Privacidade</a> · <a href="#">Termos</a></p>
+    <p><a href="privacidade.html">Privacidade</a> · <a href="termos.html">Termos</a></p>
   </div>
 </footer>
 
+
+<!-- MODAL: VERIFICAÇÃO DE IDENTIDADE -->
+<div class="modal-overlay" id="modal-verificacao">
+  <div class="modal" style="max-width:420px;">
+    <button class="modal-close" onclick="fecharModal('modal-verificacao')">✕</button>
+    <h2>🔒 Verificação de identidade</h2>
+    <p class="modal-sub">Para garantir a segurança de todos, podemos solicitar verificação de identidade em casos específicos.</p>
+
+    <div style="background:var(--cinza-f);border-radius:12px;padding:16px;margin-bottom:16px;">
+      <div style="font-weight:700;font-size:0.88rem;color:var(--azul);margin-bottom:10px;">Quando é solicitada?</div>
+      <div style="font-size:0.82rem;color:#475569;line-height:1.7;">
+        • Ao cadastrar solicitações de ajuda em situações de emergência<br>
+        • Ao confirmar presença como voluntário em múltiplas ocorrências<br>
+        • Quando o sistema detectar atividade suspeita na conta<br>
+        • Para organizações que desejam o selo de parceiro verificado
+      </div>
+    </div>
+
+    <div style="background:var(--cinza-f);border-radius:12px;padding:16px;margin-bottom:16px;">
+      <div style="font-weight:700;font-size:0.88rem;color:var(--azul);margin-bottom:10px;">Como funciona?</div>
+      <div style="font-size:0.82rem;color:#475569;line-height:1.7;">
+        A verificação é feita via sua conta Google — os dados do perfil Google (nome e foto) são usados como identificação básica. Para verificação avançada (organizações e prefeituras), entramos em contato pelo e-mail cadastrado.
+      </div>
+    </div>
+
+    <div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:12px;padding:14px;margin-bottom:20px;">
+      <div style="font-size:0.8rem;color:#1e3a8a;line-height:1.6;">
+        🔐 Seus dados são tratados conforme nossa <a href="privacidade.html" style="color:#1A3C8F;font-weight:700;">Política de Privacidade</a>. Nunca compartilhamos informações pessoais com terceiros sem autorização.
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="fecharModal('modal-verificacao')">Fechar</button>
+      <a href="mailto:contato@sosajudaai.com.br?subject=Verificação de identidade" class="btn-submit" style="display:flex;align-items:center;justify-content:center;text-decoration:none;">✉️ Falar com a equipe</a>
+    </div>
+  </div>
+</div>
 
 <!-- MODAL: LOGIN -->
 <div class="modal-overlay" id="modal-auth">
