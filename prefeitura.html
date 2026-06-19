@@ -43,6 +43,14 @@ body{font-family:'Inter',sans-serif;background:#0a0f1a;color:#e2e8f0;min-height:
 .dash-header-title{font-family:'Montserrat',sans-serif;font-weight:900;font-size:1rem;color:#fff;}
 .dash-header-cidade{font-size:0.75rem;color:#2255C4;font-weight:700;letter-spacing:.05em;text-transform:uppercase;}
 .dash-header-right{display:flex;align-items:center;gap:12px;}
+.aviso-validade{
+  width:100%;text-align:center;padding:10px 16px;
+  font-family:'Montserrat',sans-serif;font-weight:700;font-size:0.95rem;
+  background:#0c1a3d;color:#93C5FD;border-bottom:1px solid #1e3a8a;
+}
+.aviso-validade.aviso-critico{
+  background:#450a0a;color:#FCA5A5;border-bottom:1px solid #7f1d1d;
+}
 .dash-periodo{
   background:#161b27;border:1px solid #1e2535;border-radius:8px;
   padding:7px 12px;color:#cbd5e1;font-size:0.82rem;outline:none;cursor:pointer;
@@ -177,6 +185,9 @@ tbody tr:last-child td{border-bottom:none;}
       <button class="btn-logout" onclick="sair()">Sair</button>
     </div>
   </header>
+
+  <!-- AVISO DE VALIDADE DO ACESSO -->
+  <div class="aviso-validade" id="avisoValidade" style="display:none;"></div>
 
   <!-- MAIN -->
   <main class="dash-main">
@@ -368,13 +379,15 @@ async function fazerLogin() {
       return;
     }
 
-    _cidadeAtual = { cidade: pref.cidade, estado: pref.estado, nome: `${pref.cidade} — ${pref.estado}` };
+    _cidadeAtual = { cidade: pref.cidade, estado: pref.estado, nome: `${pref.cidade} — ${pref.estado}`, data_fim: pref.data_fim };
     localStorage.setItem('pref_session', JSON.stringify(_cidadeAtual));
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('dashWrap').classList.add('visible');
     document.getElementById('headerCidade').textContent = _cidadeAtual.nome;
+    exibirAvisoValidade();
     carregarDados();
     setTimeout(initMapaPrefeitura, 500);
+    iniciarVerificacaoPeriodica();
 
   } catch(e) {
     erro.textContent = '⚠️ Erro de conexão. Tente novamente.';
@@ -387,22 +400,74 @@ async function fazerLogin() {
 function sair() {
   localStorage.removeItem('pref_session');
   _cidadeAtual = null;
+  if (_intervaloValidacao) { clearInterval(_intervaloValidacao); _intervaloValidacao = null; }
   document.getElementById('dashWrap').classList.remove('visible');
   document.getElementById('loginScreen').style.display = 'flex';
   document.getElementById('loginSenha').value = '';
+  const aviso = document.getElementById('avisoValidade');
+  if (aviso) aviso.style.display = 'none';
 }
 
-// Verifica sessão salva
+// Verifica sessão salva — sempre revalida contra o banco, não confia só no localStorage
 const savedPref = localStorage.getItem('pref_session');
 if (savedPref) {
-  try {
-    _cidadeAtual = JSON.parse(savedPref);
-    document.getElementById('loginScreen').style.display = 'none';
-    document.getElementById('dashWrap').classList.add('visible');
-    document.getElementById('headerCidade').textContent = _cidadeAtual.nome;
-    carregarDados();
-    setTimeout(initMapaPrefeitura, 500);
-  } catch(e) { localStorage.removeItem('pref_session'); }
+  (async () => {
+    try {
+      const sessao = JSON.parse(savedPref);
+      const dados = await sbFetch(`prefeituras?cidade=eq.${encodeURIComponent(sessao.cidade)}&select=cidade,estado,data_fim,ativo`);
+      const pref = dados && dados[0];
+
+      if (!pref || pref.ativo === false || (pref.data_fim && new Date(pref.data_fim) < new Date())) {
+        localStorage.removeItem('pref_session');
+        const erroEl = document.getElementById('loginError');
+        if (erroEl) { erroEl.textContent = '⚠️ Seu acesso venceu ou foi desativado. Entre em contato com o SOS Ajuda Aí.'; erroEl.style.display = 'block'; }
+        return;
+      }
+
+      _cidadeAtual = { cidade: pref.cidade, estado: pref.estado, nome: `${pref.cidade} — ${pref.estado}`, data_fim: pref.data_fim };
+      localStorage.setItem('pref_session', JSON.stringify(_cidadeAtual));
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('dashWrap').classList.add('visible');
+      document.getElementById('headerCidade').textContent = _cidadeAtual.nome;
+      exibirAvisoValidade();
+      carregarDados();
+      setTimeout(initMapaPrefeitura, 500);
+      iniciarVerificacaoPeriodica();
+    } catch(e) { localStorage.removeItem('pref_session'); }
+  })();
+}
+
+let _intervaloValidacao = null;
+
+function iniciarVerificacaoPeriodica() {
+  if (_intervaloValidacao) clearInterval(_intervaloValidacao);
+  // Revalida a validade do acesso a cada 5 minutos, mesmo com a sessão já aberta
+  _intervaloValidacao = setInterval(async () => {
+    if (!_cidadeAtual) return;
+    try {
+      const dados = await sbFetch(`prefeituras?cidade=eq.${encodeURIComponent(_cidadeAtual.cidade)}&select=data_fim,ativo`);
+      const pref = dados && dados[0];
+      if (!pref || pref.ativo === false || (pref.data_fim && new Date(pref.data_fim) < new Date())) {
+        localStorage.removeItem('pref_session');
+        alert('⚠️ Seu acesso venceu durante esta sessão. Você será desconectado.');
+        window.location.reload();
+      }
+    } catch(e) { /* falha de rede não desconecta — tenta de novo no próximo ciclo */ }
+  }, 5 * 60 * 1000);
+}
+
+function exibirAvisoValidade() {
+  const aviso = document.getElementById('avisoValidade');
+  if (!aviso || !_cidadeAtual?.data_fim) return;
+
+  const dataFim = new Date(_cidadeAtual.data_fim);
+  const hoje = new Date();
+  const diasRestantes = Math.ceil((dataFim - hoje) / 86400000);
+  const dataFormatada = dataFim.toLocaleDateString('pt-BR');
+
+  aviso.textContent = `📅 Acesso válido até ${dataFormatada}${diasRestantes <= 7 ? ` (${diasRestantes} dia${diasRestantes !== 1 ? 's' : ''} restante${diasRestantes !== 1 ? 's' : ''})` : ''}`;
+  aviso.classList.toggle('aviso-critico', diasRestantes <= 7);
+  aviso.style.display = 'block';
 }
 
 // ── API ──
