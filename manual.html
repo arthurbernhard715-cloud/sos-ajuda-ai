@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Manual de Funcionalidades — SOS Ajuda Aí</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@700;900&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Inter',sans-serif;background:#f8fafc;color:#1e293b;line-height:1.7;}
+.topo{background:#0F2460;padding:16px 5%;display:flex;align-items:center;justify-content:space-between;}
+.topo-logo{display:flex;align-items:center;gap:10px;text-decoration:none;}
+.topo-logo img{height:38px;}
+.topo-logo span{font-family:'Montserrat',sans-serif;font-weight:900;color:#fff;font-size:1.1rem;}
+.topo-voltar{color:#93C5FD;font-size:0.85rem;text-decoration:none;transition:color .2s;}
+.topo-voltar:hover{color:#fff;}
+.layout{max-width:1040px;margin:0 auto;padding:48px 24px 80px;display:flex;gap:48px;}
+.sumario{width:230px;flex-shrink:0;position:sticky;top:24px;align-self:flex-start;}
+.sumario-titulo{font-family:'Montserrat',sans-serif;font-weight:700;font-size:0.78rem;
+  color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px;}
+.sumario a{display:block;font-size:0.85rem;color:#475569;text-decoration:none;padding:7px 0;
+  border-left:2px solid transparent;padding-left:12px;transition:all .15s;}
+.sumario a:hover{color:#1A3C8F;border-left-color:#93C5FD;}
+.conteudo{flex:1;max-width:680px;}
+.pagina-titulo{font-family:'Montserrat',sans-serif;font-weight:900;font-size:1.9rem;color:#0F2460;margin-bottom:8px;}
+.pagina-sub{font-size:0.92rem;color:#64748b;margin-bottom:40px;}
+.secao{margin-bottom:48px;padding-top:8px;}
+.secao-titulo{display:flex;align-items:center;gap:10px;font-family:'Montserrat',sans-serif;
+  font-weight:700;font-size:1.2rem;color:#0F2460;margin-bottom:16px;}
+.secao-icone{font-size:1.5rem;}
+.passo{display:flex;gap:14px;margin-bottom:16px;}
+.passo-num{flex-shrink:0;width:28px;height:28px;border-radius:50%;background:#1A3C8F;color:#fff;
+  display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.82rem;}
+.passo-texto{font-size:0.9rem;color:#334155;padding-top:3px;}
+.passo-texto strong{color:#0F2460;}
+.dica{background:#EFF6FF;border-left:4px solid #1A3C8F;border-radius:0 8px 8px 0;
+  padding:12px 16px;margin:16px 0;font-size:0.85rem;color:#1e3a8a;}
+.aviso{background:#FFFBEB;border-left:4px solid #D97706;border-radius:0 8px 8px 0;
+  padding:12px 16px;margin:16px 0;font-size:0.85rem;color:#78350f;}
+.tabela-tipos{width:100%;border-collapse:collapse;margin:16px 0;font-size:0.85rem;}
+.tabela-tipos th{text-align:left;padding:8px 12px;background:#f1f5f9;color:#475569;font-weight:600;}
+.tabela-tipos td{padding:8px 12px;border-bottom:1px solid #e2e8f0;color:#334155;}
+.divisor{border-top:1px solid #e2e8f0;margin:48px 0;}
+.rodape{text-align:center;font-size:0.78rem;color:#94a3b8;margin-top:48px;padding-top:24px;border-top:1px solid #e2e8f0;}
+.rodape a{color:#64748b;text-decoration:none;}
+@media (max-width:768px){.layout{flex-direction:column;}.sumario{display:none;}}
+</style>
+</head>
+<body>
+<div class="topo">
+  <a href="index.html" class="topo-logo">
+    <img src="logo.png" alt="SOS Ajuda Aí">
+    <span>SOS Ajuda Aí</span>
+  </a>
+  <a href="index.html" class="topo-voltar">← Voltar ao site</a>
+</div>
+
+<div class="layout">
+  <nav class="sumario">
+    <div class="sumario-titulo">Neste manual</div>
+    <a href="#pedir-ajuda">🏠 Pedir ajuda</a>
+    <a href="#ser-voluntario">🤝 Ser voluntário</a>
+    <a href="#mapa">🗺️ Usando o mapa</a>
+    <a href="#pontos-apoio">📍 Pontos de apoio</a>
+    <a href="#doacoes">💛 Doações</a>
+    <a href="#conta">🔐 Sua conta</a>
+    <a href="#prefeituras">🏛️ Painel de prefeituras</a>
+  </nav>
+
+  <div class="conteudo">
+    <h1 class="pagina-titulo">📖 Manual de Funcionalidades</h1>
+    <p class="pagina-sub">Guia completo de como usar cada parte do SOS Ajuda Aí. Para dúvidas rápidas, veja também o <a href="faq.html" style="color:#1A3C8F;font-weight:600;">FAQ</a>.</p>
+
+    <div class="secao" id="pedir-ajuda">
+      <div class="secao-titulo"><span class="secao-icone">🏠</span> Pedir ajuda</div>
+      <p style="font-size:0.9rem;color:#475569;margin-bottom:16px;">Se você foi atingido por uma enchente ou outro desastre e precisa de ajuda, siga estes passos:</p>
+
+      <div class="passo"><div class="passo-num">1</div><div class="passo-texto">Clique no botão <strong>"🏠 Fui atingido — preciso de ajuda"</strong> no topo da página inicial.</div></div>
+      <div class="passo"><div class="passo-num">2</div><div class="passo-texto">Faça login com sua conta <strong>Google</strong>. Isso é necessário para identificar quem está pedindo ajuda e evitar fraudes.</div></div>
+      <div class="passo"><div class="passo-num">3</div><div class="passo-texto">Preencha seu <strong>nome completo</strong> e a <strong>localização</strong> — você pode usar o botão de GPS para preencher automaticamente, ou digitar o endereço manualmente.</div></div>
+      <div class="passo"><div class="passo-num">4</div><div class="passo-texto">Descreva sua situação e selecione os <strong>tipos de ajuda</strong> que você precisa (limpeza, retirada de móveis, mantimentos, medicamentos, etc.).</div></div>
+      <div class="passo"><div class="passo-num">5</div><div class="passo-texto">Se possível, adicione uma <strong>foto</strong> da situação — isso ajuda voluntários a entenderem melhor o que é necessário.</div></div>
+      <div class="passo"><div class="passo-num">6</div><div class="passo-texto">Clique em <strong>"Publicar solicitação"</strong>. Sua solicitação aparece imediatamente no mapa e na lista "Quem precisa de ajuda".</div></div>
+
+      <div class="dica">💡 Depois de publicar, você recebe um QR Code exclusivo da sua solicitação. Mostre para vizinhos ou compartilhe no WhatsApp para alcançar mais voluntários.</div>
+      <div class="aviso">⚠️ Sua solicitação fica ativa por 24 horas. Se ainda precisar de ajuda depois desse período, cadastre novamente.</div>
+    </div>
+
+    <div class="divisor"></div>
+
+    <div class="secao" id="ser-voluntario">
+      <div class="secao-titulo"><span class="secao-icone">🤝</span> Ser voluntário</div>
+      <p style="font-size:0.9rem;color:#475569;margin-bottom:16px;">Quer ajudar quem foi atingido? Veja como se cadastrar e confirmar presença:</p>
+
+      <div class="passo"><div class="passo-num">1</div><div class="passo-texto">Clique em <strong>"🤝 Quero ser voluntário"</strong> no topo da página.</div></div>
+      <div class="passo"><div class="passo-num">2</div><div class="passo-texto">Faça login com sua conta Google e informe sua <strong>cidade</strong> e os <strong>tipos de ajuda</strong> que você pode oferecer.</div></div>
+      <div class="passo"><div class="passo-num">3</div><div class="passo-texto">Navegue pela lista de solicitações ou pelo mapa, e clique em <strong>"Ver detalhes"</strong> em quem você quer ajudar.</div></div>
+      <div class="passo"><div class="passo-num">4</div><div class="passo-texto">Clique em <strong>"Quero ajudar"</strong> para confirmar sua presença. A pessoa vai ver quantos voluntários já confirmaram.</div></div>
+      <div class="passo"><div class="passo-num">5</div><div class="passo-texto">Compareça no endereço combinado. Depois, você pode receber uma avaliação de quem você ajudou.</div></div>
+
+      <div class="dica">💡 Quanto mais confirmações de presença você acumula, mais sobe no <strong>ranking de voluntários</strong> exibido na página principal.</div>
+    </div>
+
+    <div class="divisor"></div>
+
+    <div class="secao" id="mapa">
+      <div class="secao-titulo"><span class="secao-icone">🗺️</span> Usando o mapa</div>
+      <p style="font-size:0.9rem;color:#475569;margin-bottom:16px;">O mapa mostra todas as solicitações de ajuda ativas e pontos de apoio cadastrados na região.</p>
+
+      <table class="tabela-tipos">
+        <thead><tr><th>Pin no mapa</th><th>O que significa</th></tr></thead>
+        <tbody>
+          <tr><td>🚨 Gota vermelha</td><td>Solicitação urgente</td></tr>
+          <tr><td>🏠 Gota azul</td><td>Solicitação de ajuda comum</td></tr>
+          <tr><td>🏠 Selo verde-âmbar grande</td><td>Abrigo cadastrado</td></tr>
+          <tr><td>📦 Selo laranja grande</td><td>Ponto de doações/mantimentos</td></tr>
+        </tbody>
+      </table>
+
+      <p style="font-size:0.9rem;color:#475569;">Use a barra de busca para encontrar uma cidade específica e clique em <strong>"Ver no mapa"</strong>. Use os filtros para mostrar apenas solicitações de um tipo específico, ou apenas abrigos/doações.</p>
+      <div class="dica">💡 Clique em qualquer pin para ver um resumo rápido, e em "Ver detalhes" para abrir as informações completas.</div>
+    </div>
+
+    <div class="divisor"></div>
+
+    <div class="secao" id="pontos-apoio">
+      <div class="secao-titulo"><span class="secao-icone">📍</span> Pontos de apoio</div>
+      <p style="font-size:0.9rem;color:#475569;margin-bottom:16px;">Pontos de apoio são locais de abrigo ou de doações/mantimentos. Qualquer pessoa pode cadastrar um.</p>
+
+      <div class="passo"><div class="passo-num">1</div><div class="passo-texto">Na seção do mapa, clique em <strong>"➕ Cadastrar ponto de apoio"</strong>.</div></div>
+      <div class="passo"><div class="passo-num">2</div><div class="passo-texto">Escolha o tipo: <strong>🏠 Abrigo</strong> ou <strong>📦❤️ Doações/Mantimentos</strong>.</div></div>
+      <div class="passo"><div class="passo-num">3</div><div class="passo-texto">Preencha o nome do local e o endereço. Se não souber o endereço exato, use <strong>"🗺️ Marcar no mapa"</strong> e clique no local visualmente.</div></div>
+      <div class="passo"><div class="passo-num">4</div><div class="passo-texto">Para abrigos, informe a capacidade (opcional). Para doações/mantimentos, informe horário de funcionamento e o que o local aceita receber.</div></div>
+      <div class="passo"><div class="passo-num">5</div><div class="passo-texto">Adicione uma foto do local, se possível, e clique em <strong>"Cadastrar ponto"</strong>.</div></div>
+
+      <div class="aviso">⚠️ Todo ponto cadastrado começa como <strong>"não verificado"</strong>. Um administrador ou a prefeitura da cidade confirma a existência do local antes de aplicar o selo de verificado.</div>
+    </div>
+
+    <div class="divisor"></div>
+
+    <div class="secao" id="doacoes">
+      <div class="secao-titulo"><span class="secao-icone">💛</span> Doações</div>
+      <p style="font-size:0.9rem;color:#475569;margin-bottom:16px;">Você pode apoiar financeiramente o projeto via Pix.</p>
+
+      <div class="passo"><div class="passo-num">1</div><div class="passo-texto">Clique em <strong>"💛 Apoiar financeiramente"</strong> no topo, ou role até a seção "Apoie o projeto".</div></div>
+      <div class="passo"><div class="passo-num">2</div><div class="passo-texto">Escolha um valor sugerido ou um valor livre, e clique em <strong>"Contribuir"</strong>.</div></div>
+      <div class="passo"><div class="passo-num">3</div><div class="passo-texto">Escaneie o <strong>QR Code Pix</strong> com o app do seu banco, ou copie a chave exibida.</div></div>
+
+      <div class="dica">💡 As doações ajudam a manter a plataforma no ar — custos de hospedagem, banco de dados e armazenamento de fotos.</div>
+    </div>
+
+    <div class="divisor"></div>
+
+    <div class="secao" id="conta">
+      <div class="secao-titulo"><span class="secao-icone">🔐</span> Sua conta</div>
+      <p style="font-size:0.9rem;color:#475569;margin-bottom:16px;">O SOS Ajuda Aí usa login com Google para identificar usuários, sem precisar criar uma senha nova.</p>
+      <p style="font-size:0.9rem;color:#475569;margin-bottom:12px;">Usamos apenas seu <strong>nome</strong>, <strong>e-mail</strong> e <strong>foto de perfil</strong> do Google. Nunca temos acesso à sua senha do Google.</p>
+      <p style="font-size:0.9rem;color:#475569;">Saiba mais na <a href="privacidade.html" style="color:#1A3C8F;font-weight:600;">Política de Privacidade</a> e nos <a href="termos.html" style="color:#1A3C8F;font-weight:600;">Termos de Uso</a>.</p>
+    </div>
+
+    <div class="divisor"></div>
+
+    <div class="secao" id="prefeituras">
+      <div class="secao-titulo"><span class="secao-icone">🏛️</span> Painel de prefeituras</div>
+      <p style="font-size:0.9rem;color:#475569;margin-bottom:16px;">Prefeituras parceiras têm acesso a um painel próprio com estatísticas detalhadas das solicitações da cidade.</p>
+      <p style="font-size:0.9rem;color:#475569;margin-bottom:12px;">O painel mostra: solicitações ativas, voluntários confirmados, mapa de calor das regiões mais afetadas, histórico de atendimentos, e a lista de pontos de apoio cadastrados na cidade para verificação.</p>
+      <p style="font-size:0.9rem;color:#475569;">Esse é um serviço pago, oferecido para apoiar a gestão pública durante emergências. Para mais informações, entre em contato pelo e-mail <strong>contato@sosajudaai.com.br</strong>.</p>
+    </div>
+
+    <div class="rodape">
+      <p>© 2026 SOS Ajuda Aí · <a href="faq.html">FAQ</a> · <a href="privacidade.html">Privacidade</a> · <a href="termos.html">Termos</a> · <a href="index.html">Voltar ao site</a></p>
+    </div>
+  </div>
+</div>
+</body>
+</html>

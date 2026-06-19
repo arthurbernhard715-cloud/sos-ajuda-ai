@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Perguntas Frequentes — SOS Ajuda Aí</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@700;900&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Inter',sans-serif;background:#f8fafc;color:#1e293b;line-height:1.7;}
+.topo{background:#0F2460;padding:16px 5%;display:flex;align-items:center;justify-content:space-between;}
+.topo-logo{display:flex;align-items:center;gap:10px;text-decoration:none;}
+.topo-logo img{height:38px;}
+.topo-logo span{font-family:'Montserrat',sans-serif;font-weight:900;color:#fff;font-size:1.1rem;}
+.topo-voltar{color:#93C5FD;font-size:0.85rem;text-decoration:none;transition:color .2s;}
+.topo-voltar:hover{color:#fff;}
+.container{max-width:760px;margin:48px auto;padding:0 24px 80px;}
+.pagina-titulo{font-family:'Montserrat',sans-serif;font-weight:900;font-size:1.9rem;color:#0F2460;margin-bottom:8px;}
+.pagina-sub{font-size:0.92rem;color:#64748b;margin-bottom:32px;}
+.busca-wrap{margin-bottom:36px;}
+.busca-input{width:100%;padding:14px 18px;border:1.5px solid #e2e8f0;border-radius:12px;
+  font-family:'Inter',sans-serif;font-size:0.92rem;background:#fff;}
+.busca-input:focus{outline:none;border-color:#1A3C8F;}
+.categoria-titulo{font-family:'Montserrat',sans-serif;font-weight:700;font-size:0.78rem;
+  color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;margin:32px 0 14px;}
+.categoria-titulo:first-of-type{margin-top:0;}
+.faq-item{background:#fff;border:1px solid #e2e8f0;border-radius:12px;margin-bottom:10px;overflow:hidden;}
+.faq-pergunta{padding:16px 18px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;
+  gap:12px;font-weight:600;font-size:0.9rem;color:#0F2460;}
+.faq-pergunta:hover{background:#f8fafc;}
+.faq-seta{font-size:1.1rem;color:#94a3b8;transition:transform .2s;flex-shrink:0;}
+.faq-item.aberto .faq-seta{transform:rotate(180deg);}
+.faq-resposta{display:none;padding:0 18px 18px;font-size:0.87rem;color:#475569;line-height:1.7;}
+.faq-item.aberto .faq-resposta{display:block;}
+.faq-resposta a{color:#1A3C8F;font-weight:600;text-decoration:none;}
+.sem-resultado{text-align:center;color:#94a3b8;font-size:0.88rem;padding:32px 0;display:none;}
+.rodape{text-align:center;font-size:0.78rem;color:#94a3b8;margin-top:48px;padding-top:24px;border-top:1px solid #e2e8f0;}
+.rodape a{color:#64748b;text-decoration:none;}
+</style>
+</head>
+<body>
+<div class="topo">
+  <a href="index.html" class="topo-logo">
+    <img src="logo.png" alt="SOS Ajuda Aí">
+    <span>SOS Ajuda Aí</span>
+  </a>
+  <a href="index.html" class="topo-voltar">← Voltar ao site</a>
+</div>
+
+<div class="container">
+  <h1 class="pagina-titulo">❓ Perguntas Frequentes</h1>
+  <p class="pagina-sub">Tire suas dúvidas sobre como o SOS Ajuda Aí funciona. Não encontrou o que precisa? Veja também o <a href="manual.html" style="color:#1A3C8F;font-weight:600;">manual completo</a> ou fale com a gente pelo <a href="mailto:contato@sosajudaai.com.br" style="color:#1A3C8F;font-weight:600;">e-mail de contato</a>.</p>
+
+  <div class="busca-wrap">
+    <input type="text" class="busca-input" id="buscaFaq" placeholder="🔍 Digite sua dúvida... ex: 'pix', 'voluntário', 'segurança'" oninput="filtrarFaq(this.value)">
+  </div>
+
+  <div id="listaFaq">
+
+    <div class="categoria-titulo">Para quem precisa de ajuda</div>
+
+    <div class="faq-item">
+      <div class="faq-pergunta" onclick="toggleFaq(this)">Como peço ajuda no SOS Ajuda Aí? <span class="faq-seta">▾</span></div>
+      <div class="faq-resposta">Clique no botão "🏠 Fui atingido — preciso de ajuda" no topo do site. Você precisa fazer login com sua conta Google, depois preencher seu nome, endereço (ou usar o GPS), descrição da situação e os tipos de ajuda que precisa. Sua solicitação aparece imediatamente no mapa para os voluntários.</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-pergunta" onclick="toggleFaq(this)">É gratuito pedir ajuda? <span class="faq-seta">▾</span></div>
+      <div class="faq-resposta">Sim, totalmente gratuito. O SOS Ajuda Aí nunca cobra de quem precisa de ajuda.</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-pergunta" onclick="toggleFaq(this)">Por quanto tempo minha solicitação fica visível? <span class="faq-seta">▾</span></div>
+      <div class="faq-resposta">Solicitações ficam ativas por 24 horas, ou até você marcá-la como concluída. Se precisar de mais tempo, você pode cadastrar novamente.</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-pergunta" onclick="toggleFaq(this)">Posso compartilhar minha solicitação com alguém? <span class="faq-seta">▾</span></div>
+      <div class="faq-resposta">Sim! Depois de cadastrar, você recebe um QR Code exclusivo que pode mostrar para vizinhos ou enviar pelo WhatsApp. Quem escanear é direcionado direto para o seu pedido no mapa.</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-pergunta" onclick="toggleFaq(this)">Minhas informações ficam públicas? <span class="faq-seta">▾</span></div>
+      <div class="faq-resposta">Seu nome, cidade e a situação descrita ficam visíveis para qualquer pessoa, pois isso é necessário para que voluntários te encontrem. Seu e-mail e a localização exata (coordenadas) ficam privados, visíveis só para a equipe administrativa. Veja mais na <a href="privacidade.html">Política de Privacidade</a>.</div>
+    </div>
+
+    <div class="categoria-titulo">Para voluntários</div>
+
+    <div class="faq-item">
+      <div class="faq-pergunta" onclick="toggleFaq(this)">Como me cadastro como voluntário? <span class="faq-seta">▾</span></div>
+      <div class="faq-resposta">Clique em "🤝 Quero ser voluntário" no topo do site, faça login com Google e informe sua cidade e os tipos de ajuda que pode oferecer (limpeza, transporte, mantimentos, etc.).</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-pergunta" onclick="toggleFaq(this)">Como confirmo presença em uma solicitação? <span class="faq-seta">▾</span></div>
+      <div class="faq-resposta">No mapa ou na lista de solicitações, clique em "Ver detalhes" da pessoa que você quer ajudar, e depois em "Quero ajudar". Isso conta como uma confirmação de presença e ajuda a pessoa a saber quantos voluntários já estão vindo.</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-pergunta" onclick="toggleFaq(this)">Existe ranking de voluntários? <span class="faq-seta">▾</span></div>
+      <div class="faq-resposta">Sim! Quanto mais confirmações de presença você acumula, mais sobe no ranking de voluntários exibido no site — é uma forma de reconhecer quem mais ajuda a comunidade.</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-pergunta" onclick="toggleFaq(this)">Sou obrigado a comparecer depois de confirmar presença? <span class="faq-seta">▾</span></div>
+      <div class="faq-resposta">Não é uma obrigação legal, mas é um compromisso moral importante — a pessoa que pediu ajuda está contando com você. Se não puder comparecer, o ideal é avisar com antecedência. Veja mais nos <a href="termos.html">Termos de Uso</a>.</div>
+    </div>
+
+    <div class="categoria-titulo">Pontos de apoio (abrigos e doações)</div>
+
+    <div class="faq-item">
+      <div class="faq-pergunta" onclick="toggleFaq(this)">Como cadastro um abrigo ou ponto de doações? <span class="faq-seta">▾</span></div>
+      <div class="faq-resposta">Na seção do mapa, clique em "➕ Cadastrar ponto de apoio". Você pode escolher entre Abrigo ou Doações/Mantimentos, preencher o endereço (digitando, usando GPS ou marcando direto no mapa) e, opcionalmente, adicionar uma foto do local.</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-pergunta" onclick="toggleFaq(this)">Por que meu ponto aparece como "não verificado"? <span class="faq-seta">▾</span></div>
+      <div class="faq-resposta">Todo ponto cadastrado começa como não verificado, para evitar informações falsas no mapa. Um administrador ou a prefeitura da sua cidade confirma a existência do local e aplica o selo de verificado. Isso pode levar algumas horas.</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-pergunta" onclick="toggleFaq(this)">Não sei o endereço exato, o que faço? <span class="faq-seta">▾</span></div>
+      <div class="faq-resposta">Sem problema! No formulário de cadastro, use o botão "🗺️ Marcar no mapa" — um mini-mapa abre e você só precisa clicar no local exato. O sistema tenta identificar o endereço automaticamente.</div>
+    </div>
+
+    <div class="categoria-titulo">Doações e apoio financeiro</div>
+
+    <div class="faq-item">
+      <div class="faq-pergunta" onclick="toggleFaq(this)">Como faço uma doação em dinheiro? <span class="faq-seta">▾</span></div>
+      <div class="faq-resposta">Clique em "💛 Apoiar financeiramente" no topo do site, ou role até a seção "Apoie o projeto". Escolha um valor (ou valor livre) e clique em Contribuir — vai aparecer um QR Code Pix para você escanear com o app do seu banco.</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-pergunta" onclick="toggleFaq(this)">Para onde vai o dinheiro das doações? <span class="faq-seta">▾</span></div>
+      <div class="faq-resposta">As doações ajudam a manter a plataforma no ar — custos de hospedagem, banco de dados e armazenamento de imagens. O SOS Ajuda Aí é mantido por Arthur Bernhard, com sede em Sinimbu, RS.</div>
+    </div>
+
+    <div class="categoria-titulo">Segurança e privacidade</div>
+
+    <div class="faq-item">
+      <div class="faq-pergunta" onclick="toggleFaq(this)">O site é seguro? <span class="faq-seta">▾</span></div>
+      <div class="faq-resposta">Sim. Todas as páginas usam conexão criptografada (HTTPS), e dados sensíveis ficam protegidos por regras de acesso no banco de dados. Veja mais detalhes na <a href="privacidade.html">Política de Privacidade</a>.</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-pergunta" onclick="toggleFaq(this)">Como denuncio uma solicitação ou pessoa suspeita? <span class="faq-seta">▾</span></div>
+      <div class="faq-resposta">Acesse a página <a href="denunciar.html">Denunciar Fraude</a> e preencha o formulário. Você pode denunciar de forma anônima, sem precisar se identificar.</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-pergunta" onclick="toggleFaq(this)">Por que preciso fazer login com Google? <span class="faq-seta">▾</span></div>
+      <div class="faq-resposta">O login identifica quem está cadastrando solicitações ou confirmando presença, ajudando a evitar fraudes e contas falsas. Usamos apenas seu nome, e-mail e foto de perfil — nunca sua senha do Google.</div>
+    </div>
+
+  </div>
+
+  <div class="sem-resultado" id="semResultado">Nenhuma pergunta encontrada. Tente outra palavra ou <a href="mailto:contato@sosajudaai.com.br" style="color:#1A3C8F;">fale com a gente</a>.</div>
+
+  <div class="rodape">
+    <p>© 2026 SOS Ajuda Aí · <a href="manual.html">Manual completo</a> · <a href="privacidade.html">Privacidade</a> · <a href="termos.html">Termos</a> · <a href="index.html">Voltar ao site</a></p>
+  </div>
+</div>
+
+<script>
+function toggleFaq(el) {
+  const item = el.closest('.faq-item');
+  const estavaAberto = item.classList.contains('aberto');
+  document.querySelectorAll('.faq-item.aberto').forEach(i => i.classList.remove('aberto'));
+  if (!estavaAberto) item.classList.add('aberto');
+}
+
+function filtrarFaq(termo) {
+  const t = termo.trim().toLowerCase();
+  const itens = document.querySelectorAll('.faq-item');
+  const categorias = document.querySelectorAll('.categoria-titulo');
+  let algumVisivel = false;
+
+  itens.forEach(item => {
+    const texto = item.textContent.toLowerCase();
+    const corresponde = !t || texto.includes(t);
+    item.style.display = corresponde ? 'block' : 'none';
+    if (corresponde) algumVisivel = true;
+  });
+
+  // Esconde categorias sem nenhum item visível
+  categorias.forEach(cat => {
+    let prox = cat.nextElementSibling;
+    let temVisivel = false;
+    while (prox && !prox.classList.contains('categoria-titulo')) {
+      if (prox.classList.contains('faq-item') && prox.style.display !== 'none') temVisivel = true;
+      prox = prox.nextElementSibling;
+    }
+    cat.style.display = temVisivel ? 'block' : 'none';
+  });
+
+  document.getElementById('semResultado').style.display = algumVisivel ? 'none' : 'block';
+}
+</script>
+</body>
+</html>
