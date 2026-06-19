@@ -654,6 +654,15 @@ textarea.form-control { resize: vertical; min-height: 88px; }
 .btn-google-big:hover { border-color: #4285F4; box-shadow: 0 4px 16px rgba(66,133,244,0.2); }
 .auth-divider { font-size: 0.78rem; color: #94a3b8; margin: 4px 0 12px; }
 .auth-note { font-size: 0.75rem; color: #94a3b8; line-height: 1.5; margin-top: 16px; }
+.auth-divisor { display: flex; align-items: center; gap: 10px; margin: 18px 0; }
+.auth-divisor::before, .auth-divisor::after { content: ''; flex: 1; height: 1px; background: var(--cinza-b); }
+.auth-divisor span { font-size: 0.78rem; color: #94a3b8; }
+.auth-tabs { display: flex; gap: 6px; background: var(--cinza-f); border-radius: 10px; padding: 4px; margin-bottom: 16px; }
+.auth-tab { flex: 1; padding: 9px; border: none; background: transparent; border-radius: 8px; font-size: 0.82rem; font-weight: 600; color: #64748b; cursor: pointer; transition: all .15s; font-family: 'Inter', sans-serif; }
+.auth-tab.ativo { background: #fff; color: var(--azul); box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+.auth-link { font-size: 0.8rem; color: var(--azul); margin-top: 12px; cursor: pointer; text-align: center; }
+.auth-link:hover { text-decoration: underline; }
+#authPainelEntrar .form-group, #authPainelCriar .form-group { margin-bottom: 10px; text-align: left; }
 
 /* ── MAPA ── */
 .mapa-section { background: #fff; padding: 60px 5%; }
@@ -940,12 +949,47 @@ textarea.form-control { resize: vertical; min-height: 88px; }
     <button class="modal-close" onclick="fecharModal('modal-auth')">✕</button>
     <img class="auth-logo" src="logo.png" alt="SOS Ajuda Aí">
     <h2>Bem-vindo ao SOS Ajuda Aí</h2>
-    <p>Entre com sua conta Google para cadastrar uma solicitação ou confirmar presença como voluntário.</p>
+    <p>Entre para cadastrar uma solicitação ou confirmar presença como voluntário.</p>
+
     <button class="btn-google-big" onclick="entrarComGoogle()">
       <svg viewBox="0 0 24 24" width="22" height="22"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
       Continuar com Google
     </button>
-    <p class="auth-note">🔒 Usamos sua conta Google apenas para identificação. Não publicamos nada sem sua autorização.</p>
+
+    <div class="auth-divisor"><span>ou</span></div>
+
+    <div class="auth-tabs">
+      <button type="button" class="auth-tab ativo" id="authTabEntrar" onclick="alternarAuthTab('entrar')">Entrar</button>
+      <button type="button" class="auth-tab" id="authTabCriar" onclick="alternarAuthTab('criar')">Não tenho Google</button>
+    </div>
+
+    <!-- ENTRAR -->
+    <div id="authPainelEntrar">
+      <div class="form-group">
+        <input class="form-control" type="email" id="authEmailEntrar" placeholder="Seu e-mail">
+      </div>
+      <div class="form-group">
+        <input class="form-control" type="password" id="authSenhaEntrar" placeholder="Sua senha">
+      </div>
+      <button class="btn-submit" style="width:100%;" onclick="entrarComEmailSenha()">Entrar</button>
+      <p class="auth-link" onclick="recuperarSenha()">Esqueci minha senha</p>
+    </div>
+
+    <!-- CRIAR CONTA -->
+    <div id="authPainelCriar" style="display:none;">
+      <div class="form-group">
+        <input class="form-control" type="text" id="authNomeCriar" placeholder="Seu nome completo">
+      </div>
+      <div class="form-group">
+        <input class="form-control" type="email" id="authEmailCriar" placeholder="Seu e-mail">
+      </div>
+      <div class="form-group">
+        <input class="form-control" type="password" id="authSenhaCriar" placeholder="Crie uma senha (mín. 6 caracteres)">
+      </div>
+      <button class="btn-submit" style="width:100%;" onclick="criarContaComEmailSenha()">Criar conta</button>
+    </div>
+
+    <p class="auth-note">🔒 Usamos seus dados apenas para identificação. Não publicamos nada sem sua autorização.</p>
   </div>
 </div>
 
@@ -2734,18 +2778,107 @@ async function garantirVoluntarioCadastrado(user) {
   }
 }
 
+// ── AUTENTICAÇÃO POR E-MAIL E SENHA ──
+function alternarAuthTab(aba) {
+  const ehEntrar = aba === 'entrar';
+  document.getElementById('authTabEntrar').classList.toggle('ativo', ehEntrar);
+  document.getElementById('authTabCriar').classList.toggle('ativo', !ehEntrar);
+  document.getElementById('authPainelEntrar').style.display = ehEntrar ? 'block' : 'none';
+  document.getElementById('authPainelCriar').style.display = ehEntrar ? 'none' : 'block';
+}
+
+async function criarContaComEmailSenha() {
+  const nome = document.getElementById('authNomeCriar').value.trim();
+  const email = document.getElementById('authEmailCriar').value.trim();
+  const senha = document.getElementById('authSenhaCriar').value;
+
+  if (!nome) { toast('⚠️ Informe seu nome.'); return; }
+  if (!email || !email.includes('@')) { toast('⚠️ Informe um e-mail válido.'); return; }
+  if (senha.length < 6) { toast('⚠️ A senha precisa ter pelo menos 6 caracteres.'); return; }
+
+  try {
+    const res = await fetch(`${SB_URL}/auth/v1/signup`, {
+      method: 'POST',
+      headers: { 'apikey': SB_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email, password: senha,
+        data: { full_name: nome },
+        options: { emailRedirectTo: window.location.href.split('#')[0] }
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.msg || data.error_description || 'Erro ao criar conta');
+
+    fecharModal('modal-auth');
+    toast('📧 Quase lá! Enviamos um link de confirmação para ' + email + '. Clique nele para ativar sua conta.', 'ok');
+  } catch(e) {
+    toast('⚠️ ' + e.message);
+  }
+}
+
+async function entrarComEmailSenha() {
+  const email = document.getElementById('authEmailEntrar').value.trim();
+  const senha = document.getElementById('authSenhaEntrar').value;
+
+  if (!email || !senha) { toast('⚠️ Informe e-mail e senha.'); return; }
+
+  try {
+    const res = await fetch(`${SB_URL}/auth/v1/token?grant_type=password`, {
+      method: 'POST',
+      headers: { 'apikey': SB_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password: senha })
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      if (data.error_description?.includes('Email not confirmed') || data.msg?.includes('not confirmed')) {
+        throw new Error('Confirme seu e-mail antes de entrar. Verifique sua caixa de entrada.');
+      }
+      throw new Error(data.error_description || data.msg || 'E-mail ou senha incorretos');
+    }
+
+    usuarioAtual = { access_token: data.access_token, refresh_token: data.refresh_token, user: data.user };
+    localStorage.setItem('sb_session', JSON.stringify(usuarioAtual));
+    atualizarUIAuth(usuarioAtual);
+    fecharModal('modal-auth');
+    toast('👋 Bem-vindo, ' + (data.user.user_metadata?.full_name || data.user.email) + '!', 'ok');
+    garantirVoluntarioCadastrado(data.user);
+    setTimeout(() => verificarAvaliacoesPendentes(), 3000);
+  } catch(e) {
+    toast('⚠️ ' + e.message);
+  }
+}
+
+async function recuperarSenha() {
+  const email = document.getElementById('authEmailEntrar').value.trim();
+  if (!email || !email.includes('@')) {
+    toast('⚠️ Digite seu e-mail no campo acima primeiro.');
+    return;
+  }
+  try {
+    await fetch(`${SB_URL}/auth/v1/recover`, {
+      method: 'POST',
+      headers: { 'apikey': SB_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, options: { redirectTo: window.location.href.split('#')[0] } })
+    });
+    toast('📧 Se esse e-mail estiver cadastrado, enviamos um link para redefinir sua senha.', 'ok');
+  } catch(e) {
+    toast('⚠️ Erro ao solicitar recuperação. Tente novamente.');
+  }
+}
+
 async function entrarComGoogle() {
   fecharModal('modal-auth');
   const redirectTo = window.location.href.split('#')[0];
-  window.location.href = `https://wrpfgrwayzmiucyavphk.supabase.co/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(redirectTo)}`;
+  window.location.href = `${SB_URL}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(redirectTo)}`;
 }
 
 async function sair() {
-  await fetch(`https://wrpfgrwayzmiucyavphk.supabase.co/auth/v1/logout`, {
+  await fetch(`${SB_URL}/auth/v1/logout`, {
     method: 'POST',
     headers: {
-      'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndycGZncndheXptaXVjeWF2cGhrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzMDQ3MzUsImV4cCI6MjA5Njg4MDczNX0.ZdgpjxlLRmIaIdGKXZsUthgqM15QQehyijCB4apDA6E',
-      'Authorization': 'Bearer ' + (usuarioAtual?.access_token || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndycGZncndheXptaXVjeWF2cGhrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzMDQ3MzUsImV4cCI6MjA5Njg4MDczNX0.ZdgpjxlLRmIaIdGKXZsUthgqM15QQehyijCB4apDA6E')
+      'apikey': SB_KEY,
+      'Authorization': 'Bearer ' + (usuarioAtual?.access_token || SB_KEY)
     }
   });
   usuarioAtual = null;
@@ -2771,35 +2904,40 @@ function atualizarUIAuth(session) {
 }
 
 async function verificarSessao() {
-  // Verifica hash da URL (callback do Google)
+  // Verifica hash da URL (callback do Google, confirmação de e-mail, ou recuperação de senha)
   const hash = window.location.hash;
   if (hash.includes('access_token')) {
     const params = new URLSearchParams(hash.substring(1));
     const access_token  = params.get('access_token');
     const refresh_token = params.get('refresh_token');
+    const tipo = params.get('type'); // 'signup', 'recovery', ou ausente (Google/login normal)
+
     if (access_token) {
       // Busca dados do usuário
-      const res = await fetch(`https://wrpfgrwayzmiucyavphk.supabase.co/auth/v1/user`, {
-        headers: {
-          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndycGZncndheXptaXVjeWF2cGhrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzMDQ3MzUsImV4cCI6MjA5Njg4MDczNX0.ZdgpjxlLRmIaIdGKXZsUthgqM15QQehyijCB4apDA6E',
-          'Authorization': 'Bearer ' + access_token
-        }
+      const res = await fetch(`${SB_URL}/auth/v1/user`, {
+        headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + access_token }
       });
       const user = await res.json();
       usuarioAtual = { access_token, refresh_token, user };
       localStorage.setItem('sb_session', JSON.stringify(usuarioAtual));
       atualizarUIAuth(usuarioAtual);
       window.history.replaceState(null, '', window.location.pathname);
-      toast('👋 Bem-vindo, ' + (user.user_metadata?.full_name || user.email) + '!', 'ok');
-    // Garante que usuário existe na tabela voluntarios
-    garantirVoluntarioCadastrado(user);
-    // Verifica avaliações pendentes após 3 segundos
-    setTimeout(() => verificarAvaliacoesPendentes(), 3000);
-    // Se veio do modal voluntário, reabre
-    if (localStorage.getItem('_reabrir_vol')) {
-      localStorage.removeItem('_reabrir_vol');
-      setTimeout(() => abrirModalVoluntario(), 800);
-    }
+
+      if (tipo === 'recovery') {
+        // Pede a nova senha em vez de só dar boas-vindas
+        setTimeout(() => pedirNovaSenha(), 300);
+      } else {
+        const msgBoasVindas = tipo === 'signup'
+          ? '✅ E-mail confirmado! Bem-vindo, '
+          : '👋 Bem-vindo, ';
+        toast(msgBoasVindas + (user.user_metadata?.full_name || user.email) + '!', 'ok');
+        garantirVoluntarioCadastrado(user);
+        setTimeout(() => verificarAvaliacoesPendentes(), 3000);
+        if (localStorage.getItem('_reabrir_vol')) {
+          localStorage.removeItem('_reabrir_vol');
+          setTimeout(() => abrirModalVoluntario(), 800);
+        }
+      }
       return;
     }
   }
@@ -2810,6 +2948,27 @@ async function verificarSessao() {
       usuarioAtual = JSON.parse(saved);
       atualizarUIAuth(usuarioAtual);
     } catch(e) { localStorage.removeItem('sb_session'); }
+  }
+}
+
+function pedirNovaSenha() {
+  const novaSenha = prompt('Digite sua nova senha (mínimo 6 caracteres):');
+  if (!novaSenha) return;
+  if (novaSenha.length < 6) { toast('⚠️ A senha precisa ter pelo menos 6 caracteres.'); return; }
+  atualizarSenhaUsuario(novaSenha);
+}
+
+async function atualizarSenhaUsuario(novaSenha) {
+  try {
+    const res = await fetch(`${SB_URL}/auth/v1/user`, {
+      method: 'PUT',
+      headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + usuarioAtual.access_token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: novaSenha })
+    });
+    if (!res.ok) throw new Error('Erro ao atualizar senha');
+    toast('✅ Senha atualizada com sucesso! Você já está logado.', 'ok');
+  } catch(e) {
+    toast('⚠️ Erro ao atualizar senha. Tente novamente.');
   }
 }
 
