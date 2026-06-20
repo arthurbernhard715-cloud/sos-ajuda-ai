@@ -2544,7 +2544,7 @@ async function confirmarPresenca(solId, btn) {
     }
 
     // 3. Verifica limite de voluntários
-    const atual = await sbFetch(`solicitacoes?id=eq.${solId}&select=voluntarios_confirmados,limite_voluntarios`);
+    const atual = await sbFetch(`solicitacoes?id=eq.${solId}&select=voluntarios_confirmados,limite_voluntarios,criado_em`);
     if (!atual.length) throw new Error('Solicitação não encontrada');
     const s = atual[0];
     if (s.voluntarios_confirmados >= s.limite_voluntarios) {
@@ -2568,6 +2568,23 @@ async function confirmarPresenca(solId, btn) {
       method: 'PATCH',
       body: JSON.stringify({ voluntarios_confirmados: s.voluntarios_confirmados + 1 })
     });
+
+    // 5. Atualiza pontos do voluntário: 10 base + 5 se confirmou na primeira hora
+    try {
+      const agora = new Date();
+      const minutosResposta = s.criado_em ? (agora - new Date(s.criado_em)) / 60000 : null;
+      const bonusVelocidade = (minutosResposta !== null && minutosResposta >= 0 && minutosResposta <= 60) ? 5 : 0;
+      const pontosGanhos = 10 + bonusVelocidade;
+
+      const volAtual = await sbFetch(`voluntarios?id=eq.${userId}&select=pontos`);
+      const pontosAtuais = volAtual[0]?.pontos || 0;
+      await sbFetch(`voluntarios?id=eq.${userId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ pontos: pontosAtuais + pontosGanhos })
+      });
+    } catch(e) {
+      console.warn('Não foi possível atualizar pontos (não bloqueia a confirmação):', e);
+    }
 
     if (btn) { btn.style.display = 'none'; }
     // Mostra botão cancelar
@@ -4181,6 +4198,21 @@ async function enviarAvaliacao() {
       atualizarMediaVoluntario(_avaliacaoData.avaliado_id);
     }
 
+    // Soma o bônus de pontos (estrelas x 2) ao voluntário avaliado,
+    // apenas quando é a pessoa atendida avaliando o voluntário (não o contrário)
+    if (_avaliacaoData.tipo === 'atingido_avalia_voluntario' && _avaliacaoData.avaliado_id) {
+      try {
+        const volAtual = await sbFetch(`voluntarios?id=eq.${_avaliacaoData.avaliado_id}&select=pontos`);
+        const pontosAtuais = volAtual[0]?.pontos || 0;
+        await sbFetch(`voluntarios?id=eq.${_avaliacaoData.avaliado_id}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ pontos: pontosAtuais + (_estrelaSelecionada * 2) })
+        });
+      } catch(e) {
+        console.warn('Não foi possível atualizar pontos por avaliação (não bloqueia o envio):', e);
+      }
+    }
+
     fecharModal('modal-avaliacao');
     toast('⭐ Avaliação enviada! Obrigado pelo feedback.', 'ok');
 
@@ -4496,41 +4528,6 @@ function volAba(aba) {
   if (aba === 'minhas') carregarMinhasSolicitacoes();
 }
 
-// ── CÁLCULO DE PONTUAÇÃO DO VOLUNTÁRIO ──
-// Fórmula: 10 pontos fixos por confirmação + (estrelas recebidas × 2) + 5 se confirmou
-// dentro da primeira hora da solicitação ter sido publicada.
-async function calcularPontosVoluntario(volId) {
-  if (!volId) return { total: 0, confirmacoes: 0, detalhes: [] };
-
-  const confs = await sbFetch(`confirmacoes?voluntario_id=eq.${volId}&select=*,solicitacoes(criado_em,urgencia,nome)`) || [];
-  const avaliacoesRecebidas = await sbFetch(
-    `avaliacoes?avaliado_id=eq.${volId}&tipo=eq.atingido_avalia_voluntario&select=confirmacao_id,estrelas`
-  ) || [];
-
-  const estrelasPorConfirmacao = {};
-  avaliacoesRecebidas.forEach(a => { estrelasPorConfirmacao[a.confirmacao_id] = a.estrelas; });
-
-  let total = 0;
-  const detalhes = confs.map(c => {
-    const base = 10;
-    const estrelas = estrelasPorConfirmacao[c.id] || null;
-    const bonusAvaliacao = estrelas ? estrelas * 2 : 0;
-
-    let bonusVelocidade = 0;
-    if (c.solicitacoes?.criado_em && c.criado_em) {
-      const minutosResposta = (new Date(c.criado_em) - new Date(c.solicitacoes.criado_em)) / 60000;
-      if (minutosResposta >= 0 && minutosResposta <= 60) bonusVelocidade = 5;
-    }
-
-    const pontosConfirmacao = base + bonusAvaliacao + bonusVelocidade;
-    total += pontosConfirmacao;
-    return { solicitacao: c.solicitacoes?.nome, base, estrelas, bonusAvaliacao, bonusVelocidade, pontosConfirmacao };
-  });
-
-  return { total, confirmacoes: confs.length, detalhes };
-}
-
-// ── RANKING REAL DE VOLUNTÁRIOS NA HOME ──
 // ── RANKING REAL DE VOLUNTÁRIOS NA HOME ──
 let _rankingModoAtual = 'geral';
 let _rankingVolsComPontosCache = null;
@@ -4540,36 +4537,8 @@ async function carregarRankingHome() {
   if (!grid) return;
 
   try {
-    const [todasConfs, todasAvaliacoes, todosVols] = await Promise.all([
-      sbFetch(`confirmacoes?select=id,voluntario_id,criado_em,solicitacoes(criado_em)`),
-      sbFetch(`avaliacoes?tipo=eq.atingido_avalia_voluntario&select=confirmacao_id,avaliado_id,estrelas`),
-      sbFetch(`voluntarios?select=id,nome,cidade,estado`),
-    ]);
-
-    const estrelasPorConfirmacao = {};
-    todasAvaliacoes.forEach(a => { estrelasPorConfirmacao[a.confirmacao_id] = a.estrelas; });
-
-    // Agrega pontos por voluntário
-    const pontosPorVol = {};
-    todasConfs.forEach(c => {
-      if (!c.voluntario_id) return;
-      const base = 10;
-      const estrelas = estrelasPorConfirmacao[c.id] || null;
-      const bonusAvaliacao = estrelas ? estrelas * 2 : 0;
-
-      let bonusVelocidade = 0;
-      if (c.solicitacoes?.criado_em && c.criado_em) {
-        const minutos = (new Date(c.criado_em) - new Date(c.solicitacoes.criado_em)) / 60000;
-        if (minutos >= 0 && minutos <= 60) bonusVelocidade = 5;
-      }
-
-      pontosPorVol[c.voluntario_id] = (pontosPorVol[c.voluntario_id] || 0) + base + bonusAvaliacao + bonusVelocidade;
-    });
-
-    _rankingVolsComPontosCache = todosVols
-      .map(v => ({ ...v, pontos: pontosPorVol[v.id] || 0 }))
-      .filter(v => v.pontos > 0);
-
+    const todosVols = await sbFetch(`voluntarios?select=id,nome,cidade,estado,pontos&pontos=gt.0`);
+    _rankingVolsComPontosCache = todosVols;
     renderizarRankingHome();
   } catch(e) {
     console.error('Erro ao carregar ranking:', e);
@@ -4670,8 +4639,7 @@ async function carregarDadosVoluntario() {
     // Stats
     const total = confs.length;
     const urgentes = confs.filter(c => c.solicitacoes?.urgencia === 'vermelho').length;
-    const pontuacao = _volDados?.id ? await calcularPontosVoluntario(_volDados.id) : { total: 0 };
-    const pts = pontuacao.total;
+    const pts = _volDados?.pontos || 0;
 
     document.getElementById('vs-confirmadas').textContent = total;
     document.getElementById('vs-urgentes').textContent = urgentes;

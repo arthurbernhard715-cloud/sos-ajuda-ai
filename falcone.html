@@ -646,6 +646,46 @@ tbody tr:last-child td{border-bottom:none;}
         </div>
       </div>
 
+      <!-- ZERAR RANKING/PONTUAÇÃO -->
+      <div class="zona-risco-card">
+        <div class="zona-risco-titulo">🏆 Zerar pontuação do ranking</div>
+        <div class="zona-risco-desc">Zera o campo de pontos dos voluntários, sem excluir confirmações, avaliações, solicitações ou qualquer outro dado. O histórico de ajudas permanece intacto — só o placar é resetado.</div>
+
+        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-top:16px;">
+          <div style="flex:1;min-width:160px;">
+            <label style="display:block;font-size:0.75rem;color:#94a3b8;margin-bottom:5px;">Escopo</label>
+            <select id="rankEscopo" class="table-search" style="width:100%;cursor:pointer;" onchange="atualizarCamposRank()">
+              <option value="geral" selected>🌎 Geral (todos os voluntários)</option>
+              <option value="regional">📍 Regional (cidade/estado/país)</option>
+            </select>
+          </div>
+          <div style="flex:1;min-width:140px;display:none;" id="wrapRankNivel">
+            <label style="display:block;font-size:0.75rem;color:#94a3b8;margin-bottom:5px;">Nível</label>
+            <select id="rankNivel" class="table-search" style="width:100%;cursor:pointer;" onchange="atualizarCamposRankRegional()">
+              <option value="cidade" selected>Cidade</option>
+              <option value="estado">Estado</option>
+              <option value="pais">País</option>
+            </select>
+          </div>
+          <div style="flex:1;min-width:140px;position:relative;display:none;" id="wrapRankPais">
+            <label style="display:block;font-size:0.75rem;color:#94a3b8;margin-bottom:5px;">País</label>
+            <input id="rankPais" class="table-search" style="width:100%;" value="Brasil" autocomplete="off" oninput="buscarPaisRank(this.value)" onblur="setTimeout(fecharListaPaisRank,250)">
+            <div id="listaPaisRank" class="lista-autocomplete-admin" style="display:none;"></div>
+          </div>
+          <div style="flex:1;min-width:120px;position:relative;display:none;" id="wrapRankEstado">
+            <label style="display:block;font-size:0.75rem;color:#94a3b8;margin-bottom:5px;">Estado</label>
+            <input id="rankEstado" class="table-search" style="width:100%;" placeholder="Digite o estado..." autocomplete="off" oninput="buscarEstadoRank(this.value)" onblur="setTimeout(fecharListaEstadoRank,250)">
+            <div id="listaEstadoRank" class="lista-autocomplete-admin" style="display:none;"></div>
+          </div>
+          <div style="flex:1.5;min-width:160px;position:relative;display:none;" id="wrapRankCidade">
+            <label style="display:block;font-size:0.75rem;color:#94a3b8;margin-bottom:5px;">Cidade</label>
+            <input id="rankCidade" class="table-search" style="width:100%;" placeholder="Digite a cidade..." autocomplete="off" oninput="buscarCidadeRank(this.value)" onblur="setTimeout(fecharListaCidadeRank,250)">
+            <div id="listaCidadeRank" class="lista-autocomplete-admin" style="display:none;"></div>
+          </div>
+          <button class="btn-zona-risco" id="btnZerarRanking" onclick="prepararZerarRanking()">🏆 Zerar pontuação</button>
+        </div>
+      </div>
+
       <!-- EXCLUSÃO GERAL -->
       <div class="zona-risco-card zona-risco-card-geral">
         <div class="zona-risco-titulo">💣 Excluir TODOS os dados do site</div>
@@ -1614,6 +1654,7 @@ function renderLogs(filtro='') {
     excluir: { emoji: '🗑️', cor: '#FCA5A5' },
     excluir_regiao: { emoji: '☢️', cor: '#FCA5A5' },
     excluir_geral: { emoji: '💣', cor: '#FCA5A5' },
+    zerar_ranking: { emoji: '🏆', cor: '#FDE68A' },
     verificar: { emoji: '✅', cor: '#86EFAC' },
     bloquear: { emoji: '🚫', cor: '#FCA5A5' },
     desbloquear: { emoji: '🔓', cor: '#93C5FD' },
@@ -1655,6 +1696,16 @@ function resetarCamposRisco() {
   _riscoConfirmado.estado = false;
   _riscoConfirmado.cidade = false;
   atualizarCamposRisco();
+
+  document.getElementById('rankEscopo').value = 'geral';
+  document.getElementById('rankNivel').value = 'cidade';
+  document.getElementById('rankPais').value = 'Brasil';
+  document.getElementById('rankEstado').value = '';
+  document.getElementById('rankCidade').value = '';
+  _rankConfirmado.pais = true;
+  _rankConfirmado.estado = false;
+  _rankConfirmado.cidade = false;
+  atualizarCamposRank();
 }
 
 // Autocomplete país/estado/cidade (mesmo padrão usado em Regiões Bloqueadas)
@@ -1914,6 +1965,220 @@ async function executarExclusaoRegional(nivel, pais, estado, cidade, localLabel)
   } finally {
     btn.disabled = false;
     btn.textContent = '☢️ Excluir esta região';
+  }
+}
+
+// ── ZERAR PONTUAÇÃO DO RANKING ──
+function atualizarCamposRank() {
+  const escopo = document.getElementById('rankEscopo').value;
+  const ehRegional = escopo === 'regional';
+  document.getElementById('wrapRankNivel').style.display = ehRegional ? 'block' : 'none';
+  document.getElementById('wrapRankPais').style.display = ehRegional ? 'block' : 'none';
+  if (ehRegional) atualizarCamposRankRegional();
+  else {
+    document.getElementById('wrapRankEstado').style.display = 'none';
+    document.getElementById('wrapRankCidade').style.display = 'none';
+  }
+}
+
+function atualizarCamposRankRegional() {
+  const nivel = document.getElementById('rankNivel').value;
+  document.getElementById('wrapRankEstado').style.display = (nivel === 'estado' || nivel === 'cidade') ? 'block' : 'none';
+  document.getElementById('wrapRankCidade').style.display = (nivel === 'cidade') ? 'block' : 'none';
+}
+
+const _rankConfirmado = { pais: true, estado: false, cidade: false };
+
+let _paisRankTimer = null;
+async function buscarPaisRank(valor) {
+  _rankConfirmado.pais = false;
+  clearTimeout(_paisRankTimer);
+  const lista = document.getElementById('listaPaisRank');
+  if (!valor || valor.length < 2) { lista.style.display = 'none'; return; }
+  _paisRankTimer = setTimeout(async () => {
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(valor)}&format=json&limit=6&addressdetails=1&featureType=country`);
+      const data = await res.json();
+      const vistos = new Set();
+      const paises = data.filter(r => {
+        const nome = r.address?.country || r.display_name.split(',').pop().trim();
+        if (!nome || vistos.has(nome)) return false;
+        vistos.add(nome); return true;
+      }).slice(0,6);
+      if (!paises.length) { lista.style.display='none'; return; }
+      lista.innerHTML = paises.map(r => {
+        const nome = r.address?.country || r.display_name.split(',').pop().trim();
+        return `<div onclick="selecionarPaisRank('${nome.replace(/'/g,"\\'")}')">🌍 ${nome}</div>`;
+      }).join('');
+      lista.style.display = 'block';
+    } catch(e) {}
+  }, 350);
+}
+function selecionarPaisRank(nome) {
+  document.getElementById('rankPais').value = nome;
+  document.getElementById('listaPaisRank').style.display = 'none';
+  _rankConfirmado.pais = true;
+  _rankConfirmado.estado = false;
+  _rankConfirmado.cidade = false;
+  document.getElementById('rankEstado').value = '';
+  document.getElementById('rankCidade').value = '';
+}
+function fecharListaPaisRank() { const el = document.getElementById('listaPaisRank'); if (el) el.style.display = 'none'; }
+
+let _estadoRankTimer = null;
+async function buscarEstadoRank(valor) {
+  _rankConfirmado.estado = false;
+  clearTimeout(_estadoRankTimer);
+  const lista = document.getElementById('listaEstadoRank');
+  if (!valor || valor.length < 2) { lista.style.display = 'none'; return; }
+  _estadoRankTimer = setTimeout(async () => {
+    try {
+      const pais = document.getElementById('rankPais').value.trim() || 'Brasil';
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(`${valor}, ${pais}`)}&format=json&limit=6&addressdetails=1`);
+      const data = await res.json();
+      const vistos = new Set();
+      const estados = data.filter(r => {
+        const s = r.address?.state || r.display_name.split(',')[0];
+        if (!s || vistos.has(s)) return false;
+        vistos.add(s); return true;
+      }).slice(0,6);
+      if (!estados.length) { lista.style.display='none'; return; }
+      lista.innerHTML = estados.map(r => {
+        const nome = r.address?.state || r.display_name.split(',')[0];
+        return `<div onclick="selecionarEstadoRank('${nome.replace(/'/g,"\\'")}')">📍 ${nome}</div>`;
+      }).join('');
+      lista.style.display = 'block';
+    } catch(e) {}
+  }, 350);
+}
+function selecionarEstadoRank(nome) {
+  document.getElementById('rankEstado').value = MAPA_ESTADOS_SIGLA_ADMIN[nome] || nome;
+  document.getElementById('listaEstadoRank').style.display = 'none';
+  document.getElementById('rankCidade').value = '';
+  _rankConfirmado.estado = true;
+  _rankConfirmado.cidade = false;
+}
+function fecharListaEstadoRank() { const el = document.getElementById('listaEstadoRank'); if (el) el.style.display = 'none'; }
+
+let _cidadeRankTimer = null;
+async function buscarCidadeRank(valor) {
+  _rankConfirmado.cidade = false;
+  clearTimeout(_cidadeRankTimer);
+  const lista = document.getElementById('listaCidadeRank');
+  if (!valor || valor.length < 2) { lista.style.display = 'none'; return; }
+  _cidadeRankTimer = setTimeout(async () => {
+    try {
+      const estado = document.getElementById('rankEstado').value.trim();
+      const pais = document.getElementById('rankPais').value.trim() || 'Brasil';
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(`${valor}, ${estado}, ${pais}`)}&format=json&limit=6&addressdetails=1`);
+      const data = await res.json();
+      const vistos = new Set();
+      const cidades = data.filter(r => {
+        const c = r.address?.city || r.address?.town || r.address?.village || r.display_name.split(',')[0];
+        if (!c || vistos.has(c)) return false;
+        vistos.add(c); return true;
+      }).slice(0,6);
+      if (!cidades.length) { lista.style.display='none'; return; }
+      lista.innerHTML = cidades.map(r => {
+        const nome = r.address?.city || r.address?.town || r.address?.village || r.display_name.split(',')[0];
+        return `<div onclick="selecionarCidadeRank('${nome.replace(/'/g,"\\'")}')">🏙️ ${nome}</div>`;
+      }).join('');
+      lista.style.display = 'block';
+    } catch(e) {}
+  }, 350);
+}
+function selecionarCidadeRank(nome) {
+  document.getElementById('rankCidade').value = nome;
+  document.getElementById('listaCidadeRank').style.display = 'none';
+  _rankConfirmado.cidade = true;
+}
+function fecharListaCidadeRank() { const el = document.getElementById('listaCidadeRank'); if (el) el.style.display = 'none'; }
+
+async function prepararZerarRanking() {
+  const escopo = document.getElementById('rankEscopo').value;
+
+  if (escopo === 'geral') {
+    const digitado = prompt('Isso vai zerar a pontuação de TODOS os voluntários do site (em todas as cidades). As confirmações e avaliações continuam intactas — só o placar volta a zero.\n\nDigite "ZERAR RANKING" para confirmar:');
+    if (digitado === null) return;
+    if (digitado.trim() !== 'ZERAR RANKING') {
+      toast('⚠️ Texto de confirmação não corresponde. Nenhuma pontuação foi alterada.', 'err');
+      return;
+    }
+    const totpOk = await exigirCodigoTOTP();
+    if (!totpOk) return;
+    await executarZerarRanking('geral', null, null, null, 'todos os voluntários');
+    return;
+  }
+
+  // Regional
+  const nivel = document.getElementById('rankNivel').value;
+  const pais = document.getElementById('rankPais').value.trim() || 'Brasil';
+  const estado = document.getElementById('rankEstado').value.trim();
+  const cidade = document.getElementById('rankCidade').value.trim();
+
+  if (!_rankConfirmado.pais) { toast('⚠️ Selecione o país a partir da lista de sugestões.'); return; }
+  if ((nivel === 'estado' || nivel === 'cidade') && !_rankConfirmado.estado) { toast('⚠️ Selecione o estado a partir da lista de sugestões.'); return; }
+  if (nivel === 'cidade' && !_rankConfirmado.cidade) { toast('⚠️ Selecione a cidade a partir da lista de sugestões.'); return; }
+
+  const localLabel = nivel === 'pais' ? pais : nivel === 'estado' ? `${estado}, ${pais}` : `${cidade}, ${estado}`;
+  const palavraConfirmacao = nivel === 'cidade' ? cidade : nivel === 'estado' ? estado : pais;
+
+  const digitado = prompt(`Isso vai zerar a pontuação de todos os voluntários de "${localLabel}". As confirmações e avaliações continuam intactas — só o placar volta a zero.\n\nDigite "${palavraConfirmacao}" para confirmar:`);
+  if (digitado === null) return;
+  if (digitado.trim().toLowerCase() !== palavraConfirmacao.trim().toLowerCase()) {
+    toast('⚠️ Texto de confirmação não corresponde. Nenhuma pontuação foi alterada.', 'err');
+    return;
+  }
+
+  const totpOk = await exigirCodigoTOTP();
+  if (!totpOk) return;
+
+  await executarZerarRanking('regional', nivel, estado, cidade, localLabel);
+}
+
+async function executarZerarRanking(escopo, nivel, estado, cidade, localLabel) {
+  const btn = document.getElementById('btnZerarRanking');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Zerando...'; }
+
+  try {
+    let query = 'voluntarios?select=id,pontos';
+    if (escopo === 'regional') {
+      if (nivel === 'cidade') query += `&cidade=ilike.${encodeURIComponent(cidade)}&estado=ilike.${encodeURIComponent(estado)}`;
+      else if (nivel === 'estado') query += `&estado=ilike.${encodeURIComponent(estado)}`;
+      // nível país: sem filtro extra, já que voluntarios não tem coluna país (todos são do Brasil implicitamente)
+    }
+
+    const vols = await sbFetch(query);
+    const comPontos = vols.filter(v => (v.pontos || 0) > 0);
+
+    if (!comPontos.length) {
+      toast('ℹ️ Nenhum voluntário com pontuação encontrado para esse escopo.', 'ok');
+      if (btn) { btn.disabled = false; btn.textContent = '🏆 Zerar pontuação'; }
+      return;
+    }
+
+    // Backup dos pontos antes de zerar
+    await baixarBackupAntesDeExcluir({ voluntarios_pontos: comPontos }, `ranking_${localLabel}`);
+
+    const token = usuarioAtual?.access_token || SB_KEY;
+    let totalZerado = 0;
+    for (const v of comPontos) {
+      try {
+        await fetch(`${SB_URL}/rest/v1/voluntarios?id=eq.${v.id}`, {
+          method: 'PATCH',
+          headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+          body: JSON.stringify({ pontos: 0 })
+        });
+        totalZerado++;
+      } catch(e) { /* segue tentando os demais */ }
+    }
+
+    registrarLog('zerar_ranking', 'voluntarios', null, `Zerou pontuação de ${totalZerado} voluntário(s) — escopo: ${localLabel}`);
+    toast(`🏆 Pontuação zerada para ${totalZerado} voluntário(s). Backup salvo no seu computador.`, 'ok');
+  } catch(e) {
+    toast('⚠️ Erro ao zerar pontuação: ' + e.message, 'err');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '🏆 Zerar pontuação'; }
   }
 }
 
