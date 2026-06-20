@@ -842,15 +842,8 @@ textarea.form-control { resize: vertical; min-height: 88px; }
     <h2>Voluntários destaque</h2>
     <p>Reconhecendo quem faz a diferença na prática.</p>
   </div>
-  <div class="ranking-grid">
-    <div class="rank-card"><div class="rank-pos gold">🥇</div><div style="font-size:1.3rem">👩</div><div class="rank-info"><div class="rank-nome">Juliana Hoffmann</div><div class="rank-cidade">Porto Alegre, RS</div><div class="rank-badges">🔥⭐💪</div></div><div class="rank-pts"><div class="rank-pts-n">2.840</div><div class="rank-pts-l">pontos</div></div></div>
-    <div class="rank-card"><div class="rank-pos silver">🥈</div><div style="font-size:1.3rem">👨</div><div class="rank-info"><div class="rank-nome">Carlos Eduardo</div><div class="rank-cidade">Santa Cruz do Sul, RS</div><div class="rank-badges">⭐💧🤝</div></div><div class="rank-pts"><div class="rank-pts-n">2.210</div><div class="rank-pts-l">pontos</div></div></div>
-    <div class="rank-card"><div class="rank-pos bronze">🥉</div><div style="font-size:1.3rem">👩</div><div class="rank-info"><div class="rank-nome">Fernanda Müller</div><div class="rank-cidade">Lajeado, RS</div><div class="rank-badges">💪🏠✅</div></div><div class="rank-pts"><div class="rank-pts-n">1.970</div><div class="rank-pts-l">pontos</div></div></div>
-    <div class="rank-card"><div class="rank-pos normal">4</div><div style="font-size:1.3rem">🧑</div><div class="rank-info"><div class="rank-nome">Rafael Borges</div><div class="rank-cidade">Venâncio Aires, RS</div><div class="rank-badges">🤝⭐</div></div><div class="rank-pts"><div class="rank-pts-n">1.450</div><div class="rank-pts-l">pontos</div></div></div>
-    <div class="rank-card"><div class="rank-pos normal">5</div><div style="font-size:1.3rem">👩</div><div class="rank-info"><div class="rank-nome">Aline Teixeira</div><div class="rank-cidade">Rio Pardo, RS</div><div class="rank-badges">💧🏠</div></div><div class="rank-pts"><div class="rank-pts-n">1.120</div><div class="rank-pts-l">pontos</div></div></div>
-    <div class="rank-card" style="cursor:pointer;justify-content:center" onclick="if(!usuarioAtual){abrirModal('modal-auth')}else{verificarTermos('voluntario',()=>abrirModalVoluntario())}">
-      <div style="text-align:center;width:100%"><div style="font-size:1.6rem;margin-bottom:8px">🙋</div><div style="font-family:'Montserrat',sans-serif;font-weight:700;color:var(--azul);font-size:.9rem">Seja o próximo destaque</div><div style="font-size:.8rem;color:var(--cinza-t);margin-top:4px">Cadastre-se como voluntário</div></div>
-    </div>
+  <div class="ranking-grid" id="rankingGrid">
+    <div style="grid-column:1/-1;text-align:center;padding:32px;color:var(--cinza-t);">⏳ Carregando ranking...</div>
   </div>
 </section>
 
@@ -2779,6 +2772,7 @@ async function reativarSolicitacao() {
 // ── INICIALIZAR ──
 document.addEventListener('DOMContentLoaded', () => {
   carregarSolicitacoes();
+  carregarRankingHome();
   setInterval(carregarSolicitacoes, 60000); // Atualiza a cada 1 minuto
 
   // Verifica expiradas a cada 5 minutos e remove do mapa/cards
@@ -4471,6 +4465,116 @@ function volAba(aba) {
   if (aba === 'minhas') carregarMinhasSolicitacoes();
 }
 
+// ── CÁLCULO DE PONTUAÇÃO DO VOLUNTÁRIO ──
+// Fórmula: 10 pontos fixos por confirmação + (estrelas recebidas × 2) + 5 se confirmou
+// dentro da primeira hora da solicitação ter sido publicada.
+async function calcularPontosVoluntario(volId) {
+  if (!volId) return { total: 0, confirmacoes: 0, detalhes: [] };
+
+  const confs = await sbFetch(`confirmacoes?voluntario_id=eq.${volId}&select=*,solicitacoes(criado_em,urgencia,nome)`) || [];
+  const avaliacoesRecebidas = await sbFetch(
+    `avaliacoes?avaliado_id=eq.${volId}&tipo=eq.atingido_avalia_voluntario&select=confirmacao_id,estrelas`
+  ) || [];
+
+  const estrelasPorConfirmacao = {};
+  avaliacoesRecebidas.forEach(a => { estrelasPorConfirmacao[a.confirmacao_id] = a.estrelas; });
+
+  let total = 0;
+  const detalhes = confs.map(c => {
+    const base = 10;
+    const estrelas = estrelasPorConfirmacao[c.id] || null;
+    const bonusAvaliacao = estrelas ? estrelas * 2 : 0;
+
+    let bonusVelocidade = 0;
+    if (c.solicitacoes?.criado_em && c.criado_em) {
+      const minutosResposta = (new Date(c.criado_em) - new Date(c.solicitacoes.criado_em)) / 60000;
+      if (minutosResposta >= 0 && minutosResposta <= 60) bonusVelocidade = 5;
+    }
+
+    const pontosConfirmacao = base + bonusAvaliacao + bonusVelocidade;
+    total += pontosConfirmacao;
+    return { solicitacao: c.solicitacoes?.nome, base, estrelas, bonusAvaliacao, bonusVelocidade, pontosConfirmacao };
+  });
+
+  return { total, confirmacoes: confs.length, detalhes };
+}
+
+// ── RANKING REAL DE VOLUNTÁRIOS NA HOME ──
+async function carregarRankingHome() {
+  const grid = document.getElementById('rankingGrid');
+  if (!grid) return;
+
+  try {
+    const [todasConfs, todasAvaliacoes, todosVols] = await Promise.all([
+      sbFetch(`confirmacoes?select=id,voluntario_id,criado_em,solicitacoes(criado_em)`),
+      sbFetch(`avaliacoes?tipo=eq.atingido_avalia_voluntario&select=confirmacao_id,avaliado_id,estrelas`),
+      sbFetch(`voluntarios?select=id,nome,cidade,estado`),
+    ]);
+
+    const estrelasPorConfirmacao = {};
+    todasAvaliacoes.forEach(a => { estrelasPorConfirmacao[a.confirmacao_id] = a.estrelas; });
+
+    // Agrega pontos por voluntário
+    const pontosPorVol = {};
+    todasConfs.forEach(c => {
+      if (!c.voluntario_id) return;
+      const base = 10;
+      const estrelas = estrelasPorConfirmacao[c.id] || null;
+      const bonusAvaliacao = estrelas ? estrelas * 2 : 0;
+
+      let bonusVelocidade = 0;
+      if (c.solicitacoes?.criado_em && c.criado_em) {
+        const minutos = (new Date(c.criado_em) - new Date(c.solicitacoes.criado_em)) / 60000;
+        if (minutos >= 0 && minutos <= 60) bonusVelocidade = 5;
+      }
+
+      pontosPorVol[c.voluntario_id] = (pontosPorVol[c.voluntario_id] || 0) + base + bonusAvaliacao + bonusVelocidade;
+    });
+
+    const volsComPontos = todosVols
+      .map(v => ({ ...v, pontos: pontosPorVol[v.id] || 0 }))
+      .filter(v => v.pontos > 0)
+      .sort((a, b) => b.pontos - a.pontos)
+      .slice(0, 5);
+
+    if (!volsComPontos.length) {
+      grid.innerHTML = `
+        <div style="grid-column:1/-1;text-align:center;padding:24px;color:var(--cinza-t);">
+          Nenhum voluntário com confirmações ainda. Seja o primeiro!
+        </div>
+        <div class="rank-card" style="cursor:pointer;justify-content:center" onclick="if(!usuarioAtual){abrirModal('modal-auth')}else{verificarTermos('voluntario',()=>abrirModalVoluntario())}">
+          <div style="text-align:center;width:100%"><div style="font-size:1.6rem;margin-bottom:8px">🙋</div><div style="font-family:'Montserrat',sans-serif;font-weight:700;color:var(--azul);font-size:.9rem">Seja o próximo destaque</div><div style="font-size:.8rem;color:var(--cinza-t);margin-top:4px">Cadastre-se como voluntário</div></div>
+        </div>`;
+      return;
+    }
+
+    const posicoes = [
+      { classe: 'gold', icone: '🥇' },
+      { classe: 'silver', icone: '🥈' },
+      { classe: 'bronze', icone: '🥉' },
+      { classe: 'normal', icone: '4' },
+      { classe: 'normal', icone: '5' },
+    ];
+
+    grid.innerHTML = volsComPontos.map((v, i) => `
+      <div class="rank-card">
+        <div class="rank-pos ${posicoes[i].classe}">${posicoes[i].icone}</div>
+        <div style="font-size:1.3rem">🙋</div>
+        <div class="rank-info">
+          <div class="rank-nome">${escapeHtml(v.nome || 'Voluntário')}</div>
+          <div class="rank-cidade">${escapeHtml(v.cidade || '')}${v.estado ? ', ' + escapeHtml(v.estado) : ''}</div>
+        </div>
+        <div class="rank-pts"><div class="rank-pts-n">${v.pontos.toLocaleString('pt-BR')}</div><div class="rank-pts-l">pontos</div></div>
+      </div>`).join('') + `
+      <div class="rank-card" style="cursor:pointer;justify-content:center" onclick="if(!usuarioAtual){abrirModal('modal-auth')}else{verificarTermos('voluntario',()=>abrirModalVoluntario())}">
+        <div style="text-align:center;width:100%"><div style="font-size:1.6rem;margin-bottom:8px">🙋</div><div style="font-family:'Montserrat',sans-serif;font-weight:700;color:var(--azul);font-size:.9rem">Seja o próximo destaque</div><div style="font-size:.8rem;color:var(--cinza-t);margin-top:4px">Cadastre-se como voluntário</div></div>
+      </div>`;
+  } catch(e) {
+    console.error('Erro ao carregar ranking:', e);
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:24px;color:var(--cinza-t);">Não foi possível carregar o ranking agora.</div>';
+  }
+}
+
 async function carregarDadosVoluntario() {
   if (!usuarioAtual) return;
   const userId = usuarioAtual.user?.id;
@@ -4491,7 +4595,8 @@ async function carregarDadosVoluntario() {
     // Stats
     const total = confs.length;
     const urgentes = confs.filter(c => c.solicitacoes?.urgencia === 'vermelho').length;
-    const pts = _volDados?.pontos || total * 10;
+    const pontuacao = _volDados?.id ? await calcularPontosVoluntario(_volDados.id) : { total: 0 };
+    const pts = pontuacao.total;
 
     document.getElementById('vs-confirmadas').textContent = total;
     document.getElementById('vs-urgentes').textContent = urgentes;
