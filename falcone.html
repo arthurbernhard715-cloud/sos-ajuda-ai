@@ -297,6 +297,9 @@ tbody tr:last-child td{border-bottom:none;}
       <div class="nav-item" data-page="bloqueios" onclick="irPara('bloqueios')">
         <span class="ni-icon">🚫</span> Regiões Bloqueadas
       </div>
+      <div class="nav-item" data-page="logs" onclick="irPara('logs')">
+        <span class="ni-icon">📜</span> Histórico de Ações
+      </div>
       <div class="nav-item" onclick="window.open('https://sos-ajuda-ai.vercel.app','_blank')">
         <span class="ni-icon">🌐</span> Ver site
       </div>
@@ -551,6 +554,36 @@ tbody tr:last-child td{border-bottom:none;}
       </div>
     </div>
 
+        <!-- HISTÓRICO DE AÇÕES (AUDITORIA) -->
+    <div class="page" id="page-logs">
+      <div class="page-title">Histórico de Ações</div>
+      <div class="page-sub">Registro de todas as ações administrativas realizadas no painel — exclusões, verificações, bloqueios e renovações. Este histórico não pode ser editado nem apagado.</div>
+
+      <div class="table-wrap">
+        <div class="table-header">
+          <div class="table-title">📜 Ações registradas</div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <select id="filtroAcaoLog" class="table-search" style="cursor:pointer;" onchange="renderLogs()">
+              <option value="">Todas as ações</option>
+              <option value="excluir">Exclusões</option>
+              <option value="verificar">Verificações</option>
+              <option value="bloquear">Bloqueios</option>
+              <option value="desbloquear">Desbloqueios</option>
+              <option value="reativar">Reativações</option>
+              <option value="criar">Criações</option>
+            </select>
+            <input class="table-search" placeholder="🔍 Buscar..." oninput="filtrarTabela('log',this.value)">
+          </div>
+        </div>
+        <table>
+          <thead><tr><th>Quando</th><th>Ação</th><th>Tabela</th><th>Descrição</th><th>Admin</th></tr></thead>
+          <tbody id="tbody-log">
+            <tr class="loading-row"><td colspan="5">⏳ Carregando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
     <!-- REGIÕES BLOQUEADAS -->
     <div class="page" id="page-bloqueios">
       <div class="page-title">Regiões Bloqueadas</div>
@@ -765,6 +798,25 @@ async function sbFetch(endpoint, options = {}) {
   return text ? JSON.parse(text) : [];
 }
 
+// ── AUDITORIA: REGISTRO DE AÇÕES ADMINISTRATIVAS ──
+// Registra silenciosamente cada ação relevante. Nunca bloqueia nem reverte
+// a ação principal caso o log falhe — auditoria é complementar, não crítica.
+async function registrarLog(acao, tabela, registroId, descricao) {
+  try {
+    await sbFetch('logs_admin', {
+      method: 'POST',
+      body: JSON.stringify({
+        acao, tabela,
+        registro_id: registroId ? String(registroId) : null,
+        descricao,
+        admin_email: usuarioAtual?.email || usuarioAtual?.user?.email || 'admin',
+      })
+    });
+  } catch(e) {
+    console.warn('Falha ao registrar log de auditoria:', e);
+  }
+}
+
 // ── CARREGAR DADOS ──
 let dadosConf = [];
 
@@ -865,6 +917,9 @@ async function acaoEmMassa(tipo, acao) {
 
   _selecionados[tipo].clear();
   toast(falhas === 0 ? `✅ ${sucesso} item(ns) processado(s) com sucesso!` : `⚠️ ${sucesso} processado(s), ${falhas} falharam.`, falhas === 0 ? 'ok' : 'err');
+  if (sucesso > 0) {
+    registrarLog(verbo, tabela, null, `Ação em massa: ${verbo} ${sucesso} registro(s) em ${tabela}`);
+  }
 
   if (tipo === 'sol' || tipo === 'vol') await carregarDados();
   else await carregarConfirmacoes();
@@ -1426,7 +1481,9 @@ async function adicionarBloqueio() {
   };
 
   try {
-    await sbFetch('regioes_bloqueadas', { method: 'POST', body: JSON.stringify(payload) });
+    const criado = await sbFetch('regioes_bloqueadas', { method: 'POST', body: JSON.stringify(payload) });
+    const local = nivel === 'pais' ? pais : nivel === 'estado' ? `${estado}, ${pais}` : `${cidade}, ${estado}`;
+    registrarLog('bloquear', 'regioes_bloqueadas', criado?.[0]?.id, `Bloqueou ${nivel}: ${local}`);
     toast('🚫 Região bloqueada com sucesso!', 'ok');
     document.getElementById('bloqEstado').value = '';
     document.getElementById('bloqCidade').value = '';
@@ -1442,14 +1499,70 @@ async function adicionarBloqueio() {
 async function removerBloqueio(id) {
   if (!confirm('Remover este bloqueio? A região voltará a poder cadastrar normalmente.')) return;
   try {
+    const bloqueio = dadosBloq.find(b => b.id === id);
+    const local = bloqueio ? (bloqueio.nivel === 'pais' ? bloqueio.pais : bloqueio.nivel === 'estado' ? `${bloqueio.estado}, ${bloqueio.pais}` : `${bloqueio.cidade}, ${bloqueio.estado}`) : id;
     const token = usuarioAtual?.access_token || SB_KEY;
     await fetch(`${SB_URL}/rest/v1/regioes_bloqueadas?id=eq.${id}`, {
       method: 'DELETE',
       headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' }
     });
+    registrarLog('desbloquear', 'regioes_bloqueadas', id, `Desbloqueou: ${local}`);
     toast('✅ Bloqueio removido!', 'ok');
     await carregarBloqueios();
   } catch(e) { toast('Erro: ' + e.message, 'err'); }
+}
+
+// ── HISTÓRICO DE AÇÕES (AUDITORIA) ──
+let dadosLog = [];
+
+async function carregarLogs() {
+  try {
+    dadosLog = await sbFetch('logs_admin?order=criado_em.desc&limit=300&select=*');
+    renderLogs();
+  } catch(e) { toast('Erro ao carregar histórico: ' + e.message, 'err'); }
+}
+
+function renderLogs(filtro='') {
+  const tbody = document.getElementById('tbody-log');
+  if (!tbody) return;
+
+  const acaoSel = document.getElementById('filtroAcaoLog')?.value || '';
+  let lista = dadosLog;
+  if (acaoSel) lista = lista.filter(l => l.acao === acaoSel);
+  if (filtro) lista = lista.filter(l =>
+    l.descricao?.toLowerCase().includes(filtro) ||
+    l.tabela?.toLowerCase().includes(filtro) ||
+    l.admin_email?.toLowerCase().includes(filtro)
+  );
+
+  if (!lista.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:32px;color:#475569;">Nenhuma ação registrada ainda.</td></tr>';
+    return;
+  }
+
+  const acaoVisual = {
+    excluir: { emoji: '🗑️', cor: '#FCA5A5' },
+    verificar: { emoji: '✅', cor: '#86EFAC' },
+    bloquear: { emoji: '🚫', cor: '#FCA5A5' },
+    desbloquear: { emoji: '🔓', cor: '#93C5FD' },
+    reativar: { emoji: '🔁', cor: '#86EFAC' },
+    ativar: { emoji: '▶️', cor: '#86EFAC' },
+    pausar: { emoji: '⏸️', cor: '#FDE68A' },
+    desativar: { emoji: '⏸️', cor: '#FDE68A' },
+    criar: { emoji: '➕', cor: '#93C5FD' },
+    renovar: { emoji: '📅', cor: '#93C5FD' },
+  };
+
+  tbody.innerHTML = lista.map(l => {
+    const vis = acaoVisual[l.acao] || { emoji: '📌', cor: '#94a3b8' };
+    return `<tr>
+      <td style="font-size:0.78rem;color:#64748b;white-space:nowrap;">${new Date(l.criado_em).toLocaleString('pt-BR')}</td>
+      <td><span style="color:${vis.cor};font-weight:700;">${vis.emoji} ${l.acao}</span></td>
+      <td style="font-size:0.78rem;color:#94a3b8;">${l.tabela}</td>
+      <td style="font-size:0.85rem;color:#e2e8f0;">${l.descricao || '—'}</td>
+      <td style="font-size:0.78rem;color:#64748b;">${l.admin_email || '—'}</td>
+    </tr>`;
+  }).join('');
 }
 
 function irPara(pagina) {
@@ -1463,6 +1576,7 @@ function irPara(pagina) {
   if (pagina === 'pontosapoio') carregarPontosApoioAdmin();
   if (pagina === 'dados') {} // carregamento manual via botão — não busca automaticamente
   if (pagina === 'bloqueios') carregarBloqueios();
+  if (pagina === 'logs') carregarLogs();
 }
 
 // ── FILTROS ──
@@ -1474,6 +1588,7 @@ function filtrarTabela(tipo, valor) {
   if (tipo === 'pref') renderPrefeituras(v);
   if (tipo === 'pontosapoio') renderPontosApoioAdmin(v);
   if (tipo === 'bloq') renderBloqueios(v);
+  if (tipo === 'log') renderLogs(v);
 }
 
 // ── PREFEITURAS ──
@@ -1633,6 +1748,8 @@ async function verificarPontoApoio(id) {
       headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
       body: JSON.stringify({ verificado: true, verificado_por: usuarioAtual?.email || 'admin', verificado_em: new Date().toISOString() })
     });
+    const ponto = dadosPontosApoio.find(p => p.id === id);
+    registrarLog('verificar', 'pontos_apoio', id, `Verificou ponto de apoio "${ponto?.nome || id}"`);
     toast('✅ Ponto verificado!', 'ok');
     await carregarPontosApoioAdmin();
   } catch(e) { toast('Erro: ' + e.message, 'err'); }
@@ -1646,6 +1763,8 @@ async function togglePontoApoio(id, ativo) {
       headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
       body: JSON.stringify({ ativo })
     });
+    const ponto = dadosPontosApoio.find(p => p.id === id);
+    registrarLog(ativo ? 'reativar' : 'desativar', 'pontos_apoio', id, `${ativo ? 'Reativou' : 'Desativou'} ponto de apoio "${ponto?.nome || id}"`);
     toast(ativo ? '▶️ Ponto reativado!' : '⏸️ Ponto desativado!', 'ok');
     await carregarPontosApoioAdmin();
   } catch(e) { toast('Erro: ' + e.message, 'err'); }
@@ -1745,7 +1864,7 @@ async function adicionarPrefeitura() {
   try {
     // Criptografa a senha antes de salvar
     const senhaHash = await criptografarSenha(senha);
-    await sbFetch('prefeituras', {
+    const criada = await sbFetch('prefeituras', {
       method: 'POST',
       body: JSON.stringify({
         cidade, estado, senha: senhaHash,
@@ -1756,6 +1875,7 @@ async function adicionarPrefeitura() {
         ativo: true
       })
     });
+    registrarLog('criar', 'prefeituras', criada?.[0]?.id, `Adicionou prefeitura de ${cidade}, ${estado}`);
     toast('✅ Prefeitura adicionada!', 'ok');
     // Limpa campos
     ['pref-cidade','pref-estado','pref-senha','pref-datafim','pref-contato','pref-email','pref-whatsapp']
@@ -1775,6 +1895,8 @@ async function togglePrefeitura(id, ativo) {
       headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
       body: JSON.stringify({ ativo })
     });
+    const pref = dadosPref.find(p => p.id === id);
+    registrarLog(ativo ? 'ativar' : 'pausar', 'prefeituras', id, `${ativo ? 'Ativou' : 'Pausou'} prefeitura de ${pref?.cidade || id}`);
     toast(ativo ? '✅ Prefeitura ativada!' : '⏸️ Prefeitura pausada!', 'ok');
     await carregarPrefeituras();
   } catch(e) { toast('Erro: ' + e.message, 'err'); }
@@ -1875,6 +1997,7 @@ async function confirmarRenovacao() {
       body: JSON.stringify({ data_fim: novaData, ativo: true })
     });
     toast(`✅ Validade atualizada para ${formatarDataBR(novaData)}!`, 'ok');
+    registrarLog('renovar', 'prefeituras', id, `Renovou validade de ${pref.cidade} até ${formatarDataBR(novaData)}`);
     fecharModalRenovar();
     await carregarPrefeituras();
   } catch(e) { toast('Erro: ' + e.message, 'err'); }
@@ -1911,6 +2034,8 @@ async function reativarSol(id) {
       body: JSON.stringify({ ativo: true, expira_em: new Date(Date.now() + 24*60*60*1000).toISOString() })
     });
     if (!patchRes.ok) throw new Error(await patchRes.text());
+    const sol = dadosSol.find(s => s.id === id);
+    registrarLog('reativar', 'solicitacoes', id, `Reativou solicitação de "${sol?.nome || id}" por 24h`);
     toast('✅ Solicitação reativada por 24h!', 'ok');
     await carregarDados();
   } catch(e) { toast('Erro: ' + e.message, 'err'); }
@@ -1936,6 +2061,7 @@ function confirmarDelete(tipo, id, nome) {
         const errText = await delRes.text();
         throw new Error(errText);
       }
+      registrarLog('excluir', tabela, id, `Excluiu "${nome}"`);
       toast('🗑️ Excluído com sucesso!', 'ok');
       fecharConfirm();
       if (tipo === 'pontosapoio') { await carregarPontosApoioAdmin(); } else { await carregarDados(); }
