@@ -8,6 +8,7 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'Inter',sans-serif;background:#0a0f1a;color:#e2e8f0;min-height:100vh;}
@@ -57,6 +58,9 @@ body{font-family:'Inter',sans-serif;background:#0a0f1a;color:#e2e8f0;min-height:
 }
 .btn-logout{padding:7px 14px;border-radius:8px;border:1px solid #1e2535;background:transparent;color:#64748b;font-size:0.78rem;cursor:pointer;transition:all .2s;}
 .btn-logout:hover{border-color:#D92B2B;color:#D92B2B;}
+.btn-exportar{padding:7px 14px;border-radius:8px;border:1px solid #1A3C8F;background:transparent;color:#93C5FD;font-size:0.78rem;font-weight:600;cursor:pointer;transition:all .2s;}
+.btn-exportar:hover{background:#1A3C8F;color:#fff;}
+.btn-exportar:disabled{opacity:0.5;cursor:wait;}
 .dash-badge{background:#D92B2B;color:#fff;font-size:0.65rem;font-weight:700;padding:2px 7px;border-radius:99px;margin-left:6px;}
 
 /* MAIN */
@@ -182,6 +186,7 @@ tbody tr:last-child td{border-bottom:none;}
         <option value="365">Último ano</option>
         <option value="0">Todo o período</option>
       </select>
+      <button class="btn-exportar" onclick="exportarRelatorio()">📊 Exportar relatório</button>
       <button class="btn-logout" onclick="sair()">Sair</button>
     </div>
   </header>
@@ -567,6 +572,8 @@ async function verificarPontoApoioPref(id) {
 }
 
 // ── CARREGAR DADOS ──
+let _dadosExportacao = { sols: [], vols: [], confs: [], avals: [], periodo: '' };
+
 async function carregarDados() {
   if (!_cidadeAtual) return;
   const dias = parseInt(document.getElementById('periodoSelect').value);
@@ -579,8 +586,8 @@ async function carregarDados() {
     filtroData = `&criado_em=gte.${desde}`;
   }
 
-  document.getElementById('tabela-periodo-label').textContent =
-    dias === 0 ? 'Todo o período' : `Últimos ${dias} dias`;
+  const labelPeriodo = dias === 0 ? 'Todo o período' : `Últimos ${dias} dias`;
+  document.getElementById('tabela-periodo-label').textContent = labelPeriodo;
 
   try {
     // Busca dados da cidade
@@ -590,6 +597,8 @@ async function carregarDados() {
       sbFetch(`confirmacoes?select=*,solicitacoes!inner(cidade)&solicitacoes.cidade=ilike.*${encodeURIComponent(cidade)}*${filtroData}`),
       sbFetch(`avaliacoes?select=estrelas${filtroData}`)
     ]);
+
+    _dadosExportacao = { sols, vols, confs, avals, periodo: labelPeriodo };
 
     renderStats(sols, vols, confs, avals);
     renderTipos(sols);
@@ -741,6 +750,113 @@ function renderHistorico(sols) {
 }
 
 // ── TABELA ──
+// ── EXPORTAÇÃO DE RELATÓRIO ──
+function exportarRelatorio() {
+  const btn = document.querySelector('.btn-exportar');
+  if (typeof XLSX === 'undefined') {
+    toast('⚠️ Biblioteca de exportação não carregou. Verifique sua conexão e tente novamente.');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = '⏳ Gerando...';
+
+  try {
+    const { sols, vols, confs, avals, periodo } = _dadosExportacao;
+    const cidade = _cidadeAtual?.nome || '—';
+    const agora = new Date().toLocaleString('pt-BR');
+    const wb = XLSX.utils.book_new();
+
+    // ABA 1: Resumo
+    const ativas = sols.filter(s => s.ativo && new Date(s.expira_em) > new Date());
+    const urgentes = sols.filter(s => s.urgencia === 'vermelho');
+    const concluidas = sols.filter(s => !s.ativo || new Date(s.expira_em) <= new Date());
+    const mediaAval = avals.length ? (avals.reduce((s,a) => s+a.estrelas, 0)/avals.length).toFixed(1) : '—';
+    const semVoluntarios = sols.filter(s => (s.voluntarios_confirmados || 0) === 0);
+
+    const resumo = [
+      ['Relatório SOS Ajuda Aí — Painel Municipal'],
+      ['Cidade', cidade],
+      ['Período', periodo],
+      ['Gerado em', agora],
+      [],
+      ['Indicador', 'Valor'],
+      ['Total de solicitações no período', sols.length],
+      ['Solicitações ativas agora', ativas.length],
+      ['Solicitações urgentes', urgentes.length],
+      ['Solicitações concluídas/expiradas', concluidas.length],
+      ['Solicitações sem nenhum voluntário confirmado', semVoluntarios.length],
+      ['Voluntários cadastrados na cidade', vols.length],
+      ['Confirmações de presença no período', confs.length],
+      ['Avaliação média dos voluntários', mediaAval],
+    ];
+    const wsResumo = XLSX.utils.aoa_to_sheet(resumo);
+    wsResumo['!cols'] = [{wch:42},{wch:30}];
+    XLSX.utils.book_append_sheet(wb, wsResumo, 'Resumo');
+
+    // ABA 2: Solicitações detalhadas
+    const linhasSol = sols.length ? sols.map(s => ({
+      'Nome': s.nome,
+      'Endereço': s.endereco,
+      'Urgência': s.urgencia,
+      'Tipos de ajuda': (s.tipos_ajuda || []).join(', '),
+      'Voluntários confirmados': s.voluntarios_confirmados || 0,
+      'Limite de voluntários': s.limite_voluntarios || '—',
+      'Status': s.ativo && new Date(s.expira_em) > new Date() ? 'Ativa' : 'Concluída/expirada',
+      'Criado em': s.criado_em ? new Date(s.criado_em).toLocaleString('pt-BR') : '—',
+    })) : [{ 'Nome': 'Nenhuma solicitação no período selecionado' }];
+    const wsSol = XLSX.utils.json_to_sheet(linhasSol);
+    wsSol['!cols'] = [{wch:24},{wch:34},{wch:12},{wch:30},{wch:14},{wch:14},{wch:20},{wch:18}];
+    XLSX.utils.book_append_sheet(wb, wsSol, 'Solicitações');
+
+    // ABA 3: Solicitações sem voluntários (alerta)
+    const linhasSemVol = semVoluntarios.length ? semVoluntarios.map(s => ({
+      'Nome': s.nome,
+      'Endereço': s.endereco,
+      'Urgência': s.urgencia,
+      'Criado em': s.criado_em ? new Date(s.criado_em).toLocaleString('pt-BR') : '—',
+      'Horas em aberto': s.criado_em ? Math.round((Date.now() - new Date(s.criado_em)) / 3600000) : '—',
+    })) : [{ 'Nome': 'Nenhuma solicitação sem voluntários no período' }];
+    const wsSemVol = XLSX.utils.json_to_sheet(linhasSemVol);
+    wsSemVol['!cols'] = [{wch:24},{wch:34},{wch:12},{wch:18},{wch:14}];
+    XLSX.utils.book_append_sheet(wb, wsSemVol, 'Sem voluntários');
+
+    // ABA 4: Voluntários
+    const linhasVol = vols.length ? vols.map(v => ({
+      'Nome': v.nome || '—',
+      'Cidade': v.cidade || '—',
+      'Habilidades': (v.habilidades || []).join(', '),
+      'WhatsApp': v.whatsapp || '—',
+    })) : [{ 'Nome': 'Nenhum voluntário cadastrado nesta cidade' }];
+    const wsVol = XLSX.utils.json_to_sheet(linhasVol);
+    wsVol['!cols'] = [{wch:26},{wch:18},{wch:30},{wch:16}];
+    XLSX.utils.book_append_sheet(wb, wsVol, 'Voluntários');
+
+    // ABA 5: Pontos de apoio
+    const pontosApoio = _pontosApoioPref || [];
+    const linhasPontos = pontosApoio.length ? pontosApoio.map(p => ({
+      'Tipo': p.tipo === 'abrigo' ? 'Abrigo' : 'Doações/Mantimentos',
+      'Nome': p.nome,
+      'Endereço': p.endereco,
+      'Verificado': p.verificado ? 'Sim' : 'Não',
+      'Ativo': p.ativo ? 'Sim' : 'Não',
+    })) : [{ 'Tipo': 'Nenhum ponto de apoio cadastrado nesta cidade' }];
+    const wsPontos = XLSX.utils.json_to_sheet(linhasPontos);
+    wsPontos['!cols'] = [{wch:20},{wch:24},{wch:34},{wch:12},{wch:10}];
+    XLSX.utils.book_append_sheet(wb, wsPontos, 'Pontos de apoio');
+
+    const nomeArquivo = `relatorio_sos_ajuda_ai_${cidade.replace(/[^a-zA-Z0-9]/g,'_')}_${new Date().toISOString().slice(0,10)}.xlsx`;
+    XLSX.writeFile(wb, nomeArquivo);
+    toast('✅ Relatório exportado com sucesso!');
+  } catch(e) {
+    console.error('Erro ao exportar:', e);
+    toast('⚠️ Erro ao gerar o relatório. Tente novamente.');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '📊 Exportar relatório';
+  }
+}
+
 function renderTabela(sols) {
   const tbody = document.getElementById('tbody-prefeitura');
   if (!sols.length) {
