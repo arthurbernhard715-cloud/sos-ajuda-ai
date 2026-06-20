@@ -2580,11 +2580,15 @@ async function verificarRegiaoBloqueada(pais, estado, cidade) {
     if (!bloqueios.length) return null;
 
     const norm = (s) => (s || '').trim().toLowerCase();
+    // Normaliza o estado para sigla antes de comparar — o formulário pode enviar
+    // o nome completo ("Rio Grande do Sul"), enquanto o bloqueio é salvo como sigla ("RS")
+    const estadoSigla = norm(siglaDoEstado(estado));
 
     const bloqueado = bloqueios.find(b => {
+      const bloqEstadoSigla = norm(siglaDoEstado(b.estado));
       if (b.nivel === 'pais') return norm(b.pais) === norm(pais);
-      if (b.nivel === 'estado') return norm(b.pais) === norm(pais) && norm(b.estado) === norm(estado);
-      if (b.nivel === 'cidade') return norm(b.pais) === norm(pais) && norm(b.estado) === norm(estado) && norm(b.cidade) === norm(cidade);
+      if (b.nivel === 'estado') return norm(b.pais) === norm(pais) && bloqEstadoSigla === estadoSigla;
+      if (b.nivel === 'cidade') return norm(b.pais) === norm(pais) && bloqEstadoSigla === estadoSigla && norm(b.cidade) === norm(cidade);
       return false;
     });
 
