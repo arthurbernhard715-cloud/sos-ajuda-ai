@@ -1270,6 +1270,7 @@ const MAPA_ESTADOS_SIGLA_ADMIN = {'Rio Grande do Sul':'RS','Santa Catarina':'SC'
 
 let _paisBloqTimer = null;
 async function buscarPaisBloq(valor) {
+  _bloqConfirmado.pais = false;
   clearTimeout(_paisBloqTimer);
   const lista = document.getElementById('listaPaisBloq');
   if (!valor || valor.length < 2) { lista.style.display = 'none'; return; }
@@ -1293,9 +1294,19 @@ async function buscarPaisBloq(valor) {
     } catch(e) {}
   }, 350);
 }
+// Controla se cada campo foi de fato CONFIRMADO clicando numa sugestão real,
+// e não apenas digitado livremente. Reseta a cada nova digitação.
+const _bloqConfirmado = { pais: false, estado: false, cidade: false };
+
 function selecionarPaisBloq(nome) {
   document.getElementById('bloqPais').value = nome;
   document.getElementById('listaPaisBloq').style.display = 'none';
+  _bloqConfirmado.pais = true;
+  // Mudar o país invalida estado/cidade já escolhidos
+  _bloqConfirmado.estado = false;
+  _bloqConfirmado.cidade = false;
+  document.getElementById('bloqEstado').value = '';
+  document.getElementById('bloqCidade').value = '';
 }
 function fecharListaPaisBloq() {
   const el = document.getElementById('listaPaisBloq');
@@ -1304,6 +1315,7 @@ function fecharListaPaisBloq() {
 
 let _estadoBloqTimer = null;
 async function buscarEstadoBloq(valor) {
+  _bloqConfirmado.estado = false;
   clearTimeout(_estadoBloqTimer);
   const lista = document.getElementById('listaEstadoBloq');
   if (!valor || valor.length < 2) { lista.style.display = 'none'; return; }
@@ -1333,6 +1345,8 @@ function selecionarEstadoBloq(nome) {
   document.getElementById('bloqEstado').value = MAPA_ESTADOS_SIGLA_ADMIN[nome] || nome;
   document.getElementById('listaEstadoBloq').style.display = 'none';
   document.getElementById('bloqCidade').value = '';
+  _bloqConfirmado.estado = true;
+  _bloqConfirmado.cidade = false; // mudar o estado invalida a cidade já escolhida
 }
 function fecharListaEstadoBloq() {
   const el = document.getElementById('listaEstadoBloq');
@@ -1341,6 +1355,7 @@ function fecharListaEstadoBloq() {
 
 let _cidadeBloqTimer = null;
 async function buscarCidadeBloq(valor) {
+  _bloqConfirmado.cidade = false;
   clearTimeout(_cidadeBloqTimer);
   const lista = document.getElementById('listaCidadeBloq');
   if (!valor || valor.length < 2) { lista.style.display = 'none'; return; }
@@ -1369,6 +1384,7 @@ async function buscarCidadeBloq(valor) {
 function selecionarCidadeBloq(nome) {
   document.getElementById('bloqCidade').value = nome;
   document.getElementById('listaCidadeBloq').style.display = 'none';
+  _bloqConfirmado.cidade = true;
 }
 function fecharListaCidadeBloq() {
   const el = document.getElementById('listaCidadeBloq');
@@ -1383,7 +1399,22 @@ async function adicionarBloqueio() {
   const cidade = document.getElementById('bloqCidade').value.trim();
   const motivo = document.getElementById('bloqMotivo').value.trim();
 
-  if (nivel === 'estado' && !estado) { toast('⚠️ Informe o estado (UF) a bloquear.'); return; }
+  // Exige que cada campo relevante tenha sido CONFIRMADO via clique numa sugestão real —
+  // não basta digitar livremente, isso evita bloquear lugares que não existem
+  if (!_bloqConfirmado.pais) {
+    toast('⚠️ Selecione o país a partir da lista de sugestões (não basta digitar).');
+    return;
+  }
+  if ((nivel === 'estado' || nivel === 'cidade') && !_bloqConfirmado.estado) {
+    toast('⚠️ Selecione o estado a partir da lista de sugestões (não basta digitar).');
+    return;
+  }
+  if (nivel === 'cidade' && !_bloqConfirmado.cidade) {
+    toast('⚠️ Selecione a cidade a partir da lista de sugestões (não basta digitar).');
+    return;
+  }
+
+  if (nivel === 'estado' && !estado) { toast('⚠️ Informe o estado a bloquear.'); return; }
   if (nivel === 'cidade' && (!cidade || !estado)) { toast('⚠️ Informe cidade e estado a bloquear.'); return; }
 
   const payload = {
@@ -1400,6 +1431,8 @@ async function adicionarBloqueio() {
     document.getElementById('bloqEstado').value = '';
     document.getElementById('bloqCidade').value = '';
     document.getElementById('bloqMotivo').value = '';
+    _bloqConfirmado.estado = false;
+    _bloqConfirmado.cidade = false;
     await carregarBloqueios();
   } catch(e) {
     toast('⚠️ Erro ao bloquear região: ' + e.message, 'err');
