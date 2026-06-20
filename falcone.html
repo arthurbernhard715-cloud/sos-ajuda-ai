@@ -287,6 +287,9 @@ tbody tr:last-child td{border-bottom:none;}
       <div class="nav-item" data-page="dados" onclick="irPara('dados')">
         <span class="ni-icon">📊</span> Dados
       </div>
+      <div class="nav-item" data-page="bloqueios" onclick="irPara('bloqueios')">
+        <span class="ni-icon">🚫</span> Regiões Bloqueadas
+      </div>
       <div class="nav-item" onclick="window.open('https://sos-ajuda-ai.vercel.app','_blank')">
         <span class="ni-icon">🌐</span> Ver site
       </div>
@@ -536,6 +539,58 @@ tbody tr:last-child td{border-bottom:none;}
           </thead>
           <tbody id="tbody-pontosapoio">
             <tr class="loading-row"><td colspan="6">⏳ Carregando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- REGIÕES BLOQUEADAS -->
+    <div class="page" id="page-bloqueios">
+      <div class="page-title">Regiões Bloqueadas</div>
+      <div class="page-sub">Impede que novas solicitações ou pontos de apoio sejam cadastrados a partir de países, estados ou cidades específicas. Por padrão, qualquer lugar pode cadastrar — esta lista define as exceções.</div>
+
+      <div class="table-wrap" style="margin-bottom:20px;">
+        <div class="table-header">
+          <div class="table-title">➕ Adicionar bloqueio</div>
+        </div>
+        <div style="padding:18px 20px;display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+          <div style="flex:1;min-width:140px;">
+            <label style="display:block;font-size:0.75rem;color:#94a3b8;margin-bottom:5px;">Nível</label>
+            <select id="bloqNivel" class="table-search" style="width:100%;cursor:pointer;" onchange="atualizarCamposBloqueio()">
+              <option value="pais">País</option>
+              <option value="estado">Estado</option>
+              <option value="cidade" selected>Cidade</option>
+            </select>
+          </div>
+          <div style="flex:1;min-width:140px;">
+            <label style="display:block;font-size:0.75rem;color:#94a3b8;margin-bottom:5px;">País</label>
+            <input id="bloqPais" class="table-search" style="width:100%;" value="Brasil">
+          </div>
+          <div style="flex:1;min-width:120px;" id="wrapBloqEstado">
+            <label style="display:block;font-size:0.75rem;color:#94a3b8;margin-bottom:5px;">Estado (UF)</label>
+            <input id="bloqEstado" class="table-search" style="width:100%;" maxlength="2" placeholder="Ex: RS">
+          </div>
+          <div style="flex:1.5;min-width:160px;" id="wrapBloqCidade">
+            <label style="display:block;font-size:0.75rem;color:#94a3b8;margin-bottom:5px;">Cidade</label>
+            <input id="bloqCidade" class="table-search" style="width:100%;" placeholder="Ex: Sinimbu">
+          </div>
+          <div style="flex:2;min-width:200px;">
+            <label style="display:block;font-size:0.75rem;color:#94a3b8;margin-bottom:5px;">Motivo (opcional, nota interna)</label>
+            <input id="bloqMotivo" class="table-search" style="width:100%;" placeholder="Ex: Suspeita de cadastros falsos">
+          </div>
+          <button class="btn-action btn-reativar-admin" style="padding:9px 18px;" onclick="adicionarBloqueio()">Bloquear</button>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <div class="table-header">
+          <div class="table-title">🚫 Bloqueios ativos</div>
+          <input class="table-search" placeholder="🔍 Buscar..." oninput="filtrarTabela('bloq',this.value)">
+        </div>
+        <table>
+          <thead><tr><th>Nível</th><th>Local bloqueado</th><th>Motivo</th><th>Criado em</th><th>Ações</th></tr></thead>
+          <tbody id="tbody-bloq">
+            <tr class="loading-row"><td colspan="5">⏳ Carregando...</td></tr>
           </tbody>
         </table>
       </div>
@@ -1150,6 +1205,99 @@ function cardErro(nome, icone, iconeBg, erro) {
   </div>`;
 }
 
+// ── REGIÕES BLOQUEADAS ──
+let dadosBloq = [];
+
+function atualizarCamposBloqueio() {
+  const nivel = document.getElementById('bloqNivel').value;
+  document.getElementById('wrapBloqEstado').style.display = (nivel === 'estado' || nivel === 'cidade') ? 'block' : 'none';
+  document.getElementById('wrapBloqCidade').style.display = (nivel === 'cidade') ? 'block' : 'none';
+}
+
+async function carregarBloqueios() {
+  try {
+    dadosBloq = await sbFetch('regioes_bloqueadas?order=criado_em.desc&select=*');
+    renderBloqueios();
+  } catch(e) { toast('Erro ao carregar regiões bloqueadas: ' + e.message, 'err'); }
+}
+
+function renderBloqueios(filtro='') {
+  const tbody = document.getElementById('tbody-bloq');
+  if (!tbody) return;
+
+  let lista = dadosBloq;
+  if (filtro) lista = lista.filter(b =>
+    b.pais?.toLowerCase().includes(filtro) ||
+    b.estado?.toLowerCase().includes(filtro) ||
+    b.cidade?.toLowerCase().includes(filtro) ||
+    b.motivo?.toLowerCase().includes(filtro)
+  );
+
+  if (!lista.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:32px;color:#475569;">Nenhuma região bloqueada — tudo liberado.</td></tr>';
+    return;
+  }
+
+  const nivelLabel = { pais: '🌎 País', estado: '🗺️ Estado', cidade: '🏙️ Cidade' };
+  const localLabel = (b) => {
+    if (b.nivel === 'pais') return b.pais;
+    if (b.nivel === 'estado') return `${b.estado}, ${b.pais}`;
+    return `${b.cidade}, ${b.estado} — ${b.pais}`;
+  };
+
+  tbody.innerHTML = lista.map(b => `
+    <tr>
+      <td><strong style="color:#fff">${nivelLabel[b.nivel] || b.nivel}</strong></td>
+      <td style="font-size:0.85rem;color:#e2e8f0;">${localLabel(b)}</td>
+      <td style="font-size:0.78rem;color:#94a3b8;">${b.motivo || '—'}</td>
+      <td style="font-size:0.78rem;color:#64748b">${new Date(b.criado_em).toLocaleDateString('pt-BR')}</td>
+      <td><button class="btn-action btn-del" onclick="removerBloqueio('${b.id}')">🗑️ Desbloquear</button></td>
+    </tr>`).join('');
+}
+
+async function adicionarBloqueio() {
+  const nivel = document.getElementById('bloqNivel').value;
+  const pais = document.getElementById('bloqPais').value.trim() || 'Brasil';
+  const estado = document.getElementById('bloqEstado').value.trim().toUpperCase();
+  const cidade = document.getElementById('bloqCidade').value.trim();
+  const motivo = document.getElementById('bloqMotivo').value.trim();
+
+  if (nivel === 'estado' && !estado) { toast('⚠️ Informe o estado (UF) a bloquear.'); return; }
+  if (nivel === 'cidade' && (!cidade || !estado)) { toast('⚠️ Informe cidade e estado a bloquear.'); return; }
+
+  const payload = {
+    nivel, pais,
+    estado: nivel !== 'pais' ? estado : null,
+    cidade: nivel === 'cidade' ? cidade : null,
+    motivo: motivo || null,
+    criado_por: usuarioAtual?.email || 'admin',
+  };
+
+  try {
+    await sbFetch('regioes_bloqueadas', { method: 'POST', body: JSON.stringify(payload) });
+    toast('🚫 Região bloqueada com sucesso!', 'ok');
+    document.getElementById('bloqEstado').value = '';
+    document.getElementById('bloqCidade').value = '';
+    document.getElementById('bloqMotivo').value = '';
+    await carregarBloqueios();
+  } catch(e) {
+    toast('⚠️ Erro ao bloquear região: ' + e.message, 'err');
+  }
+}
+
+async function removerBloqueio(id) {
+  if (!confirm('Remover este bloqueio? A região voltará a poder cadastrar normalmente.')) return;
+  try {
+    const token = usuarioAtual?.access_token || SB_KEY;
+    await fetch(`${SB_URL}/rest/v1/regioes_bloqueadas?id=eq.${id}`, {
+      method: 'DELETE',
+      headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' }
+    });
+    toast('✅ Bloqueio removido!', 'ok');
+    await carregarBloqueios();
+  } catch(e) { toast('Erro: ' + e.message, 'err'); }
+}
+
 function irPara(pagina) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
@@ -1160,6 +1308,7 @@ function irPara(pagina) {
   if (pagina === 'prefeituras') carregarPrefeituras();
   if (pagina === 'pontosapoio') carregarPontosApoioAdmin();
   if (pagina === 'dados') {} // carregamento manual via botão — não busca automaticamente
+  if (pagina === 'bloqueios') carregarBloqueios();
 }
 
 // ── FILTROS ──
@@ -1170,6 +1319,7 @@ function filtrarTabela(tipo, valor) {
   if (tipo === 'conf') renderConfirmacoes(v);
   if (tipo === 'pref') renderPrefeituras(v);
   if (tipo === 'pontosapoio') renderPontosApoioAdmin(v);
+  if (tipo === 'bloq') renderBloqueios(v);
 }
 
 // ── PREFEITURAS ──

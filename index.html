@@ -1841,6 +1841,10 @@ async function salvarPontoApoio() {
   if (!nome) { toast('⚠️ Informe o nome do local ou responsável.'); return; }
   if (!endereco || !cidade) { toast('⚠️ Informe endereço e cidade (ou use o GPS).'); return; }
 
+  // Verifica se a região está bloqueada para novos cadastros
+  const erroRegiao = await verificarRegiaoBloqueada('Brasil', estado, cidade);
+  if (erroRegiao) { toast(erroRegiao); return; }
+
   // Se não usou o GPS, tenta geocodificar o endereço digitado
   let lat = _pontoLatSelecionada, lng = _pontoLngSelecionada;
   if (!lat || !lng) {
@@ -2548,6 +2552,34 @@ async function confirmarPresenca(solId, btn) {
 }
 
 // ── SALVAR SOLICITAÇÃO REAL ──
+// ── VERIFICAÇÃO DE REGIÃO BLOQUEADA ──
+// Consulta a tabela regioes_bloqueadas e verifica se o país/estado/cidade
+// informado está impedido de cadastrar. Retorna null se liberado, ou uma
+// mensagem de erro se bloqueado.
+async function verificarRegiaoBloqueada(pais, estado, cidade) {
+  try {
+    const bloqueios = await sbFetch('regioes_bloqueadas?select=*');
+    if (!bloqueios.length) return null;
+
+    const norm = (s) => (s || '').trim().toLowerCase();
+
+    const bloqueado = bloqueios.find(b => {
+      if (b.nivel === 'pais') return norm(b.pais) === norm(pais);
+      if (b.nivel === 'estado') return norm(b.pais) === norm(pais) && norm(b.estado) === norm(estado);
+      if (b.nivel === 'cidade') return norm(b.pais) === norm(pais) && norm(b.estado) === norm(estado) && norm(b.cidade) === norm(cidade);
+      return false;
+    });
+
+    if (bloqueado) {
+      return '⚠️ Não é possível cadastrar a partir desta localização no momento. Entre em contato com o suporte se acredita que isso é um erro.';
+    }
+    return null;
+  } catch(e) {
+    console.warn('Erro ao verificar região bloqueada:', e);
+    return null; // em caso de falha na verificação, não bloqueia o cadastro
+  }
+}
+
 async function submeterCadastroReal() {
   if (!usuarioAtual) {
     fecharModal('modal-atingido');
@@ -2573,6 +2605,10 @@ async function submeterCadastroReal() {
   if (!estado) { toast('⚠️ Selecione o estado ou província!'); return; }
   if (!cidade) { toast('⚠️ Selecione a cidade!'); return; }
   if (!endRua) { toast('⚠️ Preencha o endereço ou use o GPS!'); return; }
+
+  // Verifica se a região está bloqueada para novos cadastros
+  const erroRegiao = await verificarRegiaoBloqueada(pais, estado, cidade);
+  if (erroRegiao) { toast(erroRegiao); return; }
 
   // Verifica se já existe solicitação ativa neste endereço + complemento
   try {
