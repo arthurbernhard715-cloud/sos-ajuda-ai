@@ -1046,8 +1046,16 @@ textarea.form-control { resize: vertical; min-height: 88px; }
       </div>
       <input class="form-control" id="pontoEnderecoInput" placeholder="Rua, número, bairro...">
       <div style="display:flex;gap:8px;margin-top:8px;">
-        <input class="form-control" id="pontoCidadeInput" placeholder="Cidade" style="flex:2;">
-        <input class="form-control" id="pontoEstadoInput" placeholder="UF" maxlength="2" style="flex:1;" value="RS">
+        <div style="position:relative;flex:1;">
+          <input class="form-control" id="pontoEstadoInput" placeholder="Digite o estado..." autocomplete="off" value="Rio Grande do Sul"
+            oninput="buscarEstadoPonto(this.value)" onblur="setTimeout(fecharListaEstadoPonto,250)">
+          <div id="listaEstadoPonto" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:999;background:#fff;border:1.5px solid var(--azul-med);border-top:none;border-radius:0 0 10px 10px;max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.12);"></div>
+        </div>
+        <div style="position:relative;flex:1.4;">
+          <input class="form-control" id="pontoCidadeInput" placeholder="Digite a cidade..." autocomplete="off"
+            oninput="buscarCidadePonto(this.value)" onblur="setTimeout(fecharListaCidadePonto,250)">
+          <div id="listaCidadePonto" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:999;background:#fff;border:1.5px solid var(--azul-med);border-top:none;border-radius:0 0 10px 10px;max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.12);"></div>
+        </div>
       </div>
     </div>
 
@@ -1711,7 +1719,10 @@ function abrirModalPontoApoio() {
   document.getElementById('pontoNomeInput').value = '';
   document.getElementById('pontoEnderecoInput').value = '';
   document.getElementById('pontoCidadeInput').value = '';
-  document.getElementById('pontoEstadoInput').value = 'RS';
+  document.getElementById('pontoEstadoInput').value = 'Rio Grande do Sul';
+  _estadoPontoSelecionado = 'Rio Grande do Sul';
+  fecharListaEstadoPonto();
+  fecharListaCidadePonto();
   document.getElementById('pontoTelefoneInput').value = '';
   document.getElementById('pontoDescricaoInput').value = '';
   document.getElementById('pontoCapacidadeInput').value = '';
@@ -1752,8 +1763,7 @@ async function preencherEnderecoPorCoordenadas(latitude, longitude) {
     const data = await res.json();
     const addr = data.address || {};
     const cidade = addr.city || addr.town || addr.village || '';
-    const mapaEst = {'Rio Grande do Sul':'RS','Santa Catarina':'SC','Paraná':'PR','São Paulo':'SP','Rio de Janeiro':'RJ'};
-    const estado = mapaEst[addr.state] || addr.state || 'RS';
+    const estado = addr.state || '';
     const ruaNum = [addr.road, addr.house_number].filter(Boolean).join(', ');
 
     if (ruaNum) document.getElementById('pontoEnderecoInput').value = ruaNum;
@@ -1834,7 +1844,7 @@ async function salvarPontoApoio() {
   const nome = document.getElementById('pontoNomeInput').value.trim();
   const endereco = document.getElementById('pontoEnderecoInput').value.trim();
   const cidade = document.getElementById('pontoCidadeInput').value.trim();
-  const estado = document.getElementById('pontoEstadoInput').value.trim().toUpperCase() || 'RS';
+  const estado = siglaDoEstado(document.getElementById('pontoEstadoInput').value.trim()) || 'RS';
   const telefone = document.getElementById('pontoTelefoneInput').value.trim();
   const descricao = document.getElementById('pontoDescricaoInput').value.trim();
 
@@ -2017,6 +2027,14 @@ window.addEventListener('scroll',()=>{
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 const SINIMBU = [-29.5317, -52.5167];
+const MAPA_ESTADOS_SIGLA = {'Rio Grande do Sul':'RS','Santa Catarina':'SC','Paraná':'PR','São Paulo':'SP','Rio de Janeiro':'RJ','Minas Gerais':'MG','Bahia':'BA','Pernambuco':'PE','Ceará':'CE','Goiás':'GO','Mato Grosso':'MT','Mato Grosso do Sul':'MS','Pará':'PA','Maranhão':'MA','Amazonas':'AM','Espírito Santo':'ES','Alagoas':'AL','Piauí':'PI','Rio Grande do Norte':'RN','Paraíba':'PB','Sergipe':'SE','Rondônia':'RO','Tocantins':'TO','Acre':'AC','Amapá':'AP','Roraima':'RR','Distrito Federal':'DF'};
+
+function siglaDoEstado(nomeOuSigla) {
+  if (!nomeOuSigla) return '';
+  const limpo = nomeOuSigla.trim();
+  if (limpo.length === 2) return limpo.toUpperCase(); // já é sigla
+  return MAPA_ESTADOS_SIGLA[limpo] || limpo.toUpperCase();
+}
 let mapaObj = null;
 let marcadores = [];
 let pontosMapa = [];
@@ -3760,6 +3778,98 @@ function fecharListaCidade() {
 
 // Mantém compatibilidade com passoEstado (chamado pelo GPS)
 function passoEstado(estado) {}
+
+// ── AUTOCOMPLETE: ESTADO E CIDADE NO FORMULÁRIO DE PONTO DE APOIO ──
+let _estadoPontoTimer = null;
+let _estadoPontoSelecionado = 'Rio Grande do Sul';
+
+async function buscarEstadoPonto(valor) {
+  clearTimeout(_estadoPontoTimer);
+  const lista = document.getElementById('listaEstadoPonto');
+  if (!valor || valor.length < 2) { lista.style.display = 'none'; return; }
+  _estadoPontoTimer = setTimeout(async () => {
+    try {
+      const q = encodeURIComponent(`${valor}, Brasil`);
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=6&addressdetails=1`);
+      const data = await res.json();
+      const vistos = new Set();
+      const estados = data.filter(r => {
+        const s = r.address?.state || r.display_name.split(',')[0];
+        if (!s || vistos.has(s)) return false;
+        vistos.add(s); return true;
+      }).slice(0,6);
+      if (!estados.length) { lista.style.display='none'; return; }
+      lista.innerHTML = estados.map(r => {
+        const nome = r.address?.state || r.display_name.split(',')[0];
+        return `<div onclick="selecionarEstadoPonto('${nome.replace(/'/g,"\\'")}')"
+          style="padding:10px 14px;cursor:pointer;font-size:0.85rem;border-bottom:1px solid #f1f5f9;"
+          onmouseover="this.style.background='#EEF2FF'" onmouseout="this.style.background='#fff'">
+          📍 <strong>${nome}</strong>
+        </div>`;
+      }).join('');
+      lista.style.display = 'block';
+    } catch(e) {}
+  }, 350);
+}
+
+function selecionarEstadoPonto(nome) {
+  _estadoPontoSelecionado = nome;
+  document.getElementById('pontoEstadoInput').value = nome;
+  document.getElementById('listaEstadoPonto').style.display = 'none';
+  // Reseta a cidade, já que mudou o estado
+  document.getElementById('pontoCidadeInput').value = '';
+}
+
+function fecharListaEstadoPonto() {
+  const el = document.getElementById('listaEstadoPonto');
+  if (el) el.style.display = 'none';
+}
+
+let _cidadePontoTimer = null;
+async function buscarCidadePonto(valor) {
+  clearTimeout(_cidadePontoTimer);
+  const lista = document.getElementById('listaCidadePonto');
+  if (!valor || valor.length < 2) { lista.style.display = 'none'; return; }
+  _cidadePontoTimer = setTimeout(async () => {
+    try {
+      const estadoAtual = document.getElementById('pontoEstadoInput').value.trim() || _estadoPontoSelecionado;
+      const q = encodeURIComponent(`${valor}, ${estadoAtual}, Brasil`);
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=6&addressdetails=1`);
+      const data = await res.json();
+      const vistos = new Set();
+      const cidades = data.filter(r => {
+        const c = r.address?.city || r.address?.town || r.address?.village || r.display_name.split(',')[0];
+        if (!c || vistos.has(c)) return false;
+        vistos.add(c); return true;
+      }).slice(0,6);
+      if (!cidades.length) { lista.style.display='none'; return; }
+      lista.innerHTML = cidades.map(r => {
+        const nome = r.address?.city || r.address?.town || r.address?.village || r.display_name.split(',')[0];
+        return `<div onclick="selecionarCidadePonto('${nome.replace(/'/g,"\\'")}',${r.lat},${r.lon})"
+          style="padding:10px 14px;cursor:pointer;font-size:0.85rem;border-bottom:1px solid #f1f5f9;"
+          onmouseover="this.style.background='#EEF2FF'" onmouseout="this.style.background='#fff'">
+          🏙️ <strong>${nome}</strong>
+        </div>`;
+      }).join('');
+      lista.style.display = 'block';
+    } catch(e) {}
+  }, 350);
+}
+
+function selecionarCidadePonto(nome, lat, lng) {
+  document.getElementById('pontoCidadeInput').value = nome;
+  document.getElementById('listaCidadePonto').style.display = 'none';
+  // Se nenhuma coordenada foi marcada ainda (GPS ou mini-mapa), usa a da cidade como aproximação
+  if (!_pontoLatSelecionada && !_pontoLngSelecionada) {
+    _pontoLatSelecionada = parseFloat(lat);
+    _pontoLngSelecionada = parseFloat(lng);
+  }
+}
+
+function fecharListaCidadePonto() {
+  const el = document.getElementById('listaCidadePonto');
+  if (el) el.style.display = 'none';
+}
 
 function fecharAutocomplete() {
   const lista = document.getElementById('autocompleteList');
