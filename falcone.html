@@ -60,6 +60,9 @@ body{font-family:'Inter',sans-serif;background:#0f1117;color:#e2e8f0;min-height:
 .nav-item:hover{color:#cbd5e1;background:rgba(255,255,255,0.03);}
 .nav-item.active{color:#fff;background:rgba(255,255,255,0.06);border-left-color:#D92B2B;}
 .nav-item .ni-icon{font-size:1.1rem;width:20px;text-align:center;}
+.nav-item-perigo{color:#FCA5A5;}
+.nav-item-perigo:hover{color:#FECACA;background:rgba(217,43,43,0.08);}
+.nav-item-perigo.active{color:#FECACA;background:rgba(217,43,43,0.12);border-left-color:#D92B2B;}
 .sidebar-footer{padding:16px 20px;border-top:1px solid #1e2535;}
 .admin-user{display:flex;align-items:center;gap:10px;}
 .admin-avatar{
@@ -185,6 +188,22 @@ tbody tr:last-child td{border-bottom:none;}
 .lista-autocomplete-admin div{padding:9px 12px;cursor:pointer;font-size:0.83rem;color:#e2e8f0;border-bottom:1px solid #1e2535;}
 .lista-autocomplete-admin div:hover{background:#0c1a3d;}
 
+/* ZONA DE RISCO */
+.zona-risco-card{
+  background:#1a0a0a;border:1.5px solid #7f1d1d;border-radius:14px;
+  padding:22px;margin-bottom:20px;
+}
+.zona-risco-card-geral{border-color:#991b1b;background:#220a0a;}
+.zona-risco-titulo{font-family:'Montserrat',sans-serif;font-weight:700;font-size:1rem;color:#FCA5A5;margin-bottom:8px;}
+.zona-risco-desc{font-size:0.85rem;color:#cbd5e1;line-height:1.6;}
+.btn-zona-risco{
+  background:#7f1d1d;color:#fff;border:1.5px solid #D92B2B;border-radius:10px;
+  padding:10px 20px;font-family:'Montserrat',sans-serif;font-weight:700;font-size:0.85rem;
+  cursor:pointer;transition:all .2s;white-space:nowrap;
+}
+.btn-zona-risco:hover{background:#D92B2B;}
+.btn-zona-risco:disabled{opacity:0.5;cursor:wait;}
+
 /* ACTION BUTTONS */
 .btn-action{
   padding:5px 12px;border-radius:7px;border:none;cursor:pointer;
@@ -299,6 +318,9 @@ tbody tr:last-child td{border-bottom:none;}
       </div>
       <div class="nav-item" data-page="logs" onclick="irPara('logs')">
         <span class="ni-icon">📜</span> Histórico de Ações
+      </div>
+      <div class="nav-item nav-item-perigo" data-page="zonarisco" onclick="irPara('zonarisco')">
+        <span class="ni-icon">☢️</span> Zona de Risco
       </div>
       <div class="nav-item" onclick="window.open('https://sos-ajuda-ai.vercel.app','_blank')">
         <span class="ni-icon">🌐</span> Ver site
@@ -566,6 +588,8 @@ tbody tr:last-child td{border-bottom:none;}
             <select id="filtroAcaoLog" class="table-search" style="cursor:pointer;" onchange="renderLogs()">
               <option value="">Todas as ações</option>
               <option value="excluir">Exclusões</option>
+              <option value="excluir_regiao">Exclusões regionais ☢️</option>
+              <option value="excluir_geral">Exclusões gerais 💣</option>
               <option value="verificar">Verificações</option>
               <option value="bloquear">Bloqueios</option>
               <option value="desbloquear">Desbloqueios</option>
@@ -581,6 +605,52 @@ tbody tr:last-child td{border-bottom:none;}
             <tr class="loading-row"><td colspan="5">⏳ Carregando...</td></tr>
           </tbody>
         </table>
+      </div>
+    </div>
+
+        <!-- ZONA DE RISCO -->
+    <div class="page" id="page-zonarisco">
+      <div class="page-title" style="color:#FCA5A5;">☢️ Zona de Risco</div>
+      <div class="page-sub">Ações nesta página são <strong>permanentes e não podem ser desfeitas</strong> pelo sistema. Um backup em JSON é baixado automaticamente antes de qualquer exclusão, mas a restauração precisa ser feita manualmente no banco de dados.</div>
+
+      <!-- EXCLUSÃO REGIONAL -->
+      <div class="zona-risco-card">
+        <div class="zona-risco-titulo">🗺️ Excluir dados por região</div>
+        <div class="zona-risco-desc">Remove permanentemente solicitações, voluntários, confirmações, pontos de apoio, prefeituras e bloqueios de uma cidade, estado ou país específico.</div>
+
+        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-top:16px;">
+          <div style="flex:1;min-width:140px;">
+            <label style="display:block;font-size:0.75rem;color:#94a3b8;margin-bottom:5px;">Nível</label>
+            <select id="riscoNivel" class="table-search" style="width:100%;cursor:pointer;" onchange="atualizarCamposRisco()">
+              <option value="cidade" selected>Cidade</option>
+              <option value="estado">Estado</option>
+              <option value="pais">País</option>
+            </select>
+          </div>
+          <div style="flex:1;min-width:140px;position:relative;">
+            <label style="display:block;font-size:0.75rem;color:#94a3b8;margin-bottom:5px;">País</label>
+            <input id="riscoPais" class="table-search" style="width:100%;" value="Brasil" autocomplete="off" oninput="buscarPaisRisco(this.value)" onblur="setTimeout(fecharListaPaisRisco,250)">
+            <div id="listaPaisRisco" class="lista-autocomplete-admin" style="display:none;"></div>
+          </div>
+          <div style="flex:1;min-width:120px;position:relative;" id="wrapRiscoEstado">
+            <label style="display:block;font-size:0.75rem;color:#94a3b8;margin-bottom:5px;">Estado</label>
+            <input id="riscoEstado" class="table-search" style="width:100%;" placeholder="Digite o estado..." autocomplete="off" oninput="buscarEstadoRisco(this.value)" onblur="setTimeout(fecharListaEstadoRisco,250)">
+            <div id="listaEstadoRisco" class="lista-autocomplete-admin" style="display:none;"></div>
+          </div>
+          <div style="flex:1.5;min-width:160px;position:relative;" id="wrapRiscoCidade">
+            <label style="display:block;font-size:0.75rem;color:#94a3b8;margin-bottom:5px;">Cidade</label>
+            <input id="riscoCidade" class="table-search" style="width:100%;" placeholder="Digite a cidade..." autocomplete="off" oninput="buscarCidadeRisco(this.value)" onblur="setTimeout(fecharListaCidadeRisco,250)">
+            <div id="listaCidadeRisco" class="lista-autocomplete-admin" style="display:none;"></div>
+          </div>
+          <button class="btn-zona-risco" onclick="prepararExclusaoRegional()">☢️ Excluir esta região</button>
+        </div>
+      </div>
+
+      <!-- EXCLUSÃO GERAL -->
+      <div class="zona-risco-card zona-risco-card-geral">
+        <div class="zona-risco-titulo">💣 Excluir TODOS os dados do site</div>
+        <div class="zona-risco-desc">Remove permanentemente <strong>todas</strong> as solicitações, voluntários, confirmações, pontos de apoio, prefeituras e bloqueios, de qualquer cidade, estado ou país. Não há filtro — é tudo.</div>
+        <button class="btn-zona-risco" style="margin-top:16px;" onclick="prepararExclusaoGeral()">💣 Excluir tudo do site</button>
       </div>
     </div>
 
@@ -1542,6 +1612,8 @@ function renderLogs(filtro='') {
 
   const acaoVisual = {
     excluir: { emoji: '🗑️', cor: '#FCA5A5' },
+    excluir_regiao: { emoji: '☢️', cor: '#FCA5A5' },
+    excluir_geral: { emoji: '💣', cor: '#FCA5A5' },
     verificar: { emoji: '✅', cor: '#86EFAC' },
     bloquear: { emoji: '🚫', cor: '#FCA5A5' },
     desbloquear: { emoji: '🔓', cor: '#93C5FD' },
@@ -1565,6 +1637,355 @@ function renderLogs(filtro='') {
   }).join('');
 }
 
+// ── ZONA DE RISCO: EXCLUSÃO REGIONAL E GERAL ──
+const TABELAS_ZONA_RISCO = ['solicitacoes', 'voluntarios', 'confirmacoes', 'pontos_apoio', 'prefeituras', 'regioes_bloqueadas'];
+
+function atualizarCamposRisco() {
+  const nivel = document.getElementById('riscoNivel').value;
+  document.getElementById('wrapRiscoEstado').style.display = (nivel === 'estado' || nivel === 'cidade') ? 'block' : 'none';
+  document.getElementById('wrapRiscoCidade').style.display = (nivel === 'cidade') ? 'block' : 'none';
+}
+
+function resetarCamposRisco() {
+  document.getElementById('riscoNivel').value = 'cidade';
+  document.getElementById('riscoPais').value = 'Brasil';
+  document.getElementById('riscoEstado').value = '';
+  document.getElementById('riscoCidade').value = '';
+  _riscoConfirmado.pais = true;
+  _riscoConfirmado.estado = false;
+  _riscoConfirmado.cidade = false;
+  atualizarCamposRisco();
+}
+
+// Autocomplete país/estado/cidade (mesmo padrão usado em Regiões Bloqueadas)
+const _riscoConfirmado = { pais: true, estado: false, cidade: false };
+
+let _paisRiscoTimer = null;
+async function buscarPaisRisco(valor) {
+  _riscoConfirmado.pais = false;
+  clearTimeout(_paisRiscoTimer);
+  const lista = document.getElementById('listaPaisRisco');
+  if (!valor || valor.length < 2) { lista.style.display = 'none'; return; }
+  _paisRiscoTimer = setTimeout(async () => {
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(valor)}&format=json&limit=6&addressdetails=1&featureType=country`);
+      const data = await res.json();
+      const vistos = new Set();
+      const paises = data.filter(r => {
+        const nome = r.address?.country || r.display_name.split(',').pop().trim();
+        if (!nome || vistos.has(nome)) return false;
+        vistos.add(nome); return true;
+      }).slice(0,6);
+      if (!paises.length) { lista.style.display='none'; return; }
+      lista.innerHTML = paises.map(r => {
+        const nome = r.address?.country || r.display_name.split(',').pop().trim();
+        return `<div onclick="selecionarPaisRisco('${nome.replace(/'/g,"\\'")}')">🌍 ${nome}</div>`;
+      }).join('');
+      lista.style.display = 'block';
+    } catch(e) {}
+  }, 350);
+}
+function selecionarPaisRisco(nome) {
+  document.getElementById('riscoPais').value = nome;
+  document.getElementById('listaPaisRisco').style.display = 'none';
+  _riscoConfirmado.pais = true;
+  _riscoConfirmado.estado = false;
+  _riscoConfirmado.cidade = false;
+  document.getElementById('riscoEstado').value = '';
+  document.getElementById('riscoCidade').value = '';
+}
+function fecharListaPaisRisco() { const el = document.getElementById('listaPaisRisco'); if (el) el.style.display = 'none'; }
+
+let _estadoRiscoTimer = null;
+async function buscarEstadoRisco(valor) {
+  _riscoConfirmado.estado = false;
+  clearTimeout(_estadoRiscoTimer);
+  const lista = document.getElementById('listaEstadoRisco');
+  if (!valor || valor.length < 2) { lista.style.display = 'none'; return; }
+  _estadoRiscoTimer = setTimeout(async () => {
+    try {
+      const pais = document.getElementById('riscoPais').value.trim() || 'Brasil';
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(`${valor}, ${pais}`)}&format=json&limit=6&addressdetails=1`);
+      const data = await res.json();
+      const vistos = new Set();
+      const estados = data.filter(r => {
+        const s = r.address?.state || r.display_name.split(',')[0];
+        if (!s || vistos.has(s)) return false;
+        vistos.add(s); return true;
+      }).slice(0,6);
+      if (!estados.length) { lista.style.display='none'; return; }
+      lista.innerHTML = estados.map(r => {
+        const nome = r.address?.state || r.display_name.split(',')[0];
+        return `<div onclick="selecionarEstadoRisco('${nome.replace(/'/g,"\\'")}')">📍 ${nome}</div>`;
+      }).join('');
+      lista.style.display = 'block';
+    } catch(e) {}
+  }, 350);
+}
+function selecionarEstadoRisco(nome) {
+  document.getElementById('riscoEstado').value = MAPA_ESTADOS_SIGLA_ADMIN[nome] || nome;
+  document.getElementById('listaEstadoRisco').style.display = 'none';
+  document.getElementById('riscoCidade').value = '';
+  _riscoConfirmado.estado = true;
+  _riscoConfirmado.cidade = false;
+}
+function fecharListaEstadoRisco() { const el = document.getElementById('listaEstadoRisco'); if (el) el.style.display = 'none'; }
+
+let _cidadeRiscoTimer = null;
+async function buscarCidadeRisco(valor) {
+  _riscoConfirmado.cidade = false;
+  clearTimeout(_cidadeRiscoTimer);
+  const lista = document.getElementById('listaCidadeRisco');
+  if (!valor || valor.length < 2) { lista.style.display = 'none'; return; }
+  _cidadeRiscoTimer = setTimeout(async () => {
+    try {
+      const estado = document.getElementById('riscoEstado').value.trim();
+      const pais = document.getElementById('riscoPais').value.trim() || 'Brasil';
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(`${valor}, ${estado}, ${pais}`)}&format=json&limit=6&addressdetails=1`);
+      const data = await res.json();
+      const vistos = new Set();
+      const cidades = data.filter(r => {
+        const c = r.address?.city || r.address?.town || r.address?.village || r.display_name.split(',')[0];
+        if (!c || vistos.has(c)) return false;
+        vistos.add(c); return true;
+      }).slice(0,6);
+      if (!cidades.length) { lista.style.display='none'; return; }
+      lista.innerHTML = cidades.map(r => {
+        const nome = r.address?.city || r.address?.town || r.address?.village || r.display_name.split(',')[0];
+        return `<div onclick="selecionarCidadeRisco('${nome.replace(/'/g,"\\'")}')">🏙️ ${nome}</div>`;
+      }).join('');
+      lista.style.display = 'block';
+    } catch(e) {}
+  }, 350);
+}
+function selecionarCidadeRisco(nome) {
+  document.getElementById('riscoCidade').value = nome;
+  document.getElementById('listaCidadeRisco').style.display = 'none';
+  _riscoConfirmado.cidade = true;
+}
+function fecharListaCidadeRisco() { const el = document.getElementById('listaCidadeRisco'); if (el) el.style.display = 'none'; }
+
+// Faz o backup em JSON de tudo que será excluído, e dispara o download no navegador
+async function baixarBackupAntesDeExcluir(registrosPorTabela, etiqueta) {
+  const backup = {
+    gerado_em: new Date().toISOString(),
+    motivo: etiqueta,
+    dados: registrosPorTabela,
+  };
+  const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `backup_sos_ajuda_ai_${etiqueta.replace(/[^a-zA-Z0-9]/g,'_')}_${new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  // Pequena pausa para garantir que o navegador inicie o download antes de seguir
+  await new Promise(res => setTimeout(res, 600));
+}
+
+// ── VERIFICAÇÃO TOTP (GOOGLE AUTHENTICATOR) PARA ZONA DE RISCO ──
+async function exigirCodigoTOTP() {
+  const codigo = prompt('🔐 Digite o código de 6 dígitos do seu app autenticador (Google Authenticator) para continuar:');
+  if (codigo === null) return false;
+
+  const codigoLimpo = codigo.trim();
+  if (!/^\d{6}$/.test(codigoLimpo)) {
+    toast('⚠️ Código inválido. Deve conter exatamente 6 dígitos.', 'err');
+    return false;
+  }
+
+  try {
+    const res = await fetch(`${SB_URL}/functions/v1/verificar-totp`, {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + SB_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ codigo: codigoLimpo })
+    });
+    const data = await res.json();
+    if (!data.valido) {
+      toast('⚠️ Código incorreto ou expirado. Ação cancelada.', 'err');
+      return false;
+    }
+    return true;
+  } catch(e) {
+    toast('⚠️ Não foi possível verificar o código. Ação cancelada por segurança.', 'err');
+    return false;
+  }
+}
+
+async function prepararExclusaoRegional() {
+  const nivel = document.getElementById('riscoNivel').value;
+  const pais = document.getElementById('riscoPais').value.trim() || 'Brasil';
+  const estado = document.getElementById('riscoEstado').value.trim();
+  const cidade = document.getElementById('riscoCidade').value.trim();
+
+  if (!_riscoConfirmado.pais) { toast('⚠️ Selecione o país a partir da lista de sugestões.'); return; }
+  if ((nivel === 'estado' || nivel === 'cidade') && !_riscoConfirmado.estado) { toast('⚠️ Selecione o estado a partir da lista de sugestões.'); return; }
+  if (nivel === 'cidade' && !_riscoConfirmado.cidade) { toast('⚠️ Selecione a cidade a partir da lista de sugestões.'); return; }
+
+  const localLabel = nivel === 'pais' ? pais : nivel === 'estado' ? `${estado}, ${pais}` : `${cidade}, ${estado}`;
+  const palavraConfirmacao = nivel === 'cidade' ? cidade : nivel === 'estado' ? estado : pais;
+
+  const digitado = prompt(`Esta ação é PERMANENTE e excluirá todos os dados de "${localLabel}" em todas as tabelas (solicitações, voluntários, confirmações, pontos de apoio, prefeituras e bloqueios).\n\nDigite "${palavraConfirmacao}" para confirmar:`);
+  if (digitado === null) return;
+  if (digitado.trim().toLowerCase() !== palavraConfirmacao.trim().toLowerCase()) {
+    toast('⚠️ Texto de confirmação não corresponde. Nenhum dado foi excluído.', 'err');
+    return;
+  }
+
+  const totpOk = await exigirCodigoTOTP();
+  if (!totpOk) return;
+
+  await executarExclusaoRegional(nivel, pais, estado, cidade, localLabel);
+}
+
+async function executarExclusaoRegional(nivel, pais, estado, cidade, localLabel) {
+  const norm = (s) => (s || '').trim().toLowerCase();
+  const btn = document.querySelector('#page-zonarisco .zona-risco-card:first-of-type .btn-zona-risco');
+  btn.disabled = true;
+  btn.textContent = '⏳ Fazendo backup...';
+
+  try {
+    const token = usuarioAtual?.access_token || SB_KEY;
+    const registrosPorTabela = {};
+
+    // Busca tudo que será excluído, para o backup, antes de excluir.
+    // Nem toda tabela tem a coluna 'pais' (só regioes_bloqueadas tem explicitamente;
+    // solicitacoes, voluntarios e pontos_apoio assumem Brasil implicitamente).
+    const TABELAS_COM_PAIS = ['regioes_bloqueadas'];
+    for (const tabela of TABELAS_ZONA_RISCO) {
+      let query = `${tabela}?select=*`;
+      const temColunaPais = TABELAS_COM_PAIS.includes(tabela);
+
+      if (nivel === 'pais') {
+        if (!temColunaPais) {
+          // Tabela sem coluna país: só aplica o filtro se o país escolhido for Brasil
+          // (caso contrário, não há registros dessa tabela fora do Brasil — resultado vazio)
+          if (norm(pais) !== 'brasil') { registrosPorTabela[tabela] = []; continue; }
+          // sem filtro extra: pega tudo da tabela, já que é tudo "Brasil" implicitamente
+        } else {
+          query += `&pais=ilike.${encodeURIComponent(pais)}`;
+        }
+      } else if (nivel === 'estado') {
+        query += `&estado=ilike.${encodeURIComponent(estado)}`;
+        if (temColunaPais) query += `&pais=ilike.${encodeURIComponent(pais)}`;
+      } else {
+        query += `&cidade=ilike.${encodeURIComponent(cidade)}&estado=ilike.${encodeURIComponent(estado)}`;
+        if (temColunaPais) query += `&pais=ilike.${encodeURIComponent(pais)}`;
+      }
+
+      try {
+        registrosPorTabela[tabela] = await sbFetch(query);
+      } catch(e) {
+        registrosPorTabela[tabela] = [];
+      }
+    }
+
+    const totalRegistros = Object.values(registrosPorTabela).reduce((s, arr) => s + arr.length, 0);
+    if (totalRegistros === 0) {
+      toast('ℹ️ Nenhum registro encontrado para essa região. Nada foi excluído.', 'ok');
+      btn.disabled = false; btn.textContent = '☢️ Excluir esta região';
+      return;
+    }
+
+    await baixarBackupAntesDeExcluir(registrosPorTabela, `regiao_${localLabel}`);
+
+    btn.textContent = '⏳ Excluindo...';
+    let totalExcluido = 0;
+
+    for (const tabela of TABELAS_ZONA_RISCO) {
+      const ids = (registrosPorTabela[tabela] || []).map(r => r.id);
+      for (const id of ids) {
+        try {
+          await fetch(`${SB_URL}/rest/v1/${tabela}?id=eq.${id}`, {
+            method: 'DELETE',
+            headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' }
+          });
+          totalExcluido++;
+        } catch(e) { /* segue tentando os demais */ }
+      }
+    }
+
+    registrarLog('excluir_regiao', 'multiplas_tabelas', null, `Excluiu região "${localLabel}" (${nivel}): ${totalExcluido} registro(s) no total`);
+    toast(`☢️ ${totalExcluido} registro(s) excluído(s) de "${localLabel}". Backup salvo no seu computador.`, 'ok');
+  } catch(e) {
+    toast('⚠️ Erro durante a exclusão regional: ' + e.message, 'err');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '☢️ Excluir esta região';
+  }
+}
+
+async function prepararExclusaoGeral() {
+  const digitado = prompt('⚠️ ATENÇÃO MÁXIMA ⚠️\n\nIsso vai excluir TODOS os dados do site — todas as cidades, estados e países, em todas as tabelas. Não há volta possível pelo sistema.\n\nDigite exatamente "EXCLUIR TUDO" para confirmar:');
+  if (digitado === null) return;
+  if (digitado.trim() !== 'EXCLUIR TUDO') {
+    toast('⚠️ Texto de confirmação não corresponde. Nenhum dado foi excluído.', 'err');
+    return;
+  }
+
+  // Segunda camada: confirmação final simples, para reduzir clique acidental após copiar/colar o texto
+  if (!confirm('Última confirmação: tem certeza absoluta? Esta é a última chance de cancelar.')) return;
+
+  const totpOk = await exigirCodigoTOTP();
+  if (!totpOk) return;
+
+  await executarExclusaoGeral();
+}
+
+async function executarExclusaoGeral() {
+  const btn = document.querySelector('.zona-risco-card-geral .btn-zona-risco');
+  btn.disabled = true;
+  btn.textContent = '⏳ Fazendo backup completo...';
+
+  try {
+    const token = usuarioAtual?.access_token || SB_KEY;
+    const registrosPorTabela = {};
+
+    for (const tabela of TABELAS_ZONA_RISCO) {
+      try {
+        registrosPorTabela[tabela] = await sbFetch(`${tabela}?select=*`);
+      } catch(e) {
+        registrosPorTabela[tabela] = [];
+      }
+    }
+
+    const totalRegistros = Object.values(registrosPorTabela).reduce((s, arr) => s + arr.length, 0);
+    if (totalRegistros === 0) {
+      toast('ℹ️ Não há nenhum dado no site para excluir.', 'ok');
+      btn.disabled = false; btn.textContent = '💣 Excluir tudo do site';
+      return;
+    }
+
+    await baixarBackupAntesDeExcluir(registrosPorTabela, 'geral_site_completo');
+
+    btn.textContent = '⏳ Excluindo tudo...';
+    let totalExcluido = 0;
+
+    for (const tabela of TABELAS_ZONA_RISCO) {
+      const ids = (registrosPorTabela[tabela] || []).map(r => r.id);
+      for (const id of ids) {
+        try {
+          await fetch(`${SB_URL}/rest/v1/${tabela}?id=eq.${id}`, {
+            method: 'DELETE',
+            headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' }
+          });
+          totalExcluido++;
+        } catch(e) { /* segue tentando os demais */ }
+      }
+    }
+
+    registrarLog('excluir_geral', 'multiplas_tabelas', null, `Excluiu TODOS os dados do site: ${totalExcluido} registro(s) no total`);
+    toast(`💣 ${totalExcluido} registro(s) excluído(s) de todo o site. Backup salvo no seu computador.`, 'ok');
+  } catch(e) {
+    toast('⚠️ Erro durante a exclusão geral: ' + e.message, 'err');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '💣 Excluir tudo do site';
+  }
+}
+
 function irPara(pagina) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
@@ -1577,6 +1998,7 @@ function irPara(pagina) {
   if (pagina === 'dados') {} // carregamento manual via botão — não busca automaticamente
   if (pagina === 'bloqueios') carregarBloqueios();
   if (pagina === 'logs') carregarLogs();
+  if (pagina === 'zonarisco') resetarCamposRisco();
 }
 
 // ── FILTROS ──
