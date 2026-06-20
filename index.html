@@ -195,6 +195,14 @@ nav.scrolled {
 
 /* ── RANKING ── */
 .ranking { background: #fff; }
+.ranking-tabs { display: flex; justify-content: center; gap: 8px; margin-bottom: 28px; }
+.ranking-tab {
+  background: #fff; border: 1.5px solid var(--cinza-b); color: #475569;
+  border-radius: 99px; padding: 9px 20px; font-family: 'Montserrat', sans-serif;
+  font-weight: 700; font-size: .85rem; cursor: pointer; transition: all .2s;
+}
+.ranking-tab:hover { border-color: var(--azul-med); color: var(--azul); }
+.ranking-tab.ativo { background: var(--azul); border-color: var(--azul); color: #fff; }
 .ranking-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(280px,1fr)); gap: 18px; max-width: 960px; margin: 0 auto; }
 .rank-card { background: var(--cinza-f); border-radius: var(--radius); padding: 22px; display: flex; align-items: center; gap: 14px; border: 1.5px solid var(--cinza-b); transition: box-shadow .2s; }
 .rank-card:hover { box-shadow: var(--sombra); }
@@ -841,6 +849,10 @@ textarea.form-control { resize: vertical; min-height: 88px; }
     <div class="eyebrow">🏆 Comunidade</div>
     <h2>Voluntários destaque</h2>
     <p>Reconhecendo quem faz a diferença na prática.</p>
+  </div>
+  <div class="ranking-tabs">
+    <button class="ranking-tab ativo" id="rankTabGeral" onclick="alternarRankingTab('geral')">🌎 Geral (Brasil)</button>
+    <button class="ranking-tab" id="rankTabRegional" onclick="alternarRankingTab('regional')">📍 Minha região</button>
   </div>
   <div class="ranking-grid" id="rankingGrid">
     <div style="grid-column:1/-1;text-align:center;padding:32px;color:var(--cinza-t);">⏳ Carregando ranking...</div>
@@ -2021,6 +2033,25 @@ window.addEventListener('scroll',()=>{
 <script>
 const SINIMBU = [-29.5317, -52.5167];
 const MAPA_ESTADOS_SIGLA = {'Rio Grande do Sul':'RS','Santa Catarina':'SC','Paraná':'PR','São Paulo':'SP','Rio de Janeiro':'RJ','Minas Gerais':'MG','Bahia':'BA','Pernambuco':'PE','Ceará':'CE','Goiás':'GO','Mato Grosso':'MT','Mato Grosso do Sul':'MS','Pará':'PA','Maranhão':'MA','Amazonas':'AM','Espírito Santo':'ES','Alagoas':'AL','Piauí':'PI','Rio Grande do Norte':'RN','Paraíba':'PB','Sergipe':'SE','Rondônia':'RO','Tocantins':'TO','Acre':'AC','Amapá':'AP','Roraima':'RR','Distrito Federal':'DF'};
+
+// Estados vizinhos (fronteira geográfica real) — usado para compor o ranking regional,
+// que inclui o estado do voluntário mais os estados que fazem fronteira direta com ele.
+const ESTADOS_VIZINHOS = {
+  AC:['AM','RO'], AL:['BA','PE','SE'], AM:['AC','RR','PA','MT','RO'], AP:['PA'],
+  BA:['AL','SE','PE','PI','TO','GO','MG','ES'], CE:['PI','PE','PB','RN'], DF:['GO'],
+  ES:['BA','MG','RJ'], GO:['BA','TO','MT','MS','MG','DF'], MA:['PA','TO','PI'],
+  MG:['BA','GO','MS','SP','RJ','ES'], MS:['MT','GO','MG','SP','PR'], MT:['AM','PA','TO','GO','MS','RO'],
+  PA:['AP','AM','MT','TO','MA','RR'], PB:['RN','CE','PE'], PE:['PB','CE','PI','BA','AL'],
+  PI:['MA','CE','PE','BA','TO'], PR:['SP','SC','MS'], RJ:['ES','MG','SP'], RN:['CE','PB'],
+  RO:['AM','MT','AC'], RR:['AM','PA'], RS:['SC'], SC:['PR','RS'], SP:['MG','RJ','PR','MS'],
+  SE:['AL','BA'], TO:['MA','PI','BA','GO','MT','PA'],
+};
+
+// Retorna a lista de siglas que compõem a "região" de um estado: ele mesmo + vizinhos
+function estadosDaRegiao(siglaEstado) {
+  const sigla = siglaDoEstado(siglaEstado);
+  return [sigla, ...(ESTADOS_VIZINHOS[sigla] || [])];
+}
 
 function siglaDoEstado(nomeOuSigla) {
   if (!nomeOuSigla) return '';
@@ -4500,6 +4531,10 @@ async function calcularPontosVoluntario(volId) {
 }
 
 // ── RANKING REAL DE VOLUNTÁRIOS NA HOME ──
+// ── RANKING REAL DE VOLUNTÁRIOS NA HOME ──
+let _rankingModoAtual = 'geral';
+let _rankingVolsComPontosCache = null;
+
 async function carregarRankingHome() {
   const grid = document.getElementById('rankingGrid');
   if (!grid) return;
@@ -4531,48 +4566,88 @@ async function carregarRankingHome() {
       pontosPorVol[c.voluntario_id] = (pontosPorVol[c.voluntario_id] || 0) + base + bonusAvaliacao + bonusVelocidade;
     });
 
-    const volsComPontos = todosVols
+    _rankingVolsComPontosCache = todosVols
       .map(v => ({ ...v, pontos: pontosPorVol[v.id] || 0 }))
-      .filter(v => v.pontos > 0)
-      .sort((a, b) => b.pontos - a.pontos)
-      .slice(0, 5);
+      .filter(v => v.pontos > 0);
 
-    if (!volsComPontos.length) {
-      grid.innerHTML = `
-        <div style="grid-column:1/-1;text-align:center;padding:24px;color:var(--cinza-t);">
-          Nenhum voluntário com confirmações ainda. Seja o primeiro!
-        </div>
-        <div class="rank-card" style="cursor:pointer;justify-content:center" onclick="if(!usuarioAtual){abrirModal('modal-auth')}else{verificarTermos('voluntario',()=>abrirModalVoluntario())}">
-          <div style="text-align:center;width:100%"><div style="font-size:1.6rem;margin-bottom:8px">🙋</div><div style="font-family:'Montserrat',sans-serif;font-weight:700;color:var(--azul);font-size:.9rem">Seja o próximo destaque</div><div style="font-size:.8rem;color:var(--cinza-t);margin-top:4px">Cadastre-se como voluntário</div></div>
-        </div>`;
-      return;
-    }
-
-    const posicoes = [
-      { classe: 'gold', icone: '🥇' },
-      { classe: 'silver', icone: '🥈' },
-      { classe: 'bronze', icone: '🥉' },
-      { classe: 'normal', icone: '4' },
-      { classe: 'normal', icone: '5' },
-    ];
-
-    grid.innerHTML = volsComPontos.map((v, i) => `
-      <div class="rank-card">
-        <div class="rank-pos ${posicoes[i].classe}">${posicoes[i].icone}</div>
-        <div style="font-size:1.3rem">🙋</div>
-        <div class="rank-info">
-          <div class="rank-nome">${escapeHtml(v.nome || 'Voluntário')}</div>
-          <div class="rank-cidade">${escapeHtml(v.cidade || '')}${v.estado ? ', ' + escapeHtml(v.estado) : ''}</div>
-        </div>
-        <div class="rank-pts"><div class="rank-pts-n">${v.pontos.toLocaleString('pt-BR')}</div><div class="rank-pts-l">pontos</div></div>
-      </div>`).join('') + `
-      <div class="rank-card" style="cursor:pointer;justify-content:center" onclick="if(!usuarioAtual){abrirModal('modal-auth')}else{verificarTermos('voluntario',()=>abrirModalVoluntario())}">
-        <div style="text-align:center;width:100%"><div style="font-size:1.6rem;margin-bottom:8px">🙋</div><div style="font-family:'Montserrat',sans-serif;font-weight:700;color:var(--azul);font-size:.9rem">Seja o próximo destaque</div><div style="font-size:.8rem;color:var(--cinza-t);margin-top:4px">Cadastre-se como voluntário</div></div>
-      </div>`;
+    renderizarRankingHome();
   } catch(e) {
     console.error('Erro ao carregar ranking:', e);
     grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:24px;color:var(--cinza-t);">Não foi possível carregar o ranking agora.</div>';
   }
+}
+
+function alternarRankingTab(modo) {
+  _rankingModoAtual = modo;
+  document.getElementById('rankTabGeral').classList.toggle('ativo', modo === 'geral');
+  document.getElementById('rankTabRegional').classList.toggle('ativo', modo === 'regional');
+  renderizarRankingHome();
+}
+
+// Determina a "região" do visitante: usa o estado do próprio voluntário logado,
+// se disponível; senão, usa a cidade mais recente vista no formulário de atingido (sessão atual).
+function obterEstadoDoVisitante() {
+  if (_volDados?.estado) return siglaDoEstado(_volDados.estado);
+  const estadoFormAtingido = document.getElementById('estadoInputText')?.value;
+  if (estadoFormAtingido) return siglaDoEstado(estadoFormAtingido);
+  return null;
+}
+
+function cardConviteRanking() {
+  return `<div class="rank-card" style="cursor:pointer;justify-content:center" onclick="if(!usuarioAtual){abrirModal('modal-auth')}else{verificarTermos('voluntario',()=>abrirModalVoluntario())}">
+    <div style="text-align:center;width:100%"><div style="font-size:1.6rem;margin-bottom:8px">🙋</div><div style="font-family:'Montserrat',sans-serif;font-weight:700;color:var(--azul);font-size:.9rem">Seja o próximo destaque</div><div style="font-size:.8rem;color:var(--cinza-t);margin-top:4px">Cadastre-se como voluntário</div></div>
+  </div>`;
+}
+
+function renderizarRankingHome() {
+  const grid = document.getElementById('rankingGrid');
+  if (!grid || !_rankingVolsComPontosCache) return;
+
+  let lista = _rankingVolsComPontosCache;
+  let avisoRegiao = '';
+
+  if (_rankingModoAtual === 'regional') {
+    const estadoVisitante = obterEstadoDoVisitante();
+    if (!estadoVisitante) {
+      grid.innerHTML = `
+        <div style="grid-column:1/-1;text-align:center;padding:24px;color:var(--cinza-t);">
+          📍 Para ver o ranking da sua região, cadastre-se como voluntário informando sua cidade, ou faça uma busca no mapa pela sua cidade.
+        </div>${cardConviteRanking()}`;
+      return;
+    }
+    const regiao = estadosDaRegiao(estadoVisitante);
+    lista = lista.filter(v => regiao.includes(siglaDoEstado(v.estado)));
+    avisoRegiao = `<div style="grid-column:1/-1;text-align:center;font-size:.8rem;color:var(--cinza-t);margin-bottom:4px;">Voluntários de ${estadoVisitante} e estados vizinhos</div>`;
+  }
+
+  lista = lista.sort((a, b) => b.pontos - a.pontos).slice(0, 5);
+
+  if (!lista.length) {
+    grid.innerHTML = `${avisoRegiao}
+      <div style="grid-column:1/-1;text-align:center;padding:24px;color:var(--cinza-t);">
+        Nenhum voluntário com confirmações ${_rankingModoAtual === 'regional' ? 'nesta região' : ''} ainda. Seja o primeiro!
+      </div>${cardConviteRanking()}`;
+    return;
+  }
+
+  const posicoes = [
+    { classe: 'gold', icone: '🥇' },
+    { classe: 'silver', icone: '🥈' },
+    { classe: 'bronze', icone: '🥉' },
+    { classe: 'normal', icone: '4' },
+    { classe: 'normal', icone: '5' },
+  ];
+
+  grid.innerHTML = avisoRegiao + lista.map((v, i) => `
+    <div class="rank-card">
+      <div class="rank-pos ${posicoes[i].classe}">${posicoes[i].icone}</div>
+      <div style="font-size:1.3rem">🙋</div>
+      <div class="rank-info">
+        <div class="rank-nome">${escapeHtml(v.nome || 'Voluntário')}</div>
+        <div class="rank-cidade">${escapeHtml(v.cidade || '')}${v.estado ? ', ' + escapeHtml(v.estado) : ''}</div>
+      </div>
+      <div class="rank-pts"><div class="rank-pts-n">${v.pontos.toLocaleString('pt-BR')}</div><div class="rank-pts-l">pontos</div></div>
+    </div>`).join('') + cardConviteRanking();
 }
 
 async function carregarDadosVoluntario() {
