@@ -116,6 +116,13 @@ body{font-family:'Inter',sans-serif;background:#0f1117;color:#e2e8f0;min-height:
   padding:7px 12px;color:#cbd5e1;font-size:0.83rem;outline:none;width:220px;
 }
 .table-search::placeholder{color:#475569;}
+.acoes-massa{
+  display:none;align-items:center;gap:10px;padding:10px 20px;
+  background:#0c1a3d;border-bottom:1px solid #1e3a8a;
+}
+.acoes-massa.visivel{display:flex;}
+.acoes-massa-contagem{font-size:0.8rem;font-weight:700;color:#93C5FD;margin-right:6px;}
+.chk-linha,.chk-all{width:16px;height:16px;cursor:pointer;accent-color:#2255C4;}
 table{width:100%;border-collapse:collapse;}
 thead th{
   padding:12px 16px;text-align:left;
@@ -351,8 +358,14 @@ tbody tr:last-child td{border-bottom:none;}
           <div class="table-title">🏠 Todas as solicitações</div>
           <input class="table-search" placeholder="🔍 Buscar..." oninput="filtrarTabela('sol',this.value)">
         </div>
+        <div class="acoes-massa" id="acoesMassa-sol">
+          <span class="acoes-massa-contagem" id="contagemSel-sol">0 selecionado(s)</span>
+          <button class="btn-action btn-reativar-admin" onclick="acaoEmMassa('sol','reativar')">🔁 Reativar selecionados</button>
+          <button class="btn-action btn-del" onclick="acaoEmMassa('sol','excluir')">🗑️ Excluir selecionados</button>
+          <button class="btn-action btn-ver" onclick="limparSelecao('sol')">Cancelar seleção</button>
+        </div>
         <table>
-          <thead><tr><th>Nome</th><th>Cidade/Estado</th><th>Tipos de ajuda</th><th>Urgência</th><th>Voluntários</th><th>Expira em</th><th>Status</th><th>Ações</th></tr></thead>
+          <thead><tr><th style="width:36px;"><input type="checkbox" class="chk-all" onchange="toggleSelecionarTodos('sol',this)"></th><th>Nome</th><th>Cidade/Estado</th><th>Tipos de ajuda</th><th>Urgência</th><th>Voluntários</th><th>Expira em</th><th>Status</th><th>Ações</th></tr></thead>
           <tbody id="tbody-sol">
             <tr class="loading-row"><td colspan="8">⏳ Carregando...</td></tr>
           </tbody>
@@ -369,8 +382,13 @@ tbody tr:last-child td{border-bottom:none;}
           <div class="table-title">🙋 Voluntários cadastrados</div>
           <input class="table-search" placeholder="🔍 Buscar..." oninput="filtrarTabela('vol',this.value)">
         </div>
+        <div class="acoes-massa" id="acoesMassa-vol">
+          <span class="acoes-massa-contagem" id="contagemSel-vol">0 selecionado(s)</span>
+          <button class="btn-action btn-del" onclick="acaoEmMassa('vol','excluir')">🗑️ Excluir selecionados</button>
+          <button class="btn-action btn-ver" onclick="limparSelecao('vol')">Cancelar seleção</button>
+        </div>
         <table>
-          <thead><tr><th>Nome</th><th>Cidade</th><th>WhatsApp</th><th>Raio</th><th>Habilidades</th><th>Pontos</th><th>Cadastrado em</th><th>Ações</th></tr></thead>
+          <thead><tr><th style="width:36px;"><input type="checkbox" class="chk-all" onchange="toggleSelecionarTodos('vol',this)"></th><th>Nome</th><th>Cidade</th><th>WhatsApp</th><th>Habilidades</th><th>Pontos</th><th>Cadastrado em</th><th>Ações</th></tr></thead>
           <tbody id="tbody-vol">
             <tr class="loading-row"><td colspan="8">⏳ Carregando...</td></tr>
           </tbody>
@@ -387,9 +405,15 @@ tbody tr:last-child td{border-bottom:none;}
           <div class="table-title">✅ Confirmações ativas</div>
           <input class="table-search" placeholder="🔍 Buscar..." oninput="filtrarTabela('conf',this.value)">
         </div>
+        <div class="acoes-massa" id="acoesMassa-conf">
+          <span class="acoes-massa-contagem" id="contagemSel-conf">0 selecionado(s)</span>
+          <button class="btn-action btn-del" onclick="acaoEmMassa('conf','excluir')">🗑️ Cancelar selecionadas</button>
+          <button class="btn-action btn-ver" onclick="limparSelecao('conf')">Cancelar seleção</button>
+        </div>
         <table>
           <thead>
             <tr>
+              <th style="width:36px;"><input type="checkbox" class="chk-all" onchange="toggleSelecionarTodos('conf',this)"></th>
               <th>Voluntário</th>
               <th>Solicitação</th>
               <th>Cidade</th>
@@ -700,6 +724,87 @@ async function carregarConfirmacoes() {
   }
 }
 
+// ── SELEÇÃO MÚLTIPLA E AÇÕES EM MASSA ──
+const _selecionados = { sol: new Set(), vol: new Set(), conf: new Set() };
+
+function toggleSelecaoLinha(tipo, id, checkbox) {
+  if (checkbox.checked) _selecionados[tipo].add(id);
+  else _selecionados[tipo].delete(id);
+  atualizarBarraAcoesMassa(tipo);
+}
+
+function toggleSelecionarTodos(tipo, checkboxHeader) {
+  const tbodyId = tipo === 'sol' ? 'tbody-sol' : tipo === 'vol' ? 'tbody-vol' : 'tbody-conf';
+  const checkboxesLinha = document.querySelectorAll(`#${tbodyId} .chk-linha`);
+  checkboxesLinha.forEach(chk => {
+    chk.checked = checkboxHeader.checked;
+    const id = chk.dataset.id;
+    if (checkboxHeader.checked) _selecionados[tipo].add(id);
+    else _selecionados[tipo].delete(id);
+  });
+  atualizarBarraAcoesMassa(tipo);
+}
+
+function atualizarBarraAcoesMassa(tipo) {
+  const qtd = _selecionados[tipo].size;
+  const barra = document.getElementById(`acoesMassa-${tipo}`);
+  const contagem = document.getElementById(`contagemSel-${tipo}`);
+  if (!barra || !contagem) return;
+  contagem.textContent = `${qtd} selecionado${qtd !== 1 ? 's' : ''}`;
+  barra.classList.toggle('visivel', qtd > 0);
+}
+
+function limparSelecao(tipo) {
+  _selecionados[tipo].clear();
+  const tbodyId = tipo === 'sol' ? 'tbody-sol' : tipo === 'vol' ? 'tbody-vol' : 'tbody-conf';
+  document.querySelectorAll(`#${tbodyId} .chk-linha`).forEach(chk => chk.checked = false);
+  const chkAll = document.querySelector(`#page-${tipo === 'sol' ? 'solicitacoes' : tipo === 'vol' ? 'voluntarios' : 'confirmacoes'} .chk-all`);
+  if (chkAll) chkAll.checked = false;
+  atualizarBarraAcoesMassa(tipo);
+}
+
+async function acaoEmMassa(tipo, acao) {
+  const ids = Array.from(_selecionados[tipo]);
+  if (!ids.length) return;
+
+  const tabela = tipo === 'sol' ? 'solicitacoes' : tipo === 'vol' ? 'voluntarios' : 'confirmacoes';
+  const verbo = acao === 'reativar' ? 'reativar' : (tipo === 'conf' ? 'cancelar' : 'excluir');
+
+  if (!confirm(`Tem certeza que deseja ${verbo} ${ids.length} item${ids.length !== 1 ? 's' : ''}? Esta ação não pode ser desfeita.`)) return;
+
+  const token = usuarioAtual?.access_token || SB_KEY;
+  let sucesso = 0, falhas = 0;
+
+  for (const id of ids) {
+    try {
+      if (acao === 'reativar') {
+        const base = new Date();
+        base.setHours(base.getHours() + 24);
+        await fetch(`${SB_URL}/rest/v1/${tabela}?id=eq.${id}`, {
+          method: 'PATCH',
+          headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+          body: JSON.stringify({ ativo: true, expira_em: base.toISOString() })
+        });
+      } else {
+        const res = await fetch(`${SB_URL}/rest/v1/${tabela}?id=eq.${id}`, {
+          method: 'DELETE',
+          headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' }
+        });
+        if (!res.ok && res.status !== 204) throw new Error('Falha ao excluir');
+      }
+      sucesso++;
+    } catch(e) {
+      falhas++;
+    }
+  }
+
+  _selecionados[tipo].clear();
+  toast(falhas === 0 ? `✅ ${sucesso} item(ns) processado(s) com sucesso!` : `⚠️ ${sucesso} processado(s), ${falhas} falharam.`, falhas === 0 ? 'ok' : 'err');
+
+  if (tipo === 'sol' || tipo === 'vol') await carregarDados();
+  else await carregarConfirmacoes();
+}
+
 function renderConfirmacoes(filtro='') {
   const tbody = document.getElementById('tbody-conf');
   const lista = filtro ? dadosConf.filter(c =>
@@ -709,12 +814,13 @@ function renderConfirmacoes(filtro='') {
   ) : dadosConf;
 
   if (!lista.length) {
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:32px;color:#475569;">Nenhuma confirmação encontrada</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:32px;color:#475569;">Nenhuma confirmação encontrada</td></tr>';
     return;
   }
 
   tbody.innerHTML = lista.map(c => `
     <tr>
+      <td><input type="checkbox" class="chk-linha" data-tipo="conf" data-id="${c.id}" ${_selecionados.conf.has(c.id)?'checked':''} onchange="toggleSelecaoLinha('conf','${c.id}',this)"></td>
       <td>
         <strong style="color:#fff">${c.voluntarios?.nome || '—'}</strong>
         <br><small style="color:#475569">${c.voluntarios?.whatsapp || ''}</small>
@@ -728,6 +834,7 @@ function renderConfirmacoes(filtro='') {
         </button>
       </td>
     </tr>`).join('');
+  atualizarBarraAcoesMassa('conf');
 }
 
 async function cancelarConfirmacaoAdmin(confId, solId) {
@@ -802,12 +909,13 @@ function renderSolicitacoes(filtro='') {
   ) : dadosSol;
 
   if (!lista.length) {
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:32px;color:#475569;">Nenhum resultado</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:32px;color:#475569;">Nenhum resultado</td></tr>';
     return;
   }
 
   tbody.innerHTML = lista.map(s => `
     <tr>
+      <td><input type="checkbox" class="chk-linha" data-tipo="sol" data-id="${s.id}" ${_selecionados.sol.has(s.id)?'checked':''} onchange="toggleSelecaoLinha('sol','${s.id}',this)"></td>
       <td><strong style="color:#fff">${s.nome}</strong><br><small style="color:#475569">${s.endereco || ''}</small></td>
       <td>${s.cidade}, ${s.estado}</td>
       <td style="font-size:0.78rem">${(s.tipos_ajuda||[]).join(', ') || '—'}</td>
@@ -822,6 +930,7 @@ function renderSolicitacoes(filtro='') {
         </div>
       </td>
     </tr>`).join('');
+  atualizarBarraAcoesMassa('sol');
 }
 
 // ── VOLUNTÁRIOS ──
@@ -839,10 +948,10 @@ function renderVoluntarios(filtro='') {
 
   tbody.innerHTML = lista.map(v => `
     <tr>
+      <td><input type="checkbox" class="chk-linha" data-tipo="vol" data-id="${v.id}" ${_selecionados.vol.has(v.id)?'checked':''} onchange="toggleSelecaoLinha('vol','${v.id}',this)"></td>
       <td><strong style="color:#fff">${v.nome}</strong></td>
       <td>${v.cidade}, ${v.estado}</td>
       <td style="font-size:0.82rem">${v.whatsapp || '—'}</td>
-      <td><span class="badge badge-azul">${v.raio_atuacao || '—'}</span></td>
       <td style="font-size:0.78rem">${(v.habilidades||[]).join(', ') || '—'}</td>
       <td><strong style="color:#D92B2B">${v.pontos || 0}</strong></td>
       <td style="font-size:0.78rem;color:#64748b">${new Date(v.criado_em).toLocaleDateString('pt-BR')}</td>
@@ -850,6 +959,7 @@ function renderVoluntarios(filtro='') {
         <button class="btn-action btn-del" onclick="confirmarDelete('vol','${v.id}','${v.nome}')">🗑️</button>
       </td>
     </tr>`).join('');
+  atualizarBarraAcoesMassa('vol');
 }
 
 // ── MAPA ADMIN ──
