@@ -8,7 +8,9 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'Inter',sans-serif;background:#0a0f1a;color:#e2e8f0;min-height:100vh;}
@@ -329,6 +331,82 @@ tbody tr:last-child td{border-bottom:none;}
 </div>
 
 <div class="toast" id="toastEl"></div>
+
+<!-- TEMPLATE DO RELATÓRIO (fora da tela, usado apenas para gerar o PDF) -->
+<div id="relatorioTemplate" style="position:absolute;left:-9999px;top:0;width:794px;background:#fff;font-family:'Inter',sans-serif;">
+
+  <!-- PÁGINA 1 -->
+  <div class="rel-pagina" style="width:794px;min-height:1123px;padding:50px 56px;box-sizing:border-box;">
+    <div style="display:flex;align-items:center;gap:14px;border-bottom:3px solid #1A3C8F;padding-bottom:18px;margin-bottom:28px;">
+      <img src="logo.png" alt="SOS Ajuda Aí" style="height:48px;">
+      <div>
+        <div style="font-family:'Montserrat',sans-serif;font-weight:900;font-size:1.4rem;color:#0F2460;">Relatório Municipal</div>
+        <div id="relCidadeTitulo" style="font-size:0.95rem;color:#475569;">—</div>
+      </div>
+      <div style="margin-left:auto;text-align:right;">
+        <div style="font-size:0.78rem;color:#94a3b8;">Período</div>
+        <div id="relPeriodoTitulo" style="font-size:0.92rem;font-weight:700;color:#1A3C8F;">—</div>
+      </div>
+    </div>
+
+    <!-- KPIs -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:30px;">
+      <div style="background:#EFF6FF;border-radius:14px;padding:18px;text-align:center;">
+        <div id="kpiTotal" style="font-family:'Montserrat',sans-serif;font-weight:900;font-size:2.1rem;color:#1A3C8F;">0</div>
+        <div style="font-size:0.78rem;color:#475569;font-weight:600;">Solicitações no período</div>
+      </div>
+      <div style="background:#FEF2F2;border-radius:14px;padding:18px;text-align:center;">
+        <div id="kpiUrgentes" style="font-family:'Montserrat',sans-serif;font-weight:900;font-size:2.1rem;color:#D92B2B;">0</div>
+        <div style="font-size:0.78rem;color:#475569;font-weight:600;">Urgentes</div>
+      </div>
+      <div style="background:#FFFBEB;border-radius:14px;padding:18px;text-align:center;">
+        <div id="kpiSemVol" style="font-family:'Montserrat',sans-serif;font-weight:900;font-size:2.1rem;color:#D97706;">0</div>
+        <div style="font-size:0.78rem;color:#475569;font-weight:600;">Sem voluntário</div>
+      </div>
+      <div style="background:#ECFDF5;border-radius:14px;padding:18px;text-align:center;">
+        <div id="kpiVoluntarios" style="font-family:'Montserrat',sans-serif;font-weight:900;font-size:2.1rem;color:#059669;">0</div>
+        <div style="font-size:0.78rem;color:#475569;font-weight:600;">Voluntários na cidade</div>
+      </div>
+    </div>
+
+    <!-- GRÁFICOS -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:28px;">
+      <div style="background:#F8FAFC;border-radius:14px;padding:18px;">
+        <div style="font-weight:700;font-size:0.85rem;color:#0F2460;margin-bottom:10px;">Tipos de ajuda mais solicitados</div>
+        <canvas id="relChartTipos" width="320" height="220"></canvas>
+      </div>
+      <div style="background:#F8FAFC;border-radius:14px;padding:18px;">
+        <div style="font-weight:700;font-size:0.85rem;color:#0F2460;margin-bottom:10px;">Status das solicitações</div>
+        <canvas id="relChartStatus" width="320" height="220"></canvas>
+      </div>
+    </div>
+
+    <div style="background:#F8FAFC;border-radius:14px;padding:18px;margin-bottom:10px;">
+      <div style="font-weight:700;font-size:0.85rem;color:#0F2460;margin-bottom:10px;">Solicitações por dia</div>
+      <canvas id="relChartLinha" width="700" height="180"></canvas>
+    </div>
+
+    <div style="margin-top:auto;padding-top:20px;text-align:center;font-size:0.7rem;color:#94a3b8;">
+      Gerado automaticamente pelo SOS Ajuda Aí em <span id="relDataGeracao">—</span> · Página 1 de 2
+    </div>
+  </div>
+
+  <!-- PÁGINA 2: CRÍTICOS -->
+  <div class="rel-pagina" style="width:794px;min-height:1123px;padding:50px 56px;box-sizing:border-box;">
+    <div style="font-family:'Montserrat',sans-serif;font-weight:900;font-size:1.15rem;color:#0F2460;margin-bottom:6px;">⚠️ Solicitações que precisam de atenção</div>
+    <div style="font-size:0.85rem;color:#475569;margin-bottom:20px;">Urgentes e/ou sem nenhum voluntário confirmado</div>
+
+    <div id="relTabelaCriticos"></div>
+
+    <div style="font-family:'Montserrat',sans-serif;font-weight:900;font-size:1.15rem;color:#0F2460;margin:32px 0 6px;">📍 Pontos de apoio</div>
+    <div id="relTabelaPontos"></div>
+
+    <div style="margin-top:40px;padding-top:20px;border-top:1px solid #e2e8f0;text-align:center;font-size:0.7rem;color:#94a3b8;">
+      SOS Ajuda Aí · Relatório municipal · Página 2 de 2
+    </div>
+  </div>
+
+</div>
 
 <script>
 const SB_URL = "https://wrpfgrwayzmiucyavphk.supabase.co";
@@ -750,104 +828,153 @@ function renderHistorico(sols) {
 }
 
 // ── TABELA ──
-// ── EXPORTAÇÃO DE RELATÓRIO ──
-function exportarRelatorio() {
+// ── EXPORTAÇÃO DE RELATÓRIO VISUAL (PDF) ──
+let _chartsRelatorio = [];
+
+function destruirChartsRelatorio() {
+  _chartsRelatorio.forEach(c => c.destroy());
+  _chartsRelatorio = [];
+}
+
+function montarTabelaHtml(linhas, colunas) {
+  if (!linhas.length) {
+    return `<div style="text-align:center;padding:24px;color:#94a3b8;font-size:0.85rem;background:#F8FAFC;border-radius:10px;">Nenhum registro encontrado.</div>`;
+  }
+  const head = colunas.map(c => `<th style="text-align:left;padding:8px 10px;background:#1A3C8F;color:#fff;font-size:0.75rem;font-weight:700;">${c.label}</th>`).join('');
+  const body = linhas.map((linha, i) => {
+    const bg = i % 2 === 0 ? '#fff' : '#F8FAFC';
+    const tds = colunas.map(c => `<td style="padding:7px 10px;font-size:0.78rem;color:#334155;border-bottom:1px solid #e2e8f0;">${linha[c.key] ?? '—'}</td>`).join('');
+    return `<tr style="background:${bg};">${tds}</tr>`;
+  }).join('');
+  return `<table style="width:100%;border-collapse:collapse;"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
+}
+
+async function exportarRelatorio() {
   const btn = document.querySelector('.btn-exportar');
-  if (typeof XLSX === 'undefined') {
-    toast('⚠️ Biblioteca de exportação não carregou. Verifique sua conexão e tente novamente.');
+  if (typeof Chart === 'undefined' || typeof html2canvas === 'undefined' || typeof jspdf === 'undefined') {
+    toast('⚠️ Bibliotecas de geração de PDF não carregaram. Verifique sua conexão e tente novamente.');
     return;
   }
 
   btn.disabled = true;
-  btn.textContent = '⏳ Gerando...';
+  btn.textContent = '⏳ Gerando PDF...';
 
   try {
     const { sols, vols, confs, avals, periodo } = _dadosExportacao;
     const cidade = _cidadeAtual?.nome || '—';
-    const agora = new Date().toLocaleString('pt-BR');
-    const wb = XLSX.utils.book_new();
 
-    // ABA 1: Resumo
-    const ativas = sols.filter(s => s.ativo && new Date(s.expira_em) > new Date());
     const urgentes = sols.filter(s => s.urgencia === 'vermelho');
-    const concluidas = sols.filter(s => !s.ativo || new Date(s.expira_em) <= new Date());
-    const mediaAval = avals.length ? (avals.reduce((s,a) => s+a.estrelas, 0)/avals.length).toFixed(1) : '—';
     const semVoluntarios = sols.filter(s => (s.voluntarios_confirmados || 0) === 0);
-
-    const resumo = [
-      ['Relatório SOS Ajuda Aí — Painel Municipal'],
-      ['Cidade', cidade],
-      ['Período', periodo],
-      ['Gerado em', agora],
-      [],
-      ['Indicador', 'Valor'],
-      ['Total de solicitações no período', sols.length],
-      ['Solicitações ativas agora', ativas.length],
-      ['Solicitações urgentes', urgentes.length],
-      ['Solicitações concluídas/expiradas', concluidas.length],
-      ['Solicitações sem nenhum voluntário confirmado', semVoluntarios.length],
-      ['Voluntários cadastrados na cidade', vols.length],
-      ['Confirmações de presença no período', confs.length],
-      ['Avaliação média dos voluntários', mediaAval],
-    ];
-    const wsResumo = XLSX.utils.aoa_to_sheet(resumo);
-    wsResumo['!cols'] = [{wch:42},{wch:30}];
-    XLSX.utils.book_append_sheet(wb, wsResumo, 'Resumo');
-
-    // ABA 2: Solicitações detalhadas
-    const linhasSol = sols.length ? sols.map(s => ({
-      'Nome': s.nome,
-      'Endereço': s.endereco,
-      'Urgência': s.urgencia,
-      'Tipos de ajuda': (s.tipos_ajuda || []).join(', '),
-      'Voluntários confirmados': s.voluntarios_confirmados || 0,
-      'Limite de voluntários': s.limite_voluntarios || '—',
-      'Status': s.ativo && new Date(s.expira_em) > new Date() ? 'Ativa' : 'Concluída/expirada',
-      'Criado em': s.criado_em ? new Date(s.criado_em).toLocaleString('pt-BR') : '—',
-    })) : [{ 'Nome': 'Nenhuma solicitação no período selecionado' }];
-    const wsSol = XLSX.utils.json_to_sheet(linhasSol);
-    wsSol['!cols'] = [{wch:24},{wch:34},{wch:12},{wch:30},{wch:14},{wch:14},{wch:20},{wch:18}];
-    XLSX.utils.book_append_sheet(wb, wsSol, 'Solicitações');
-
-    // ABA 3: Solicitações sem voluntários (alerta)
-    const linhasSemVol = semVoluntarios.length ? semVoluntarios.map(s => ({
-      'Nome': s.nome,
-      'Endereço': s.endereco,
-      'Urgência': s.urgencia,
-      'Criado em': s.criado_em ? new Date(s.criado_em).toLocaleString('pt-BR') : '—',
-      'Horas em aberto': s.criado_em ? Math.round((Date.now() - new Date(s.criado_em)) / 3600000) : '—',
-    })) : [{ 'Nome': 'Nenhuma solicitação sem voluntários no período' }];
-    const wsSemVol = XLSX.utils.json_to_sheet(linhasSemVol);
-    wsSemVol['!cols'] = [{wch:24},{wch:34},{wch:12},{wch:18},{wch:14}];
-    XLSX.utils.book_append_sheet(wb, wsSemVol, 'Sem voluntários');
-
-    // ABA 4: Voluntários
-    const linhasVol = vols.length ? vols.map(v => ({
-      'Nome': v.nome || '—',
-      'Cidade': v.cidade || '—',
-      'Habilidades': (v.habilidades || []).join(', '),
-      'WhatsApp': v.whatsapp || '—',
-    })) : [{ 'Nome': 'Nenhum voluntário cadastrado nesta cidade' }];
-    const wsVol = XLSX.utils.json_to_sheet(linhasVol);
-    wsVol['!cols'] = [{wch:26},{wch:18},{wch:30},{wch:16}];
-    XLSX.utils.book_append_sheet(wb, wsVol, 'Voluntários');
-
-    // ABA 5: Pontos de apoio
+    const criticos = sols.filter(s => s.urgencia === 'vermelho' || (s.voluntarios_confirmados || 0) === 0);
+    const ativas = sols.filter(s => s.ativo && new Date(s.expira_em) > new Date());
+    const concluidas = sols.length - ativas.length;
     const pontosApoio = _pontosApoioPref || [];
-    const linhasPontos = pontosApoio.length ? pontosApoio.map(p => ({
-      'Tipo': p.tipo === 'abrigo' ? 'Abrigo' : 'Doações/Mantimentos',
-      'Nome': p.nome,
-      'Endereço': p.endereco,
-      'Verificado': p.verificado ? 'Sim' : 'Não',
-      'Ativo': p.ativo ? 'Sim' : 'Não',
-    })) : [{ 'Tipo': 'Nenhum ponto de apoio cadastrado nesta cidade' }];
-    const wsPontos = XLSX.utils.json_to_sheet(linhasPontos);
-    wsPontos['!cols'] = [{wch:20},{wch:24},{wch:34},{wch:12},{wch:10}];
-    XLSX.utils.book_append_sheet(wb, wsPontos, 'Pontos de apoio');
 
-    const nomeArquivo = `relatorio_sos_ajuda_ai_${cidade.replace(/[^a-zA-Z0-9]/g,'_')}_${new Date().toISOString().slice(0,10)}.xlsx`;
-    XLSX.writeFile(wb, nomeArquivo);
-    toast('✅ Relatório exportado com sucesso!');
+    // Preenche cabeçalho e KPIs
+    document.getElementById('relCidadeTitulo').textContent = cidade;
+    document.getElementById('relPeriodoTitulo').textContent = periodo;
+    document.getElementById('relDataGeracao').textContent = new Date().toLocaleString('pt-BR');
+    document.getElementById('kpiTotal').textContent = sols.length;
+    document.getElementById('kpiUrgentes').textContent = urgentes.length;
+    document.getElementById('kpiSemVol').textContent = semVoluntarios.length;
+    document.getElementById('kpiVoluntarios').textContent = vols.length;
+
+    // Gráfico 1: tipos de ajuda (pizza)
+    const contagemTipos = {};
+    sols.forEach(s => (s.tipos_ajuda || []).forEach(t => contagemTipos[t] = (contagemTipos[t]||0) + 1));
+    const tiposOrdenados = Object.entries(contagemTipos).sort((a,b) => b[1]-a[1]).slice(0, 6);
+
+    destruirChartsRelatorio();
+    const coresGrafico = ['#1A3C8F','#D92B2B','#D97706','#059669','#7C3AED','#2255C4'];
+
+    const ctxTipos = document.getElementById('relChartTipos').getContext('2d');
+    _chartsRelatorio.push(new Chart(ctxTipos, {
+      type: 'doughnut',
+      data: {
+        labels: tiposOrdenados.length ? tiposOrdenados.map(t => t[0]) : ['Sem dados'],
+        datasets: [{ data: tiposOrdenados.length ? tiposOrdenados.map(t => t[1]) : [1], backgroundColor: coresGrafico }]
+      },
+      options: { responsive: false, animation: false, plugins: { legend: { position: 'right', labels: { font: { size: 10 } } } } }
+    }));
+
+    // Gráfico 2: status (pizza)
+    const ctxStatus = document.getElementById('relChartStatus').getContext('2d');
+    _chartsRelatorio.push(new Chart(ctxStatus, {
+      type: 'doughnut',
+      data: {
+        labels: ['Ativas', 'Concluídas/expiradas'],
+        datasets: [{ data: [ativas.length, concluidas], backgroundColor: ['#059669', '#94a3b8'] }]
+      },
+      options: { responsive: false, animation: false, plugins: { legend: { position: 'right', labels: { font: { size: 10 } } } } }
+    }));
+
+    // Gráfico 3: solicitações por dia (linha)
+    const porDia = {};
+    sols.forEach(s => {
+      if (!s.criado_em) return;
+      const dia = new Date(s.criado_em).toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit' });
+      porDia[dia] = (porDia[dia]||0) + 1;
+    });
+    const diasOrdenados = Object.keys(porDia).sort((a,b) => {
+      const [da,ma] = a.split('/'); const [db,mb] = b.split('/');
+      return new Date(2026,ma-1,da) - new Date(2026,mb-1,db);
+    });
+
+    const ctxLinha = document.getElementById('relChartLinha').getContext('2d');
+    _chartsRelatorio.push(new Chart(ctxLinha, {
+      type: 'line',
+      data: {
+        labels: diasOrdenados.length ? diasOrdenados : ['Sem dados'],
+        datasets: [{
+          label: 'Solicitações', data: diasOrdenados.length ? diasOrdenados.map(d => porDia[d]) : [0],
+          borderColor: '#1A3C8F', backgroundColor: 'rgba(26,60,143,0.1)', fill: true, tension: 0.3
+        }]
+      },
+      options: { responsive: false, animation: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
+    }));
+
+    // Tabela de críticos
+    const linhasCriticos = criticos.map(s => ({
+      nome: s.nome,
+      endereco: s.endereco,
+      urgencia: s.urgencia === 'vermelho' ? '🔴 Urgente' : s.urgencia === 'amarelo' ? '🟡 Atenção' : '🟢 Normal',
+      voluntarios: `${s.voluntarios_confirmados || 0}/${s.limite_voluntarios || '—'}`,
+      horas: s.criado_em ? Math.round((Date.now() - new Date(s.criado_em)) / 3600000) + 'h' : '—',
+    }));
+    document.getElementById('relTabelaCriticos').innerHTML = montarTabelaHtml(linhasCriticos, [
+      { key:'nome', label:'Nome' }, { key:'endereco', label:'Endereço' },
+      { key:'urgencia', label:'Status' }, { key:'voluntarios', label:'Voluntários' }, { key:'horas', label:'Tempo aberto' },
+    ]);
+
+    // Tabela de pontos de apoio
+    const linhasPontos = pontosApoio.map(p => ({
+      tipo: p.tipo === 'abrigo' ? '🏠 Abrigo' : '📦 Doações/Mantimentos',
+      nome: p.nome, endereco: p.endereco,
+      status: p.verificado ? '✅ Verificado' : '⏳ Pendente',
+    }));
+    document.getElementById('relTabelaPontos').innerHTML = montarTabelaHtml(linhasPontos, [
+      { key:'tipo', label:'Tipo' }, { key:'nome', label:'Nome' }, { key:'endereco', label:'Endereço' }, { key:'status', label:'Status' },
+    ]);
+
+    // Espera os gráficos renderizarem antes de capturar
+    await new Promise(res => setTimeout(res, 350));
+
+    // Captura cada página do template e monta o PDF
+    const { jsPDF } = jspdf;
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    const paginas = document.querySelectorAll('#relatorioTemplate .rel-pagina');
+
+    for (let i = 0; i < paginas.length; i++) {
+      const canvas = await html2canvas(paginas[i], { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+      const imgData = canvas.toDataURL('image/jpeg', 0.95);
+      const larguraMM = 210, alturaMM = (canvas.height * larguraMM) / canvas.width;
+      if (i > 0) pdf.addPage();
+      pdf.addImage(imgData, 'JPEG', 0, 0, larguraMM, Math.min(alturaMM, 297));
+    }
+
+    const nomeArquivo = `relatorio_sos_ajuda_ai_${cidade.replace(/[^a-zA-Z0-9]/g,'_')}_${new Date().toISOString().slice(0,10)}.pdf`;
+    pdf.save(nomeArquivo);
+    toast('✅ Relatório em PDF gerado com sucesso!');
   } catch(e) {
     console.error('Erro ao exportar:', e);
     toast('⚠️ Erro ao gerar o relatório. Tente novamente.');
