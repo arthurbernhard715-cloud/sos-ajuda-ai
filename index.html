@@ -240,6 +240,24 @@ nav.scrolled {
 .quem-somos-titulo { font-family: 'Montserrat', sans-serif; font-weight: 700; color: var(--azul); font-size: .92rem; margin-bottom: 8px; }
 .quem-somos-texto p { font-size: .85rem; color: #475569; line-height: 1.6; }
 .quem-somos-texto a { color: var(--azul); font-weight: 600; }
+.quem-somos-sec { background: #fff; }
+.quem-somos-card {
+  display: flex; gap: 24px; align-items: flex-start; text-align: left;
+  max-width: 720px; margin: 0 auto; padding: 30px 32px;
+  background: var(--cinza-f); border-radius: 18px; border: 1px solid var(--cinza-b);
+}
+.quem-somos-card-foto {
+  flex-shrink: 0; width: 72px; height: 72px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--azul), #0F2460); color: #fff;
+  display: flex; align-items: center; justify-content: center; font-size: 2.2rem;
+}
+.quem-somos-card-texto h3 { font-family: 'Montserrat', sans-serif; font-weight: 800; color: var(--azul); font-size: 1.1rem; margin-bottom: 2px; }
+.quem-somos-card-local { font-size: .82rem; color: var(--cinza-t); margin-bottom: 14px; }
+.quem-somos-card-texto p { font-size: .9rem; color: #475569; line-height: 1.7; margin-bottom: 12px; }
+.quem-somos-card-texto a { color: var(--azul); font-weight: 600; }
+@media (max-width: 640px) {
+  .quem-somos-card { flex-direction: column; align-items: center; text-align: center; padding: 26px 22px; }
+}
 .parceiros { margin-top: 36px; }
 .parceiros p { font-size: .87rem; color: var(--cinza-t); margin-bottom: 14px; }
 .parceiros-row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
@@ -732,6 +750,7 @@ textarea.form-control { resize: vertical; min-height: 88px; }
   <div class="nav-logo"><img src="logo.png" alt="SOS Ajuda Aí"></div>
   <div class="nav-links">
     <a href="#como-funciona">Como funciona</a>
+    <a href="#quem-somos">Quem somos</a>
     <a href="#mapa">Mapa</a>
     <a href="#solicitacoes">Ver solicitações</a>
     <a href="#ranking">Ranking</a>
@@ -838,6 +857,25 @@ textarea.form-control { resize: vertical; min-height: 88px; }
   </div>
 </section>
 
+<!-- QUEM SOMOS -->
+<section class="section quem-somos-sec" id="quem-somos">
+  <div class="section-title">
+    <div class="eyebrow">Transparência</div>
+    <h2>Quem somos</h2>
+    <p>Um projeto independente, criado por quem viveu a enchente de perto.</p>
+  </div>
+  <div class="quem-somos-card">
+    <div class="quem-somos-card-foto">👤</div>
+    <div class="quem-somos-card-texto">
+      <h3>Arthur Bernhard</h3>
+      <p class="quem-somos-card-local">📍 Sinimbu, Rio Grande do Sul</p>
+      <p>O SOS Ajuda Aí foi criado por Arthur Bernhard, morador de Sinimbu — uma das cidades atingidas pelas enchentes no Rio Grande do Sul. A ideia nasceu da dificuldade real de conectar quem precisava de ajuda com quem queria ajudar, de forma rápida e organizada, no momento em que isso mais importa.</p>
+      <p>Hoje o projeto é desenvolvido e mantido de forma independente, sem fins lucrativos. <strong>Ainda não somos uma ONG formalmente registrada</strong> — somos transparentes sobre isso, e sobre o fato de que doações recebidas via Pix são usadas integralmente para manter a infraestrutura do site (hospedagem, banco de dados, armazenamento de imagens) funcionando, especialmente em momentos de pico de uso durante emergências.</p>
+      <p>Tem dúvidas, sugestões, ou quer apoiar o projeto de outras formas? <a href="mailto:contato@sosajudaai.com.br">contato@sosajudaai.com.br</a></p>
+    </div>
+  </div>
+</section>
+
 <!-- SOLICITAÇÕES -->
 <section class="section solicitacoes" id="solicitacoes">
   <div class="section-title">
@@ -922,7 +960,7 @@ textarea.form-control { resize: vertical; min-height: 88px; }
       <img src="logo.png" alt="SOS Ajuda Aí">
       <p>Conectando quem precisa com quem quer ajudar, desde o Rio Grande do Sul para todo o Brasil.</p>
     </div>
-    <div class="footer-col"><h4>Plataforma</h4><a href="#como-funciona">Como funciona</a><a href="#mapa">Ver solicitações</a><a href="#ranking">Ranking de voluntários</a><a href="faq.html">Perguntas frequentes</a><a href="prefeitura.html">Painel para prefeituras</a></div>
+    <div class="footer-col"><h4>Plataforma</h4><a href="#como-funciona">Como funciona</a><a href="#quem-somos">Quem somos</a><a href="#mapa">Ver solicitações</a><a href="#ranking">Ranking de voluntários</a><a href="faq.html">Perguntas frequentes</a><a href="prefeitura.html">Painel para prefeituras</a></div>
     <div class="footer-col"><h4>Segurança</h4><a href="#" onclick="abrirModal('modal-verificacao');return false;">Verificação de identidade</a><a href="privacidade.html">Política de privacidade</a><a href="termos.html">Termos de uso</a><a href="denunciar.html">Denunciar fraude</a></div>
     <div class="footer-col"><h4>Contato</h4><a href="#">contato@sosajudaai.com.br</a><a href="#">WhatsApp</a><a href="#">Instagram</a><a href="#">Seja parceiro</a></div>
   </div>
