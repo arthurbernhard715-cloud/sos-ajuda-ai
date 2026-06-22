@@ -227,6 +227,19 @@ nav.scrolled {
 .d-val:hover, .d-val.ativo { background: var(--verm); color: #fff; border-color: var(--verm); }
 .btn-doar { background: var(--verm); color: #fff; padding: 15px 40px; border-radius: 12px; border: none; cursor: pointer; font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 1rem; box-shadow: 0 4px 18px rgba(217,43,43,0.3); transition: all .2s; }
 .btn-doar:hover { background: var(--verm-c); transform: translateY(-1px); }
+.quem-somos {
+  display: flex; gap: 18px; align-items: flex-start; text-align: left;
+  max-width: 620px; margin: 32px auto 0; padding: 22px 24px;
+  background: var(--cinza-f); border-radius: 14px; border: 1px solid var(--cinza-b);
+}
+.quem-somos-foto {
+  flex-shrink: 0; width: 52px; height: 52px; border-radius: 50%;
+  background: var(--azul); color: #fff; display: flex; align-items: center;
+  justify-content: center; font-size: 1.6rem;
+}
+.quem-somos-titulo { font-family: 'Montserrat', sans-serif; font-weight: 700; color: var(--azul); font-size: .92rem; margin-bottom: 8px; }
+.quem-somos-texto p { font-size: .85rem; color: #475569; line-height: 1.6; }
+.quem-somos-texto a { color: var(--azul); font-weight: 600; }
 .parceiros { margin-top: 36px; }
 .parceiros p { font-size: .87rem; color: var(--cinza-t); margin-bottom: 14px; }
 .parceiros-row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
@@ -874,6 +887,16 @@ textarea.form-control { resize: vertical; min-height: 88px; }
     <button class="d-val" onclick="selecionarDoacao(this,'outro valor')">Outro valor</button>
   </div>
   <button class="btn-doar" id="btnDoar" onclick="abrirModalPix()">Contribuir com R$ 50</button>
+
+  <div class="quem-somos">
+    <div class="quem-somos-foto">👤</div>
+    <div class="quem-somos-texto">
+      <div class="quem-somos-titulo">Quem está por trás do SOS Ajuda Aí</div>
+      <p>Este projeto foi criado e é mantido por <strong>Arthur Bernhard</strong>, morador de Sinimbu, RS — uma das regiões atingidas pelas enchentes. Não somos (ainda) uma ONG formalmente registrada; somos um projeto independente, transparente sobre quem está por trás dele e sobre como cada doação é usada: 100% para manter o site no ar (hospedagem, banco de dados, armazenamento de imagens).</p>
+      <p style="margin-top:8px;">Tem dúvidas ou quer conversar antes de doar? <a href="mailto:contato@sosajudaai.com.br">contato@sosajudaai.com.br</a></p>
+    </div>
+  </div>
+
   <div class="parceiros">
     <p>Empresas que apoiam a missão</p>
     <div class="parceiros-row">
