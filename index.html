@@ -2073,6 +2073,21 @@ function escapeHtml(str) {
     .replace(/'/g, '&#39;');
 }
 
+// Escapa uma string para uso segura como argumento dentro de uma chamada de
+// função em atributo onclick="...('VALOR')". Diferente de escapeHtml (que
+// sanitiza para exibição em HTML), esta função previne que aspas, barras
+// invertidas ou quebras de linha rompam a string JS e injetem código.
+function escapeJsString(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/\\/g, '\\\\')
+    .replace(/'/g, "\\'")
+    .replace(/"/g, '\\"')
+    .replace(/\n/g, '\\n')
+    .replace(/\r/g, '\\r')
+    .replace(/</g, '\\x3C'); // previne fechar a tag <script> ou </
+}
+
 function initMapa() {
   if(mapaObj) return;
   mapaObj = L.map('mapa-leaflet').setView(SINIMBU, 13);
@@ -2213,7 +2228,7 @@ function desenharCards() {
     const urgIcon  = s.urgencia === 'vermelho' ? '🔴' : s.urgencia === 'amarelo' ? '🟡' : '🟢';
     const expiraEm = calcularExpiracao(s.expira_em);
     const pct = Math.round((s.voluntarios_confirmados / s.limite_voluntarios) * 100);
-    const tipos = (s.tipos_ajuda || []).map(t => `<span class="tag">${t}</span>`).join('');
+    const tipos = (s.tipos_ajuda || []).map(t => `<span class="tag">${escapeHtml(t)}</span>`).join('');
 
     const card = document.createElement('div');
     card.className = 'card';
@@ -2224,9 +2239,9 @@ function desenharCards() {
     card.innerHTML = `
       <div class="card-img" style="${s.foto_url ? 'padding:0;overflow:hidden;' : ''}">${cardImgContent}</div>
       <div class="card-body">
-        <div class="card-nome">${s.nome}</div>
-        <div class="card-local">📍 ${s.cidade}, ${s.estado}</div>
-        <div class="card-desc">${s.descricao || ''}</div>
+        <div class="card-nome">${escapeHtml(s.nome)}</div>
+        <div class="card-local">📍 ${escapeHtml(s.cidade)}, ${escapeHtml(s.estado)}</div>
+        <div class="card-desc">${escapeHtml(s.descricao || '')}</div>
         <div class="card-tags">${tipos}</div>
         <div class="expiry-row">
           <span class="expiry-badge ${urgClass}">${urgIcon} ${expiraEm}</span>
@@ -2307,10 +2322,10 @@ function renderizarMapaPins(solicitacoes, pontosApoio) {
       const dot = s.urgencia === 'vermelho' ? 'pin-urg' : 'pin-ok';
       item.innerHTML = `
         <div class="mapa-card-head"><div class="pin-dot ${dot}"></div><div>
-          <div class="mapa-card-nome">${s.nome}</div>
-          <div class="mapa-card-local">📍 ${s.cidade}</div>
+          <div class="mapa-card-nome">${escapeHtml(s.nome)}</div>
+          <div class="mapa-card-local">📍 ${escapeHtml(s.cidade)}</div>
         </div></div>
-        <div class="mapa-card-tags">${(s.tipos_ajuda||[]).map(t=>`<span class="mapa-tag">${t}</span>`).join('')}</div>
+        <div class="mapa-card-tags">${(s.tipos_ajuda||[]).map(t=>`<span class="mapa-tag">${escapeHtml(t)}</span>`).join('')}</div>
         <div class="mapa-bar"><div class="mapa-bar-fill" style="width:${Math.round(s.voluntarios_confirmados/s.limite_voluntarios*100)}%"></div></div>
         <div class="mapa-vol">${s.voluntarios_confirmados}/${s.limite_voluntarios} voluntários</div>`;
       sidebar.appendChild(item);
@@ -2438,8 +2453,8 @@ function abrirDetalhePonto(i) {
   const grid = document.getElementById('dp-grid');
   const cel = (label, valor) => `
     <div style="background:var(--cinza-f);padding:13px;border-radius:10px;">
-      <div style="font-size:.72rem;font-weight:700;color:var(--cinza-t);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px;">${label}</div>
-      <div style="font-size:.9rem;font-weight:600;color:var(--azul);">${valor}</div>
+      <div style="font-size:.72rem;font-weight:700;color:var(--cinza-t);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px;">${escapeHtml(label)}</div>
+      <div style="font-size:.9rem;font-weight:600;color:var(--azul);">${escapeHtml(String(valor))}</div>
     </div>`;
 
   let celulas = cel('Tipo', vis.label);
@@ -3179,7 +3194,7 @@ async function buscarPaisVol(valor) {
       if (!paises.length) { lista.style.display='none'; return; }
       lista.innerHTML = paises.map(r => {
         const nome = r.address?.country || r.display_name.split(',').pop().trim();
-        return `<div onclick="selecionarPaisVol('${nome.replace(/'/g,"\'")}')"
+        return `<div onclick="selecionarPaisVol('${escapeJsString(nome)}')"
           style="padding:10px 14px;cursor:pointer;font-size:0.85rem;border-bottom:1px solid #f1f5f9;"
           onmouseover="this.style.background='#EEF2FF'" onmouseout="this.style.background='#fff'">
           🌍 <strong>${nome}</strong></div>`;
@@ -3300,7 +3315,7 @@ async function buscarEstadoVol(valor) {
       if (!estados.length) { lista.style.display='none'; return; }
       lista.innerHTML = estados.map(r => {
         const nome = r.address?.state || r.display_name.split(',')[0];
-        return `<div onclick="selecionarEstadoVol('${nome.replace(/'/g,"\'")}')"
+        return `<div onclick="selecionarEstadoVol('${escapeJsString(nome)}')"
           style="padding:10px 14px;cursor:pointer;font-size:0.85rem;border-bottom:1px solid #f1f5f9;"
           onmouseover="this.style.background='#EEF2FF'" onmouseout="this.style.background='#fff'">
           📍 <strong>${nome}</strong></div>`;
@@ -3339,7 +3354,7 @@ async function buscarCidadeVol(valor) {
       if (!cidades.length) { lista.style.display='none'; return; }
       lista.innerHTML = cidades.map(r => {
         const nome = r.address?.city||r.address?.town||r.address?.village||r.display_name.split(',')[0];
-        return `<div onclick="selecionarCidadeVol('${nome.replace(/'/g,"\'")}')"
+        return `<div onclick="selecionarCidadeVol('${escapeJsString(nome)}')"
           style="padding:10px 14px;cursor:pointer;font-size:0.85rem;border-bottom:1px solid #f1f5f9;"
           onmouseover="this.style.background='#EEF2FF'" onmouseout="this.style.background='#fff'">
           🏙️ <strong>${nome}</strong> <small style="color:#64748b;">${_volEstadoSel}</small></div>`;
@@ -3563,10 +3578,10 @@ async function buscarEndereco(valor) {
         const addr = r.address || {};
         const rua = addr.road || addr.pedestrian || addr.footway || r.display_name.split(',')[0];
         const sub = [addr.suburb, addr.city_district, addr.city || addr.town || addr.village].filter(Boolean).join(', ');
-        return `<div class="autocomplete-item" onclick="selecionarEndereco('${rua.replace(/'/g,"\'")}', ${r.lat}, ${r.lon})">
+        return `<div class="autocomplete-item" onclick="selecionarEndereco('${escapeJsString(rua)}', ${r.lat}, ${r.lon})">
           <span class="autocomplete-icon">📍</span>
           <div class="autocomplete-text">
-            <div class="autocomplete-main">${rua}</div>
+            <div class="autocomplete-main">${escapeHtml(rua)}</div>
             <div class="autocomplete-sub">${sub}</div>
           </div>
         </div>`;
@@ -3683,10 +3698,10 @@ async function buscarPais(valor) {
       lista.innerHTML = unicos.map(r => {
         const nome = r.address?.country || r.display_name.split(',').pop().trim();
         const code = r.address?.country_code?.toUpperCase() || '';
-        return `<div onclick="selecionarPais('${nome.replace(/'/g,"\'")}','${code}')"
+        return `<div onclick="selecionarPais('${escapeJsString(nome)}','${escapeJsString(code)}')"
           style="padding:10px 14px;cursor:pointer;font-size:0.85rem;border-bottom:1px solid #f1f5f9;display:flex;gap:8px;align-items:center;"
           onmouseover="this.style.background='#EEF2FF'" onmouseout="this.style.background='#fff'">
-          🌍 <strong>${nome}</strong> <span style="color:#94a3b8;margin-left:auto;font-size:0.75rem;">${code}</span>
+          🌍 <strong>${escapeHtml(nome)}</strong> <span style="color:#94a3b8;margin-left:auto;font-size:0.75rem;">${escapeHtml(code)}</span>
         </div>`;
       }).join('');
       lista.style.display = 'block';
@@ -3741,10 +3756,10 @@ async function buscarEstado(valor) {
       if (!estados.length) { lista.style.display='none'; return; }
       lista.innerHTML = estados.map(r => {
         const nome = r.address?.state || r.display_name.split(',')[0];
-        return `<div onclick="selecionarEstado('${nome.replace(/'/g,"\'")}',${r.lat},${r.lon})"
+        return `<div onclick="selecionarEstado('${escapeJsString(nome)}',${r.lat},${r.lon})"
           style="padding:10px 14px;cursor:pointer;font-size:0.85rem;border-bottom:1px solid #f1f5f9;display:flex;gap:8px;align-items:center;"
           onmouseover="this.style.background='#EEF2FF'" onmouseout="this.style.background='#fff'">
-          📍 <span><strong>${nome}</strong><br><small style="color:#64748b">${_paisSelecionado}</small></span>
+          📍 <span><strong>${escapeHtml(nome)}</strong><br><small style="color:#64748b">${escapeHtml(_paisSelecionado)}</small></span>
         </div>`;
       }).join('');
       lista.style.display = 'block';
@@ -3794,10 +3809,10 @@ async function buscarCidade(valor) {
       if (!cidades.length) { lista.style.display='none'; return; }
       lista.innerHTML = cidades.map(r => {
         const nome = r.address?.city || r.address?.town || r.address?.village || r.display_name.split(',')[0];
-        return `<div onclick="selecionarCidade('${nome.replace(/'/g,"\'")}',${r.lat},${r.lon})"
+        return `<div onclick="selecionarCidade('${escapeJsString(nome)}',${r.lat},${r.lon})"
           style="padding:10px 14px;cursor:pointer;font-size:0.85rem;border-bottom:1px solid #f1f5f9;display:flex;gap:8px;align-items:center;"
           onmouseover="this.style.background='#EEF2FF'" onmouseout="this.style.background='#fff'">
-          🏙️ <span><strong>${nome}</strong><br><small style="color:#64748b">${_estadoSelecionado}, ${_paisSelecionado}</small></span>
+          🏙️ <span><strong>${escapeHtml(nome)}</strong><br><small style="color:#64748b">${escapeHtml(_estadoSelecionado)}, ${escapeHtml(_paisSelecionado)}</small></span>
         </div>`;
       }).join('');
       lista.style.display = 'block';
@@ -3847,7 +3862,7 @@ async function buscarEstadoPonto(valor) {
       if (!estados.length) { lista.style.display='none'; return; }
       lista.innerHTML = estados.map(r => {
         const nome = r.address?.state || r.display_name.split(',')[0];
-        return `<div onclick="selecionarEstadoPonto('${nome.replace(/'/g,"\\'")}')"
+        return `<div onclick="selecionarEstadoPonto('${escapeJsString(nome)}')"
           style="padding:10px 14px;cursor:pointer;font-size:0.85rem;border-bottom:1px solid #f1f5f9;"
           onmouseover="this.style.background='#EEF2FF'" onmouseout="this.style.background='#fff'">
           📍 <strong>${nome}</strong>
@@ -3891,7 +3906,7 @@ async function buscarCidadePonto(valor) {
       if (!cidades.length) { lista.style.display='none'; return; }
       lista.innerHTML = cidades.map(r => {
         const nome = r.address?.city || r.address?.town || r.address?.village || r.display_name.split(',')[0];
-        return `<div onclick="selecionarCidadePonto('${nome.replace(/'/g,"\\'")}',${r.lat},${r.lon})"
+        return `<div onclick="selecionarCidadePonto('${escapeJsString(nome)}',${r.lat},${r.lon})"
           style="padding:10px 14px;cursor:pointer;font-size:0.85rem;border-bottom:1px solid #f1f5f9;"
           onmouseover="this.style.background='#EEF2FF'" onmouseout="this.style.background='#fff'">
           🏙️ <strong>${nome}</strong>
@@ -4411,16 +4426,16 @@ async function carregarMinhasSolicitacoes() {
       const urg = s.urgencia === 'vermelho' ? '🔴' : s.urgencia === 'amarelo' ? '🟡' : '🟢';
       return `<div class="vol-item">
         ${s.foto_url ? `<img src="${s.foto_url}" style="width:100%;height:120px;object-fit:cover;border-radius:10px;margin-bottom:10px;">` : ''}
-        <div class="vol-item-nome">${s.nome} ${urg}</div>
-        <div class="vol-item-local">📍 ${s.cidade}, ${s.estado}</div>
-        <div style="font-size:0.75rem;color:#475569;margin-bottom:6px;">${s.endereco || ''}</div>
-        <div class="vol-item-tags">${(s.tipos_ajuda||[]).map(t=>`<span class="tag">${t}</span>`).join('')}</div>
+        <div class="vol-item-nome">${escapeHtml(s.nome)} ${urg}</div>
+        <div class="vol-item-local">📍 ${escapeHtml(s.cidade)}, ${escapeHtml(s.estado)}</div>
+        <div style="font-size:0.75rem;color:#475569;margin-bottom:6px;">${escapeHtml(s.endereco || '')}</div>
+        <div class="vol-item-tags">${(s.tipos_ajuda||[]).map(t=>`<span class="tag">${escapeHtml(t)}</span>`).join('')}</div>
         <div class="vol-item-footer" style="margin-top:8px;">
           <span class="vol-status ${ativa ? 'vs-confirmado' : 'vs-concluido'}">${ativa ? '✅ Ativa' : '⏰ Expirada'}</span>
           <span style="font-size:0.72rem;color:#64748b;">${ativa ? exp : new Date(s.criado_em).toLocaleDateString('pt-BR')}</span>
         </div>
         <div style="display:flex;gap:8px;margin-top:10px;">
-          <button onclick="gerarQRCode('${s.id}','${s.nome}','${(s.endereco||'').replace(/'/g,"\'")}');fecharPainelVoluntario();"
+          <button onclick="gerarQRCode('${s.id}','${escapeJsString(s.nome)}','${escapeJsString(s.endereco||'')}');fecharPainelVoluntario();"
             style="flex:1;padding:9px;border-radius:9px;border:1.5px solid #c7d2fe;background:#EEF2FF;color:var(--azul);font-size:0.8rem;font-weight:700;cursor:pointer;transition:all .2s;">
             📱 Ver QR Code
           </button>
@@ -4684,10 +4699,10 @@ function renderListaConfirmadas(confs) {
     const exp = calcularExpiracao(s.expira_em);
     const urg = s.urgencia === 'vermelho' ? '🔴' : s.urgencia === 'amarelo' ? '🟡' : '🟢';
     return `<div class="vol-item" id="conf-item-${c.id}">
-      <div class="vol-item-nome">${s.nome || '—'} ${urg}</div>
-      <div class="vol-item-local">📍 ${s.cidade || ''}, ${s.estado || ''}</div>
-      <div style="font-size:0.78rem;color:#475569;margin-bottom:8px;">${s.endereco || ''}</div>
-      <div class="vol-item-tags">${(s.tipos_ajuda||[]).map(t=>`<span class="tag">${t}</span>`).join('')}</div>
+      <div class="vol-item-nome">${escapeHtml(s.nome || '—')} ${urg}</div>
+      <div class="vol-item-local">📍 ${escapeHtml(s.cidade || '')}, ${escapeHtml(s.estado || '')}</div>
+      <div style="font-size:0.78rem;color:#475569;margin-bottom:8px;">${escapeHtml(s.endereco || '')}</div>
+      <div class="vol-item-tags">${(s.tipos_ajuda||[]).map(t=>`<span class="tag">${escapeHtml(t)}</span>`).join('')}</div>
       <div class="vol-item-footer" style="margin-top:10px;">
         <span class="vol-status vs-confirmado">✅ Confirmado</span>
         <span style="font-size:0.75rem;color:#64748b;">⏰ ${exp}</span>
@@ -4720,16 +4735,16 @@ async function renderHistorico(confs) {
     const s = c.solicitacoes || {};
     const jaAvaliou = avalIds.has(c.id);
     return `<div class="vol-item">
-      <div class="vol-item-nome">${s.nome || '—'}</div>
-      <div class="vol-item-local">📍 ${s.cidade || ''}, ${s.estado || ''}</div>
-      <div class="vol-item-tags">${(s.tipos_ajuda||[]).map(t=>`<span class="tag">${t}</span>`).join('')}</div>
+      <div class="vol-item-nome">${escapeHtml(s.nome || '—')}</div>
+      <div class="vol-item-local">📍 ${escapeHtml(s.cidade || '')}, ${escapeHtml(s.estado || '')}</div>
+      <div class="vol-item-tags">${(s.tipos_ajuda||[]).map(t=>`<span class="tag">${escapeHtml(t)}</span>`).join('')}</div>
       <div class="vol-item-footer">
         <span class="vol-status vs-concluido">✅ Concluído</span>
         <span style="font-size:0.75rem;color:#64748b;">${new Date(c.criado_em).toLocaleDateString('pt-BR')}</span>
       </div>
       ${jaAvaliou
         ? `<div style="margin-top:8px;font-size:0.78rem;color:#15803D;font-weight:600;">⭐ Já avaliado</div>`
-        : `<button class="btn-avaliar-hist" onclick="abrirAvaliacaoHistorico('${c.id}','${s.nome || ''}','${volId}',null)">⭐ Avaliar esta ajuda</button>`
+        : `<button class="btn-avaliar-hist" onclick="abrirAvaliacaoHistorico('${c.id}','${escapeJsString(s.nome || '')}','${volId}',null)">⭐ Avaliar esta ajuda</button>`
       }
     </div>`;
   }).join('');
@@ -4757,7 +4772,7 @@ async function carregarAvaliacoes() {
       ${avals.map(a => `
         <div class="aval-item">
           <div class="aval-stars">${'★'.repeat(a.estrelas)}${'☆'.repeat(5-a.estrelas)}</div>
-          ${a.comentario ? `<div class="aval-comentario">"${a.comentario}"</div>` : ''}
+          ${a.comentario ? `<div class="aval-comentario">"${escapeHtml(a.comentario)}"</div>` : ''}
           <div class="aval-data">${new Date(a.criado_em).toLocaleDateString('pt-BR')}</div>
         </div>`).join('')}`;
   } catch(e) { console.warn('Erro ao carregar avaliações:', e); }

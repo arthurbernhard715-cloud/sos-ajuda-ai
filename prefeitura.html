@@ -554,6 +554,18 @@ function exibirAvisoValidade() {
 }
 
 // ── API ──
+// Sanitiza texto antes de inserir via innerHTML, prevenindo XSS a partir de
+// dados cadastrados publicamente (nome, endereço, descrição, etc.)
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 async function sbFetch(endpoint) {
   const res = await fetch(SB_URL + '/rest/v1/' + endpoint, {
     headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY }
@@ -617,15 +629,15 @@ function renderPontosApoioPref() {
         : 'Capacidade não informada';
     } else if (p.tipo === 'doacoes_mantimentos') {
       const partes = [];
-      if (p.horario_funcionamento) partes.push(p.horario_funcionamento);
-      if (p.itens_aceitos && p.itens_aceitos.length) partes.push(p.itens_aceitos.join(', '));
+      if (p.horario_funcionamento) partes.push(escapeHtml(p.horario_funcionamento));
+      if (p.itens_aceitos && p.itens_aceitos.length) partes.push(p.itens_aceitos.map(escapeHtml).join(', '));
       detalhes = partes.length ? partes.join(' · ') : '—';
     }
 
     return `<tr>
       <td>${vis.emoji} ${vis.label}</td>
-      <td>${p.nome} ${p.foto_url ? `<a href="${p.foto_url}" target="_blank" style="color:#2255C4;font-size:0.75rem;text-decoration:none;">📷 ver foto</a>` : ''}</td>
-      <td style="font-size:0.8rem;color:#94a3b8;">${p.endereco}</td>
+      <td>${escapeHtml(p.nome)} ${p.foto_url ? `<a href="${p.foto_url}" target="_blank" style="color:#2255C4;font-size:0.75rem;text-decoration:none;">📷 ver foto</a>` : ''}</td>
+      <td style="font-size:0.8rem;color:#94a3b8;">${escapeHtml(p.endereco)}</td>
       <td style="font-size:0.78rem;color:#94a3b8;">${detalhes}</td>
       <td>${status}</td>
       <td>${!p.verificado
@@ -726,7 +738,7 @@ function renderTipos(sols) {
 
   el.innerHTML = sorted.map(([tipo, qtd], i) => `
     <div class="bar-item">
-      <div class="bar-label">${tipo}</div>
+      <div class="bar-label">${escapeHtml(tipo)}</div>
       <div class="bar-track">
         <div class="bar-fill" style="width:${(qtd/max*100).toFixed(0)}%;background:${cores[i%cores.length]}">${qtd > 3 ? qtd : ''}</div>
       </div>
@@ -795,7 +807,7 @@ function renderBairros(sols) {
 
   el.innerHTML = sorted.map(([rua, qtd], i) => `
     <div class="bar-item">
-      <div class="bar-label" style="font-size:0.72rem;" title="${rua}">${rua.length>18?rua.substring(0,18)+'...':rua}</div>
+      <div class="bar-label" style="font-size:0.72rem;" title="${escapeHtml(rua)}">${escapeHtml(rua.length>18?rua.substring(0,18)+'...':rua)}</div>
       <div class="bar-track">
         <div class="bar-fill" style="width:${(qtd/max*100).toFixed(0)}%;background:#7C3AED">${qtd > 2 ? qtd : ''}</div>
       </div>
@@ -840,10 +852,10 @@ function montarTabelaHtml(linhas, colunas) {
   if (!linhas.length) {
     return `<div style="text-align:center;padding:24px;color:#94a3b8;font-size:0.85rem;background:#F8FAFC;border-radius:10px;">Nenhum registro encontrado.</div>`;
   }
-  const head = colunas.map(c => `<th style="text-align:left;padding:8px 10px;background:#1A3C8F;color:#fff;font-size:0.75rem;font-weight:700;">${c.label}</th>`).join('');
+  const head = colunas.map(c => `<th style="text-align:left;padding:8px 10px;background:#1A3C8F;color:#fff;font-size:0.75rem;font-weight:700;">${escapeHtml(c.label)}</th>`).join('');
   const body = linhas.map((linha, i) => {
     const bg = i % 2 === 0 ? '#fff' : '#F8FAFC';
-    const tds = colunas.map(c => `<td style="padding:7px 10px;font-size:0.78rem;color:#334155;border-bottom:1px solid #e2e8f0;">${linha[c.key] ?? '—'}</td>`).join('');
+    const tds = colunas.map(c => `<td style="padding:7px 10px;font-size:0.78rem;color:#334155;border-bottom:1px solid #e2e8f0;">${escapeHtml(linha[c.key] ?? '—')}</td>`).join('');
     return `<tr style="background:${bg};">${tds}</tr>`;
   }).join('');
   return `<table style="width:100%;border-collapse:collapse;"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
@@ -996,9 +1008,9 @@ function renderTabela(sols) {
 
   tbody.innerHTML = sols.slice(0,20).map(s => `
     <tr>
-      <td><strong style="color:#fff">${s.nome}</strong></td>
-      <td style="font-size:0.78rem;color:#64748b;">${s.endereco||'—'}</td>
-      <td style="font-size:0.75rem;">${(s.tipos_ajuda||[]).join(', ')||'—'}</td>
+      <td><strong style="color:#fff">${escapeHtml(s.nome)}</strong></td>
+      <td style="font-size:0.78rem;color:#64748b;">${escapeHtml(s.endereco||'—')}</td>
+      <td style="font-size:0.75rem;">${(s.tipos_ajuda||[]).map(escapeHtml).join(', ')||'—'}</td>
       <td>${urgLabel(s.urgencia)}</td>
       <td>${s.voluntarios_confirmados||0}/${s.limite_voluntarios}</td>
       <td style="font-size:0.75rem;color:#64748b;">${new Date(s.criado_em).toLocaleDateString('pt-BR')}</td>
@@ -1037,7 +1049,7 @@ function atualizarMapa(sols) {
         iconSize:[30,30],iconAnchor:[15,30]
       });
       L.marker([s.lat,s.lng],{icon}).addTo(pinsLayer)
-        .bindPopup(`<div style="font-family:'Inter',sans-serif;min-width:160px;"><strong style="color:#1A3C8F">${s.nome}</strong><br><small style="color:#64748b">📍 ${s.cidade} · ${s.voluntarios_confirmados}/${s.limite_voluntarios} vol.</small></div>`);
+        .bindPopup(`<div style="font-family:'Inter',sans-serif;min-width:160px;"><strong style="color:#1A3C8F">${escapeHtml(s.nome)}</strong><br><small style="color:#64748b">📍 ${escapeHtml(s.cidade)} · ${s.voluntarios_confirmados}/${s.limite_voluntarios} vol.</small></div>`);
     });
     pinsLayer.addTo(mapaP);
   }

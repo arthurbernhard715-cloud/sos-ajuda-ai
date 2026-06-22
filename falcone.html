@@ -886,6 +886,32 @@ async function verificarSessao() {
 }
 
 // ── API ──
+// Sanitiza texto antes de inserir via innerHTML, prevenindo XSS a partir de
+// dados cadastrados publicamente (nome, endereço, descrição, etc.)
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+// Escapa uma string para uso segura como argumento dentro de uma chamada de
+// função em atributo onclick="...('VALOR')". Previne que aspas, barras
+// invertidas ou quebras de linha rompam a string JS e injetem código.
+function escapeJsString(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/\\/g, '\\\\')
+    .replace(/'/g, "\\'")
+    .replace(/"/g, '\\"')
+    .replace(/\n/g, '\\n')
+    .replace(/\r/g, '\\r')
+    .replace(/</g, '\\x3C');
+}
+
 async function sbFetch(endpoint, options = {}) {
   const token = usuarioAtual?.access_token || SB_KEY;
   const defaultHeaders = {
@@ -1052,11 +1078,11 @@ function renderConfirmacoes(filtro='') {
     <tr>
       <td><input type="checkbox" class="chk-linha" data-tipo="conf" data-id="${c.id}" ${_selecionados.conf.has(c.id)?'checked':''} onchange="toggleSelecaoLinha('conf','${c.id}',this)"></td>
       <td>
-        <strong style="color:#fff">${c.voluntarios?.nome || '—'}</strong>
-        <br><small style="color:#475569">${c.voluntarios?.whatsapp || ''}</small>
+        <strong style="color:#fff">${escapeHtml(c.voluntarios?.nome || '—')}</strong>
+        <br><small style="color:#475569">${escapeHtml(c.voluntarios?.whatsapp || '')}</small>
       </td>
-      <td><strong style="color:#fff">${c.solicitacoes?.nome || '—'}</strong></td>
-      <td>${c.solicitacoes?.cidade || '—'}, ${c.solicitacoes?.estado || ''}</td>
+      <td><strong style="color:#fff">${escapeHtml(c.solicitacoes?.nome || '—')}</strong></td>
+      <td>${escapeHtml(c.solicitacoes?.cidade || '—')}, ${escapeHtml(c.solicitacoes?.estado || '')}</td>
       <td style="font-size:0.78rem;color:#64748b">${new Date(c.criado_em).toLocaleString('pt-BR')}</td>
       <td>
         <button class="btn-action btn-del" onclick="cancelarConfirmacaoAdmin('${c.id}','${c.solicitacao_id}')">
@@ -1120,8 +1146,8 @@ function renderDashboard() {
   }
   tbody.innerHTML = dadosSol.slice(0,8).map(s => `
     <tr>
-      <td><strong>${s.nome}</strong></td>
-      <td>${s.cidade}, ${s.estado}</td>
+      <td><strong>${escapeHtml(s.nome)}</strong></td>
+      <td>${escapeHtml(s.cidade)}, ${escapeHtml(s.estado)}</td>
       <td>${urgBadge(s.urgencia)}</td>
       <td>${s.voluntarios_confirmados}/${s.limite_voluntarios}</td>
       <td style="font-size:0.78rem;color:#64748b">${calcExp(s.expira_em)}</td>
@@ -1146,9 +1172,9 @@ function renderSolicitacoes(filtro='') {
   tbody.innerHTML = lista.map(s => `
     <tr>
       <td><input type="checkbox" class="chk-linha" data-tipo="sol" data-id="${s.id}" ${_selecionados.sol.has(s.id)?'checked':''} onchange="toggleSelecaoLinha('sol','${s.id}',this)"></td>
-      <td><strong style="color:#fff">${s.nome}</strong><br><small style="color:#475569">${s.endereco || ''}</small></td>
-      <td>${s.cidade}, ${s.estado}</td>
-      <td style="font-size:0.78rem">${(s.tipos_ajuda||[]).join(', ') || '—'}</td>
+      <td><strong style="color:#fff">${escapeHtml(s.nome)}</strong><br><small style="color:#475569">${escapeHtml(s.endereco || '')}</small></td>
+      <td>${escapeHtml(s.cidade)}, ${escapeHtml(s.estado)}</td>
+      <td style="font-size:0.78rem">${(s.tipos_ajuda||[]).map(escapeHtml).join(', ') || '—'}</td>
       <td>${urgBadge(s.urgencia)}</td>
       <td>${s.voluntarios_confirmados}/${s.limite_voluntarios}</td>
       <td style="font-size:0.78rem;color:#64748b">${calcExp(s.expira_em)}</td>
@@ -1156,7 +1182,7 @@ function renderSolicitacoes(filtro='') {
       <td>
         <div class="actions-cell">
           <button class="btn-action btn-reativar-admin" onclick="reativarSol('${s.id}')">🔁 Reativar</button>
-          <button class="btn-action btn-del" onclick="confirmarDelete('sol','${s.id}','${s.nome}')">🗑️</button>
+          <button class="btn-action btn-del" onclick="confirmarDelete('sol','${s.id}','${escapeHtml(s.nome).replace(/'/g,"\\'")}')">🗑️</button>
         </div>
       </td>
     </tr>`).join('');
@@ -1179,14 +1205,14 @@ function renderVoluntarios(filtro='') {
   tbody.innerHTML = lista.map(v => `
     <tr>
       <td><input type="checkbox" class="chk-linha" data-tipo="vol" data-id="${v.id}" ${_selecionados.vol.has(v.id)?'checked':''} onchange="toggleSelecaoLinha('vol','${v.id}',this)"></td>
-      <td><strong style="color:#fff">${v.nome}</strong></td>
-      <td>${v.cidade}, ${v.estado}</td>
-      <td style="font-size:0.82rem">${v.whatsapp || '—'}</td>
-      <td style="font-size:0.78rem">${(v.habilidades||[]).join(', ') || '—'}</td>
+      <td><strong style="color:#fff">${escapeHtml(v.nome)}</strong></td>
+      <td>${escapeHtml(v.cidade)}, ${escapeHtml(v.estado)}</td>
+      <td style="font-size:0.82rem">${escapeHtml(v.whatsapp || '—')}</td>
+      <td style="font-size:0.78rem">${(v.habilidades||[]).map(escapeHtml).join(', ') || '—'}</td>
       <td><strong style="color:#D92B2B">${v.pontos || 0}</strong></td>
       <td style="font-size:0.78rem;color:#64748b">${new Date(v.criado_em).toLocaleDateString('pt-BR')}</td>
       <td>
-        <button class="btn-action btn-del" onclick="confirmarDelete('vol','${v.id}','${v.nome}')">🗑️</button>
+        <button class="btn-action btn-del" onclick="confirmarDelete('vol','${v.id}','${escapeHtml(v.nome).replace(/'/g,"\\'")}')">🗑️</button>
       </td>
     </tr>`).join('');
   atualizarBarraAcoesMassa('vol');
@@ -1211,8 +1237,8 @@ function initMapaAdmin() {
     });
     L.marker([s.lat, s.lng], {icon}).addTo(mapaAdmin)
       .bindPopup(`<div style="font-family:'Inter',sans-serif;min-width:160px;">
-        <strong style="color:#1A3C8F">${s.nome}</strong><br>
-        <small style="color:#64748b">📍 ${s.cidade} · ${s.voluntarios_confirmados}/${s.limite_voluntarios} vol.</small>
+        <strong style="color:#1A3C8F">${escapeHtml(s.nome)}</strong><br>
+        <small style="color:#64748b">📍 ${escapeHtml(s.cidade)} · ${s.voluntarios_confirmados}/${s.limite_voluntarios} vol.</small>
       </div>`);
   });
 }
@@ -1415,16 +1441,16 @@ function renderBloqueios(filtro='') {
 
   const nivelLabel = { pais: '🌎 País', estado: '🗺️ Estado', cidade: '🏙️ Cidade' };
   const localLabel = (b) => {
-    if (b.nivel === 'pais') return b.pais;
-    if (b.nivel === 'estado') return `${b.estado}, ${b.pais}`;
-    return `${b.cidade}, ${b.estado} — ${b.pais}`;
+    if (b.nivel === 'pais') return escapeHtml(b.pais);
+    if (b.nivel === 'estado') return `${escapeHtml(b.estado)}, ${escapeHtml(b.pais)}`;
+    return `${escapeHtml(b.cidade)}, ${escapeHtml(b.estado)} — ${escapeHtml(b.pais)}`;
   };
 
   tbody.innerHTML = lista.map(b => `
     <tr>
-      <td><strong style="color:#fff">${nivelLabel[b.nivel] || b.nivel}</strong></td>
+      <td><strong style="color:#fff">${nivelLabel[b.nivel] || escapeHtml(b.nivel)}</strong></td>
       <td style="font-size:0.85rem;color:#e2e8f0;">${localLabel(b)}</td>
-      <td style="font-size:0.78rem;color:#94a3b8;">${b.motivo || '—'}</td>
+      <td style="font-size:0.78rem;color:#94a3b8;">${escapeHtml(b.motivo || '—')}</td>
       <td style="font-size:0.78rem;color:#64748b">${new Date(b.criado_em).toLocaleDateString('pt-BR')}</td>
       <td><button class="btn-action btn-del" onclick="removerBloqueio('${b.id}')">🗑️ Desbloquear</button></td>
     </tr>`).join('');
@@ -1453,7 +1479,7 @@ async function buscarPaisBloq(valor) {
       if (!paises.length) { lista.style.display='none'; return; }
       lista.innerHTML = paises.map(r => {
         const nome = r.address?.country || r.display_name.split(',').pop().trim();
-        return `<div onclick="selecionarPaisBloq('${nome.replace(/'/g,"\\'")}')">🌍 ${nome}</div>`;
+        return `<div onclick="selecionarPaisBloq('${escapeJsString(nome)}')">🌍 ${nome}</div>`;
       }).join('');
       lista.style.display = 'block';
     } catch(e) {}
@@ -1499,7 +1525,7 @@ async function buscarEstadoBloq(valor) {
       if (!estados.length) { lista.style.display='none'; return; }
       lista.innerHTML = estados.map(r => {
         const nome = r.address?.state || r.display_name.split(',')[0];
-        return `<div onclick="selecionarEstadoBloq('${nome.replace(/'/g,"\\'")}')">📍 ${nome}</div>`;
+        return `<div onclick="selecionarEstadoBloq('${escapeJsString(nome)}')">📍 ${nome}</div>`;
       }).join('');
       lista.style.display = 'block';
     } catch(e) {}
@@ -1540,7 +1566,7 @@ async function buscarCidadeBloq(valor) {
       if (!cidades.length) { lista.style.display='none'; return; }
       lista.innerHTML = cidades.map(r => {
         const nome = r.address?.city || r.address?.town || r.address?.village || r.display_name.split(',')[0];
-        return `<div onclick="selecionarCidadeBloq('${nome.replace(/'/g,"\\'")}')">🏙️ ${nome}</div>`;
+        return `<div onclick="selecionarCidadeBloq('${escapeJsString(nome)}')">🏙️ ${nome}</div>`;
       }).join('');
       lista.style.display = 'block';
     } catch(e) {}
@@ -1670,10 +1696,10 @@ function renderLogs(filtro='') {
     const vis = acaoVisual[l.acao] || { emoji: '📌', cor: '#94a3b8' };
     return `<tr>
       <td style="font-size:0.78rem;color:#64748b;white-space:nowrap;">${new Date(l.criado_em).toLocaleString('pt-BR')}</td>
-      <td><span style="color:${vis.cor};font-weight:700;">${vis.emoji} ${l.acao}</span></td>
-      <td style="font-size:0.78rem;color:#94a3b8;">${l.tabela}</td>
-      <td style="font-size:0.85rem;color:#e2e8f0;">${l.descricao || '—'}</td>
-      <td style="font-size:0.78rem;color:#64748b;">${l.admin_email || '—'}</td>
+      <td><span style="color:${vis.cor};font-weight:700;">${vis.emoji} ${escapeHtml(l.acao)}</span></td>
+      <td style="font-size:0.78rem;color:#94a3b8;">${escapeHtml(l.tabela)}</td>
+      <td style="font-size:0.85rem;color:#e2e8f0;">${escapeHtml(l.descricao || '—')}</td>
+      <td style="font-size:0.78rem;color:#64748b;">${escapeHtml(l.admin_email || '—')}</td>
     </tr>`;
   }).join('');
 }
@@ -1730,7 +1756,7 @@ async function buscarPaisRisco(valor) {
       if (!paises.length) { lista.style.display='none'; return; }
       lista.innerHTML = paises.map(r => {
         const nome = r.address?.country || r.display_name.split(',').pop().trim();
-        return `<div onclick="selecionarPaisRisco('${nome.replace(/'/g,"\\'")}')">🌍 ${nome}</div>`;
+        return `<div onclick="selecionarPaisRisco('${escapeJsString(nome)}')">🌍 ${nome}</div>`;
       }).join('');
       lista.style.display = 'block';
     } catch(e) {}
@@ -1767,7 +1793,7 @@ async function buscarEstadoRisco(valor) {
       if (!estados.length) { lista.style.display='none'; return; }
       lista.innerHTML = estados.map(r => {
         const nome = r.address?.state || r.display_name.split(',')[0];
-        return `<div onclick="selecionarEstadoRisco('${nome.replace(/'/g,"\\'")}')">📍 ${nome}</div>`;
+        return `<div onclick="selecionarEstadoRisco('${escapeJsString(nome)}')">📍 ${nome}</div>`;
       }).join('');
       lista.style.display = 'block';
     } catch(e) {}
@@ -1803,7 +1829,7 @@ async function buscarCidadeRisco(valor) {
       if (!cidades.length) { lista.style.display='none'; return; }
       lista.innerHTML = cidades.map(r => {
         const nome = r.address?.city || r.address?.town || r.address?.village || r.display_name.split(',')[0];
-        return `<div onclick="selecionarCidadeRisco('${nome.replace(/'/g,"\\'")}')">🏙️ ${nome}</div>`;
+        return `<div onclick="selecionarCidadeRisco('${escapeJsString(nome)}')">🏙️ ${nome}</div>`;
       }).join('');
       lista.style.display = 'block';
     } catch(e) {}
@@ -2008,7 +2034,7 @@ async function buscarPaisRank(valor) {
       if (!paises.length) { lista.style.display='none'; return; }
       lista.innerHTML = paises.map(r => {
         const nome = r.address?.country || r.display_name.split(',').pop().trim();
-        return `<div onclick="selecionarPaisRank('${nome.replace(/'/g,"\\'")}')">🌍 ${nome}</div>`;
+        return `<div onclick="selecionarPaisRank('${escapeJsString(nome)}')">🌍 ${nome}</div>`;
       }).join('');
       lista.style.display = 'block';
     } catch(e) {}
@@ -2045,7 +2071,7 @@ async function buscarEstadoRank(valor) {
       if (!estados.length) { lista.style.display='none'; return; }
       lista.innerHTML = estados.map(r => {
         const nome = r.address?.state || r.display_name.split(',')[0];
-        return `<div onclick="selecionarEstadoRank('${nome.replace(/'/g,"\\'")}')">📍 ${nome}</div>`;
+        return `<div onclick="selecionarEstadoRank('${escapeJsString(nome)}')">📍 ${nome}</div>`;
       }).join('');
       lista.style.display = 'block';
     } catch(e) {}
@@ -2081,7 +2107,7 @@ async function buscarCidadeRank(valor) {
       if (!cidades.length) { lista.style.display='none'; return; }
       lista.innerHTML = cidades.map(r => {
         const nome = r.address?.city || r.address?.town || r.address?.village || r.display_name.split(',')[0];
-        return `<div onclick="selecionarCidadeRank('${nome.replace(/'/g,"\\'")}')">🏙️ ${nome}</div>`;
+        return `<div onclick="selecionarCidadeRank('${escapeJsString(nome)}')">🏙️ ${nome}</div>`;
       }).join('');
       lista.style.display = 'block';
     } catch(e) {}
@@ -2313,8 +2339,8 @@ function renderPrefeituras(filtro='') {
 
     return `<tr>
       <td>
-        <strong style="color:#fff">${p.cidade}</strong>
-        <span style="color:#475569"> — ${p.estado}</span>
+        <strong style="color:#fff">${escapeHtml(p.cidade)}</strong>
+        <span style="color:#475569"> — ${escapeHtml(p.estado)}</span>
       </td>
       <td>
         <div style="font-size:0.82rem">${p.contato_nome || '—'}</div>
@@ -2334,7 +2360,7 @@ function renderPrefeituras(filtro='') {
             : `<button class="btn-action btn-reativar-admin" onclick="togglePrefeitura('${p.id}',true)">▶️ Ativar</button>`
           }
           <button class="btn-action btn-reativar-admin" onclick="renovarPrefeitura('${p.id}')">🔄 Renovar</button>
-          <button class="btn-action btn-del" onclick="confirmarDelete('pref','${p.id}','${p.cidade}')">🗑️</button>
+          <button class="btn-action btn-del" onclick="confirmarDelete('pref','${p.id}','${escapeJsString(p.cidade)}')">🗑️</button>
         </div>
       </td>
     </tr>`;
@@ -2393,8 +2419,8 @@ function renderPontosApoioAdmin(filtro='') {
         : 'Capacidade não informada';
     } else if (p.tipo === 'doacoes_mantimentos') {
       const partes = [];
-      if (p.horario_funcionamento) partes.push(`🕒 ${p.horario_funcionamento}`);
-      if (p.itens_aceitos && p.itens_aceitos.length) partes.push(p.itens_aceitos.join(', '));
+      if (p.horario_funcionamento) partes.push(`🕒 ${escapeHtml(p.horario_funcionamento)}`);
+      if (p.itens_aceitos && p.itens_aceitos.length) partes.push(p.itens_aceitos.map(escapeHtml).join(', '));
       detalhes = partes.length ? partes.join(' · ') : '—';
     }
 
@@ -2404,12 +2430,12 @@ function renderPontosApoioAdmin(filtro='') {
         <div style="display:flex;align-items:center;gap:8px;">
           ${p.foto_url ? `<img src="${p.foto_url}" alt="Foto" onclick="window.open('${p.foto_url}','_blank')" style="width:36px;height:36px;object-fit:cover;border-radius:6px;cursor:pointer;flex-shrink:0;" title="Ver foto em tamanho real">` : ''}
           <div>
-            <div style="font-size:0.82rem;color:#fff">${p.nome}</div>
-            <div style="font-size:0.72rem;color:#475569">${p.telefone_contato || ''}</div>
+            <div style="font-size:0.82rem;color:#fff">${escapeHtml(p.nome)}</div>
+            <div style="font-size:0.72rem;color:#475569">${escapeHtml(p.telefone_contato || '')}</div>
           </div>
         </div>
       </td>
-      <td style="font-size:0.8rem">${p.endereco}<br><span style="color:#475569">${p.cidade}, ${p.estado}</span></td>
+      <td style="font-size:0.8rem">${escapeHtml(p.endereco)}<br><span style="color:#475569">${escapeHtml(p.cidade)}, ${escapeHtml(p.estado)}</span></td>
       <td style="font-size:0.78rem;color:#94a3b8">${detalhes}</td>
       <td>${status}</td>
       <td>
@@ -2420,7 +2446,7 @@ function renderPontosApoioAdmin(filtro='') {
           ${p.ativo
             ? `<button class="btn-action btn-ver" onclick="togglePontoApoio('${p.id}',false)">⏸️ Desativar</button>`
             : `<button class="btn-action btn-reativar-admin" onclick="togglePontoApoio('${p.id}',true)">▶️ Ativar</button>`}
-          <button class="btn-action btn-del" onclick="confirmarDelete('pontosapoio','${p.id}','${p.nome.replace(/'/g,"\\'")}')">🗑️</button>
+          <button class="btn-action btn-del" onclick="confirmarDelete('pontosapoio','${p.id}','${escapeHtml(p.nome).replace(/'/g,"\\'")}')">🗑️</button>
         </div>
       </td>
     </tr>`;
@@ -2504,10 +2530,10 @@ async function buscarCidadeAdmin(valor) {
         const mapaEst = {'Rio Grande do Sul':'RS','Santa Catarina':'SC','Paraná':'PR','São Paulo':'SP','Rio de Janeiro':'RJ','Minas Gerais':'MG','Bahia':'BA','Pernambuco':'PE','Ceará':'CE','Goiás':'GO','Mato Grosso':'MT','Mato Grosso do Sul':'MS','Pará':'PA','Maranhão':'MA','Amazonas':'AM','Espírito Santo':'ES','Alagoas':'AL','Piauí':'PI','Rio Grande do Norte':'RN','Paraíba':'PB','Sergipe':'SE','Rondônia':'RO','Tocantins':'TO','Acre':'AC','Amapá':'AP','Roraima':'RR','Distrito Federal':'DF'};
         const estado = mapaEst[addr.state] || addr.state?.substring(0,2).toUpperCase() || '';
         const pais = addr.country || '';
-        return `<div onclick="selecionarCidadeAdmin('${cidade.replace(/'/g,"\'")}','${estado}','${pais.replace(/'/g,"\'")}')"
+        return `<div onclick="selecionarCidadeAdmin('${escapeJsString(cidade)}','${escapeJsString(estado)}','${escapeJsString(pais)}')"
           style="padding:10px 14px;cursor:pointer;font-size:0.83rem;border-bottom:1px solid #1e2535;color:#cbd5e1;"
           onmouseover="this.style.background='#161b27'" onmouseout="this.style.background='transparent'">
-          🏙️ <strong>${cidade}</strong> <span style="color:#475569;font-size:0.75rem;">— ${estado}, ${pais}</span>
+          🏙️ <strong>${escapeHtml(cidade)}</strong> <span style="color:#475569;font-size:0.75rem;">— ${escapeHtml(estado)}, ${escapeHtml(pais)}</span>
         </div>`;
       }).join('');
       lista.style.display = 'block';
