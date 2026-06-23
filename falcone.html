@@ -203,6 +203,21 @@ tbody tr:last-child td{border-bottom:none;}
 }
 .btn-zona-risco:hover{background:#D92B2B;}
 .btn-zona-risco:disabled{opacity:0.5;cursor:wait;}
+.sim-cidade-card{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  background:#241344;border:1px solid #4c1d95;border-radius:10px;
+  padding:12px 16px;margin-bottom:8px;
+}
+.sim-cidade-info{font-size:0.85rem;color:#e2e8f0;}
+.sim-cidade-nome{font-weight:700;color:#C4B5FD;margin-bottom:2px;}
+.sim-cidade-contagem{font-size:0.78rem;color:#94a3b8;}
+.btn-sim-cidade-del{
+  flex-shrink:0;background:#5b21b6;border:1px solid #7C3AED;color:#fff;
+  border-radius:8px;padding:7px 14px;font-size:0.78rem;font-weight:700;
+  cursor:pointer;white-space:nowrap;transition:background .2s;
+}
+.btn-sim-cidade-del:hover{background:#7C3AED;}
+.btn-sim-cidade-del:disabled{opacity:0.5;cursor:wait;}
 
 /* ACTION BUTTONS */
 .btn-action{
@@ -667,9 +682,9 @@ tbody tr:last-child td{border-bottom:none;}
 
       <div class="zona-risco-card" style="border-color:#7C3AED;background:#1a0a2e;">
         <div class="zona-risco-titulo" style="color:#C4B5FD;">🧹 Limpar simulação ativa</div>
-        <div class="zona-risco-desc">Remove permanentemente todas as solicitações, voluntários e confirmações marcados como simulação — não afeta nenhum dado real de produção.</div>
-        <div id="simResumoAtivo" style="margin:14px 0;font-size:0.85rem;color:#cbd5e1;"></div>
-        <button class="btn-zona-risco" style="background:#5b21b6;border-color:#7C3AED;" onclick="limparSimulacao()">🧹 Apagar toda a simulação</button>
+        <div class="zona-risco-desc">Remove permanentemente as solicitações, voluntários e confirmações marcados como simulação — não afeta nenhum dado real de produção. Apague uma cidade específica, ou tudo de uma vez.</div>
+        <div id="simListaCidades" style="margin:14px 0;"></div>
+        <button class="btn-zona-risco" style="background:#5b21b6;border-color:#7C3AED;" onclick="limparSimulacao()">🧹 Apagar TODA a simulação (todas as cidades)</button>
       </div>
     </div>
 
@@ -2667,7 +2682,7 @@ async function criarSimulacao() {
 }
 
 async function atualizarResumoSimulacao() {
-  const el = document.getElementById('simResumoAtivo');
+  const el = document.getElementById('simListaCidades');
   if (!el) return;
   try {
     const [sols, vols, confs] = await Promise.all([
@@ -2676,14 +2691,97 @@ async function atualizarResumoSimulacao() {
       sbFetch('confirmacoes?is_simulacao=eq.true&select=id'),
     ]);
     if (!sols.length && !vols.length && !confs.length) {
-      el.innerHTML = 'Nenhuma simulação ativa no momento.';
+      el.innerHTML = '<div style="font-size:0.85rem;color:#94a3b8;">Nenhuma simulação ativa no momento.</div>';
       return;
     }
-    const cidades = new Set([...sols, ...vols].map(x => `${x.cidade}, ${x.estado}`));
-    el.innerHTML = `<strong>${sols.length}</strong> solicitações, <strong>${vols.length}</strong> voluntários, <strong>${confs.length}</strong> confirmações ativas`
-      + (cidades.size ? ` — em: ${Array.from(cidades).map(escapeHtml).join(' · ')}` : '');
+
+    // Agrupa solicitações e voluntários por cidade/estado
+    const porCidade = {};
+    const chave = (x) => `${x.cidade}|||${x.estado}`;
+    [...sols.map(s => ({...s, _tipo:'sol'})), ...vols.map(v => ({...v, _tipo:'vol'}))].forEach(x => {
+      const k = chave(x);
+      if (!porCidade[k]) porCidade[k] = { cidade: x.cidade, estado: x.estado, sols: 0, vols: 0 };
+      if (x._tipo === 'sol') porCidade[k].sols++;
+      else porCidade[k].vols++;
+    });
+
+    const cards = Object.values(porCidade).map(c => `
+      <div class="sim-cidade-card">
+        <div class="sim-cidade-info">
+          <div class="sim-cidade-nome">📍 ${escapeHtml(c.cidade)}, ${escapeHtml(c.estado)}</div>
+          <div class="sim-cidade-contagem">${c.sols} solicitação(ões) · ${c.vols} voluntário(s)</div>
+        </div>
+        <button class="btn-sim-cidade-del" onclick="limparSimulacaoCidade('${escapeJsString(c.cidade)}','${escapeJsString(c.estado)}',this)">🗑️ Apagar esta cidade</button>
+      </div>`).join('');
+
+    el.innerHTML = cards + `<div style="font-size:0.78rem;color:#94a3b8;margin-top:8px;">${confs.length} confirmação(ões) no total, distribuídas entre as cidades acima.</div>`;
   } catch(e) {
-    el.innerHTML = 'Não foi possível verificar o estado atual da simulação.';
+    el.innerHTML = '<div style="font-size:0.85rem;color:#94a3b8;">Não foi possível verificar o estado atual da simulação.</div>';
+  }
+}
+
+// Apaga a simulação de UMA cidade específica, sem afetar simulações de outras
+// cidades que possam estar ativas ao mesmo tempo
+async function limparSimulacaoCidade(cidade, estado, btnClicado) {
+  if (!confirm(`Apagar toda a simulação de "${cidade}, ${estado}"? As solicitações, voluntários e confirmações fictícias dessa cidade serão removidos permanentemente.`)) return;
+
+  const btn = btnClicado || null;
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Apagando...'; }
+
+  try {
+    const token = usuarioAtual?.access_token || SB_KEY;
+    const cidadeEsc = encodeURIComponent(cidade);
+    const estadoEsc = encodeURIComponent(estado);
+
+    // Busca ids de solicitações e voluntários dessa cidade marcados como simulação
+    const sols = await sbFetch(`solicitacoes?is_simulacao=eq.true&cidade=eq.${cidadeEsc}&estado=eq.${estadoEsc}&select=id`);
+    const vols = await sbFetch(`voluntarios?is_simulacao=eq.true&cidade=eq.${cidadeEsc}&estado=eq.${estadoEsc}&select=id`);
+    const idsSol = sols.map(s => s.id);
+    const idsVol = vols.map(v => v.id);
+
+    let totalExcluido = 0;
+
+    // Confirmações ligadas a qualquer uma dessas solicitações ou voluntários
+    if (idsSol.length || idsVol.length) {
+      const confs = await sbFetch(`confirmacoes?is_simulacao=eq.true&select=id,solicitacao_id,voluntario_id`);
+      const confsDaCidade = confs.filter(c => idsSol.includes(c.solicitacao_id) || idsVol.includes(c.voluntario_id));
+      for (const c of confsDaCidade) {
+        try {
+          await fetch(`${SB_URL}/rest/v1/confirmacoes?id=eq.${c.id}`, {
+            method: 'DELETE',
+            headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' }
+          });
+          totalExcluido++;
+        } catch(e) {}
+      }
+    }
+
+    for (const id of idsSol) {
+      try {
+        await fetch(`${SB_URL}/rest/v1/solicitacoes?id=eq.${id}`, {
+          method: 'DELETE',
+          headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' }
+        });
+        totalExcluido++;
+      } catch(e) {}
+    }
+
+    for (const id of idsVol) {
+      try {
+        await fetch(`${SB_URL}/rest/v1/voluntarios?id=eq.${id}`, {
+          method: 'DELETE',
+          headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' }
+        });
+        totalExcluido++;
+      } catch(e) {}
+    }
+
+    registrarLog('limpar_simulacao', 'multiplas_tabelas', null, `Removeu simulação de "${cidade}, ${estado}": ${totalExcluido} registro(s)`);
+    toast(`🧹 Simulação de ${cidade} removida! ${totalExcluido} registro(s) excluído(s).`, 'ok');
+    await atualizarResumoSimulacao();
+  } catch(e) {
+    toast('⚠️ Erro ao limpar simulação da cidade: ' + e.message, 'err');
+    await atualizarResumoSimulacao();
   }
 }
 
