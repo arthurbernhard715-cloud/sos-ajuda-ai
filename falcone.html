@@ -238,6 +238,15 @@ tbody tr:last-child td{border-bottom:none;}
 .modal-confirm-btns{display:flex;gap:10px;justify-content:center;}
 .btn-confirm-cancel{padding:10px 24px;border-radius:9px;border:1px solid #1e2535;background:transparent;color:#94a3b8;cursor:pointer;font-weight:600;}
 .btn-confirm-del{padding:10px 24px;border-radius:9px;border:none;background:#D92B2B;color:#fff;cursor:pointer;font-weight:700;font-family:'Montserrat',sans-serif;}
+.detalhe-secao{margin-bottom:18px;}
+.detalhe-secao-titulo{font-family:'Montserrat',sans-serif;font-weight:700;font-size:0.78rem;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;border-bottom:1px solid #1e2535;padding-bottom:6px;}
+.detalhe-linha{display:flex;gap:12px;padding:6px 0;font-size:0.85rem;}
+.detalhe-rotulo{flex:0 0 140px;color:#64748b;font-weight:600;}
+.detalhe-valor{flex:1;color:#e2e8f0;word-break:break-word;}
+.detalhe-valor a{color:#60a5fa;}
+.detalhe-foto{width:100%;max-height:220px;object-fit:cover;border-radius:10px;margin-bottom:14px;}
+.nome-clicavel{cursor:pointer;text-decoration:underline;text-decoration-color:transparent;transition:text-decoration-color .15s;}
+.nome-clicavel:hover{text-decoration-color:#60a5fa;}
 
 /* MODAL RENOVAR */
 .renovar-tabs{display:flex;gap:8px;margin-bottom:18px;}
@@ -839,6 +848,17 @@ tbody tr:last-child td{border-bottom:none;}
 </div>
 
 <!-- MODAL CONFIRMAR DELETE -->
+<!-- MODAL DETALHE DE CADASTRO -->
+<div class="modal-confirm" id="modalDetalhe">
+  <div class="modal-confirm-box" id="modalDetalheBox" style="max-width:560px;text-align:left;max-height:85vh;overflow-y:auto;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <h3 id="modalDetalheTitulo" style="margin:0;">Detalhes do cadastro</h3>
+      <button onclick="fecharModalDetalhe()" style="background:none;border:none;color:#94a3b8;font-size:1.3rem;cursor:pointer;line-height:1;">✕</button>
+    </div>
+    <div id="modalDetalheConteudo"></div>
+  </div>
+</div>
+
 <div class="modal-confirm" id="modalConfirm">
   <div class="modal-confirm-box">
     <h3>⚠️ Confirmar exclusão</h3>
@@ -1134,10 +1154,10 @@ function renderConfirmacoes(filtro='') {
     <tr>
       <td><input type="checkbox" class="chk-linha" data-tipo="conf" data-id="${c.id}" ${_selecionados.conf.has(c.id)?'checked':''} onchange="toggleSelecaoLinha('conf','${c.id}',this)"></td>
       <td>
-        <strong style="color:#fff">${escapeHtml(c.voluntarios?.nome || '—')}</strong>
+        <strong class="nome-clicavel" style="color:#fff" onclick="abrirModalDetalheConf('${c.id}')">${escapeHtml(c.voluntarios?.nome || '—')}</strong>
         <br><small style="color:#475569">${escapeHtml(c.voluntarios?.whatsapp || '')}</small>
       </td>
-      <td><strong style="color:#fff">${escapeHtml(c.solicitacoes?.nome || '—')}</strong></td>
+      <td><strong class="nome-clicavel" style="color:#fff" onclick="abrirModalDetalheConf('${c.id}')">${escapeHtml(c.solicitacoes?.nome || '—')}</strong></td>
       <td>${escapeHtml(c.solicitacoes?.cidade || '—')}, ${escapeHtml(c.solicitacoes?.estado || '')}</td>
       <td style="font-size:0.78rem;color:#64748b">${new Date(c.criado_em).toLocaleString('pt-BR')}</td>
       <td>
@@ -1228,7 +1248,7 @@ function renderSolicitacoes(filtro='') {
   tbody.innerHTML = lista.map(s => `
     <tr>
       <td><input type="checkbox" class="chk-linha" data-tipo="sol" data-id="${s.id}" ${_selecionados.sol.has(s.id)?'checked':''} onchange="toggleSelecaoLinha('sol','${s.id}',this)"></td>
-      <td><strong style="color:#fff">${escapeHtml(s.nome)}</strong><br><small style="color:#475569">${escapeHtml(s.endereco || '')}</small></td>
+      <td><strong class="nome-clicavel" style="color:#fff" onclick="abrirModalDetalheSol('${s.id}')">${escapeHtml(s.nome)}</strong><br><small style="color:#475569">${escapeHtml(s.endereco || '')}</small></td>
       <td>${escapeHtml(s.cidade)}, ${escapeHtml(s.estado)}</td>
       <td style="font-size:0.78rem">${(s.tipos_ajuda||[]).map(escapeHtml).join(', ') || '—'}</td>
       <td>${urgBadge(s.urgencia)}</td>
@@ -1261,7 +1281,7 @@ function renderVoluntarios(filtro='') {
   tbody.innerHTML = lista.map(v => `
     <tr>
       <td><input type="checkbox" class="chk-linha" data-tipo="vol" data-id="${v.id}" ${_selecionados.vol.has(v.id)?'checked':''} onchange="toggleSelecaoLinha('vol','${v.id}',this)"></td>
-      <td><strong style="color:#fff">${escapeHtml(v.nome)}</strong></td>
+      <td><strong class="nome-clicavel" style="color:#fff" onclick="abrirModalDetalheVol('${v.id}')">${escapeHtml(v.nome)}</strong></td>
       <td>${escapeHtml(v.cidade)}, ${escapeHtml(v.estado)}</td>
       <td style="font-size:0.82rem">${escapeHtml(v.whatsapp || '—')}</td>
       <td style="font-size:0.78rem">${(v.habilidades||[]).map(escapeHtml).join(', ') || '—'}</td>
@@ -2459,7 +2479,17 @@ function selecionarCidadeSim(nome, lat, lng) {
 }
 function fecharListaCidadeSim() { const el = document.getElementById('listaCidadeSim'); if (el) el.style.display = 'none'; }
 
-const NOMES_FICTICIOS = ['Solicitante', 'Voluntário Demo'];
+const NOMES_FICTICIOS_SOL = [
+  'Maria Aparecida Souza', 'João Pedro Almeida', 'Ana Carolina Ferreira', 'Carlos Eduardo Lima',
+  'Juliana Santos Costa', 'Rafael Oliveira Silva', 'Fernanda Rodrigues Pinto', 'Marcos Vinícius Alves',
+  'Patrícia Gomes Martins', 'Lucas Henrique Barros', 'Camila Cristina Nunes', 'Roberto Carlos Dias',
+  'Beatriz Helena Castro', 'Diego Fernandes Rocha', 'Sandra Regina Teixeira', 'Felipe Augusto Moreira',
+];
+const NOMES_FICTICIOS_VOL = [
+  'Gabriel Henrique Cardoso', 'Larissa Mendes Pereira', 'Bruno César Ribeiro', 'Aline Vitória Carvalho',
+  'Thiago Rodrigo Monteiro', 'Letícia Fernanda Araújo', 'Vinícius Eduardo Correia', 'Priscila Andrade Lopes',
+  'Eduardo Luiz Cavalcante', 'Renata Aparecida Freitas', 'Anderson José Pacheco', 'Tatiane Cristina Borges',
+];
 const TIPOS_AJUDA_DEMO = ['Limpeza', 'Retirada de móveis', 'Mantimentos', 'Roupas', 'Transporte', 'Medicamentos'];
 const HABILIDADES_DEMO = ['Limpeza', 'Transporte', 'Mão de obra', 'Mantimentos', 'Resgate'];
 const DESCRICOES_DEMO = [
@@ -2471,11 +2501,37 @@ const DESCRICOES_DEMO = [
   'Telhado parcialmente destruído, preciso de ajuda para cobrir e proteger a casa.',
 ];
 
-// Gera um pequeno deslocamento aleatório em torno das coordenadas da cidade,
-// para os pins não ficarem todos exatamente empilhados no mesmo ponto do mapa
-function jitterCoordenada(valor) {
-  return valor + (Math.random() - 0.5) * 0.02;
+// Embaralha uma cópia do array, para sortear nomes/endereços sem repetir
+function embaralhar(arr) {
+  const copia = [...arr];
+  for (let i = copia.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copia[i], copia[j]] = [copia[j], copia[i]];
+  }
+  return copia;
 }
+
+// Busca ruas/endereços reais dentro da cidade selecionada via Nominatim,
+// para os pins da simulação caírem em vias reais — não em rio, mata ou
+// coordenadas soltas no meio do nada.
+async function buscarRuasReaisDaCidade(cidade, estado, pais, quantidade) {
+  const enderecos = [];
+  try {
+    const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(`rua, ${cidade}, ${estado}, ${pais}`)}&format=json&limit=${Math.min(quantidade*2, 40)}&addressdetails=1`);
+    const data = await res.json();
+    for (const r of data) {
+      const rua = r.address?.road;
+      if (!rua) continue;
+      enderecos.push({
+        endereco: `${rua}${r.address?.house_number ? ', ' + r.address.house_number : ''}`,
+        lat: parseFloat(r.lat),
+        lng: parseFloat(r.lon),
+      });
+    }
+  } catch(e) { /* segue com o que conseguiu encontrar, se algo */ }
+  return enderecos;
+}
+
 
 async function criarSimulacao() {
   if (!_simConfirmado.pais || !_simConfirmado.estado || !_simConfirmado.cidade) {
@@ -2501,32 +2557,47 @@ async function criarSimulacao() {
 
   const btn = document.getElementById('btnCriarSimulacao');
   btn.disabled = true;
-  btn.textContent = '⏳ Gerando...';
+  btn.textContent = '⏳ Buscando endereços reais...';
 
   try {
     const token = usuarioAtual?.access_token || SB_KEY;
     const idsSolicitacoes = [];
     const idsVoluntarios = [];
 
+    // Busca ruas reais da cidade antes de gerar, para os pins caírem em vias
+    // reais (não em rio, mata, ou coordenadas soltas)
+    const ruasReais = await buscarRuasReaisDaCidade(cidade, estado, pais, qtdSol);
+    if (!ruasReais.length) {
+      toast('⚠️ Não foi possível encontrar ruas reais para esta cidade. Usando o centro da cidade como aproximação.');
+    }
+    const nomesSolEmbaralhados = embaralhar(NOMES_FICTICIOS_SOL);
+    const nomesVolEmbaralhados = embaralhar(NOMES_FICTICIOS_VOL);
+
+    btn.textContent = '⏳ Gerando...';
+
     // Cria solicitações fictícias
     for (let i = 1; i <= qtdSol; i++) {
       const urgencias = ['vermelho','amarelo','verde'];
       const urgencia = urgencias[Math.floor(Math.random()*3)];
       const tiposEscolhidos = TIPOS_AJUDA_DEMO.filter(() => Math.random() > 0.6).slice(0,3);
+      // Usa uma rua real encontrada (cicla pela lista se houver mais solicitações que ruas encontradas);
+      // se nenhuma rua foi encontrada, cai no centro da cidade como aproximação
+      const ruaEscolhida = ruasReais.length ? ruasReais[(i-1) % ruasReais.length] : { endereco: `Centro`, lat: _simCidadeLat, lng: _simCidadeLng };
+      const nome = nomesSolEmbaralhados[(i-1) % nomesSolEmbaralhados.length];
       const criado = await sbFetch('solicitacoes', {
         method: 'POST',
         body: JSON.stringify({
-          nome: `Solicitante Demo ${i}`,
+          nome,
           pais, cidade, estado,
-          endereco: `Rua Exemplo ${i*10}, Bairro Centro`,
+          endereco: ruaEscolhida.endereco,
           descricao: DESCRICOES_DEMO[i % DESCRICOES_DEMO.length],
           tipos_ajuda: tiposEscolhidos.length ? tiposEscolhidos : ['Limpeza'],
           urgencia,
           limite_voluntarios: 10 + Math.floor(Math.random()*10),
           voluntarios_confirmados: 0,
           ativo: true,
-          lat: jitterCoordenada(_simCidadeLat),
-          lng: jitterCoordenada(_simCidadeLng),
+          lat: ruaEscolhida.lat,
+          lng: ruaEscolhida.lng,
           expira_em: new Date(Date.now() + 24*60*60*1000).toISOString(),
           is_simulacao: true,
         })
@@ -2537,10 +2608,11 @@ async function criarSimulacao() {
     // Cria voluntários fictícios
     for (let i = 1; i <= qtdVol; i++) {
       const habsEscolhidas = HABILIDADES_DEMO.filter(() => Math.random() > 0.5).slice(0,3);
+      const nome = nomesVolEmbaralhados[(i-1) % nomesVolEmbaralhados.length];
       const criado = await sbFetch('voluntarios', {
         method: 'POST',
         body: JSON.stringify({
-          nome: `Voluntário Demo ${i}`,
+          nome,
           whatsapp: '',
           pais, estado, cidade,
           habilidades: habsEscolhidas.length ? habsEscolhidas : ['Limpeza'],
@@ -3128,6 +3200,119 @@ async function reativarSol(id) {
 }
 
 let deleteCallback = null;
+// ── MODAL DE DETALHE DE CADASTRO ──
+function linhaDetalhe(rotulo, valor) {
+  if (valor === null || valor === undefined || valor === '') valor = '—';
+  return `<div class="detalhe-linha"><div class="detalhe-rotulo">${escapeHtml(rotulo)}</div><div class="detalhe-valor">${valor}</div></div>`;
+}
+
+function abrirModalDetalheSol(id) {
+  const s = dadosSol.find(x => x.id === id);
+  if (!s) return;
+
+  document.getElementById('modalDetalheTitulo').textContent = '🏠 Solicitação de ajuda';
+
+  const status = s.ativo && new Date(s.expira_em) > new Date()
+    ? '<span class="badge badge-verde">Ativa</span>' : '<span class="badge badge-cinza">Expirada</span>';
+
+  let html = '';
+  if (s.foto_url) html += `<img class="detalhe-foto" src="${s.foto_url}" alt="Foto da solicitação">`;
+
+  html += `<div class="detalhe-secao">
+    <div class="detalhe-secao-titulo">Dados do solicitante</div>
+    ${linhaDetalhe('Nome', escapeHtml(s.nome))}
+    ${linhaDetalhe('E-mail', s.email_dono ? `<a href="mailto:${escapeHtml(s.email_dono)}">${escapeHtml(s.email_dono)}</a>` : null)}
+    ${linhaDetalhe('Status', status)}
+  </div>
+
+  <div class="detalhe-secao">
+    <div class="detalhe-secao-titulo">Localização</div>
+    ${linhaDetalhe('Endereço', escapeHtml(s.endereco))}
+    ${linhaDetalhe('Cidade / Estado', `${escapeHtml(s.cidade)}, ${escapeHtml(s.estado)}`)}
+    ${linhaDetalhe('País', escapeHtml(s.pais))}
+    ${linhaDetalhe('Coordenadas', s.lat && s.lng ? `${s.lat}, ${s.lng} — <a href="https://www.google.com/maps?q=${s.lat},${s.lng}" target="_blank">ver no Google Maps</a>` : null)}
+  </div>
+
+  <div class="detalhe-secao">
+    <div class="detalhe-secao-titulo">Solicitação</div>
+    ${linhaDetalhe('Descrição', escapeHtml(s.descricao))}
+    ${linhaDetalhe('Tipos de ajuda', (s.tipos_ajuda||[]).map(escapeHtml).join(', '))}
+    ${linhaDetalhe('Urgência', urgBadge(s.urgencia))}
+    ${linhaDetalhe('Voluntários', `${s.voluntarios_confirmados} de ${s.limite_voluntarios}`)}
+    ${linhaDetalhe('Criado em', s.criado_em ? new Date(s.criado_em).toLocaleString('pt-BR') : null)}
+    ${linhaDetalhe('Expira em', s.expira_em ? new Date(s.expira_em).toLocaleString('pt-BR') : null)}
+    ${linhaDetalhe('ID do registro', `<code style="font-size:0.75rem;">${s.id}</code>`)}
+  </div>`;
+
+  document.getElementById('modalDetalheConteudo').innerHTML = html;
+  document.getElementById('modalDetalhe').classList.add('open');
+}
+
+function abrirModalDetalheVol(id) {
+  const v = dadosVol.find(x => x.id === id);
+  if (!v) return;
+
+  document.getElementById('modalDetalheTitulo').textContent = '🙋 Voluntário';
+
+  let html = `<div class="detalhe-secao">
+    <div class="detalhe-secao-titulo">Dados pessoais</div>
+    ${linhaDetalhe('Nome', escapeHtml(v.nome))}
+    ${linhaDetalhe('WhatsApp', escapeHtml(v.whatsapp))}
+    ${linhaDetalhe('CPF', escapeHtml(v.cpf))}
+    ${linhaDetalhe('Google ID', `<code style="font-size:0.75rem;">${escapeHtml(v.google_id)}</code>`)}
+  </div>
+
+  <div class="detalhe-secao">
+    <div class="detalhe-secao-titulo">Localização</div>
+    ${linhaDetalhe('Cidade / Estado', `${escapeHtml(v.cidade)}, ${escapeHtml(v.estado)}`)}
+    ${linhaDetalhe('País', escapeHtml(v.pais))}
+  </div>
+
+  <div class="detalhe-secao">
+    <div class="detalhe-secao-titulo">Atividade</div>
+    ${linhaDetalhe('Habilidades', (v.habilidades||[]).map(escapeHtml).join(', '))}
+    ${linhaDetalhe('Pontos', v.pontos || 0)}
+    ${linhaDetalhe('Cadastrado em', v.criado_em ? new Date(v.criado_em).toLocaleString('pt-BR') : null)}
+    ${linhaDetalhe('ID do registro', `<code style="font-size:0.75rem;">${v.id}</code>`)}
+  </div>`;
+
+  document.getElementById('modalDetalheConteudo').innerHTML = html;
+  document.getElementById('modalDetalhe').classList.add('open');
+}
+
+function abrirModalDetalheConf(id) {
+  const c = dadosConf.find(x => x.id === id);
+  if (!c) return;
+
+  document.getElementById('modalDetalheTitulo').textContent = '✅ Confirmação de presença';
+
+  let html = `<div class="detalhe-secao">
+    <div class="detalhe-secao-titulo">Voluntário</div>
+    ${linhaDetalhe('Nome', escapeHtml(c.voluntarios?.nome))}
+    ${linhaDetalhe('WhatsApp', escapeHtml(c.voluntarios?.whatsapp))}
+  </div>
+
+  <div class="detalhe-secao">
+    <div class="detalhe-secao-titulo">Solicitação confirmada</div>
+    ${linhaDetalhe('Nome do solicitante', escapeHtml(c.solicitacoes?.nome))}
+    ${linhaDetalhe('Cidade / Estado', `${escapeHtml(c.solicitacoes?.cidade)}, ${escapeHtml(c.solicitacoes?.estado)}`)}
+  </div>
+
+  <div class="detalhe-secao">
+    <div class="detalhe-secao-titulo">Confirmação</div>
+    ${linhaDetalhe('Status', escapeHtml(c.status))}
+    ${linhaDetalhe('Confirmado em', c.criado_em ? new Date(c.criado_em).toLocaleString('pt-BR') : null)}
+    ${linhaDetalhe('ID do registro', `<code style="font-size:0.75rem;">${c.id}</code>`)}
+  </div>`;
+
+  document.getElementById('modalDetalheConteudo').innerHTML = html;
+  document.getElementById('modalDetalhe').classList.add('open');
+}
+
+function fecharModalDetalhe() {
+  document.getElementById('modalDetalhe').classList.remove('open');
+}
+
 function confirmarDelete(tipo, id, nome) {
   document.getElementById('modalConfirmMsg').textContent = `Excluir "${nome}"? Esta ação não pode ser desfeita.`;
   deleteCallback = async () => {
