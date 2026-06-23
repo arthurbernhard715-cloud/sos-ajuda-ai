@@ -319,6 +319,9 @@ tbody tr:last-child td{border-bottom:none;}
       <div class="nav-item" data-page="logs" onclick="irPara('logs')">
         <span class="ni-icon">📜</span> Histórico de Ações
       </div>
+      <div class="nav-item" data-page="simulacao" onclick="irPara('simulacao')">
+        <span class="ni-icon">🎭</span> Simulação Demo
+      </div>
       <div class="nav-item nav-item-perigo" data-page="zonarisco" onclick="irPara('zonarisco')">
         <span class="ni-icon">☢️</span> Zona de Risco
       </div>
@@ -605,6 +608,59 @@ tbody tr:last-child td{border-bottom:none;}
             <tr class="loading-row"><td colspan="5">⏳ Carregando...</td></tr>
           </tbody>
         </table>
+      </div>
+    </div>
+
+    <!-- SIMULAÇÃO DE DEMONSTRAÇÃO -->
+    <div class="page" id="page-simulacao">
+      <div class="page-title">🎭 Simulação de Demonstração</div>
+      <div class="page-sub">Cria solicitações, voluntários e confirmações fictícias numa cidade escolhida, para demonstrar a plataforma em reuniões comerciais sem precisar de uma catástrofe real em andamento. Tudo marcado como simulação e fácil de remover depois.</div>
+
+      <div class="table-wrap" style="margin-bottom:20px;">
+        <div class="table-header">
+          <div class="table-title">➕ Criar cenário de demonstração</div>
+        </div>
+        <div style="padding:18px 20px;">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:16px;">
+            <div style="flex:1;min-width:140px;position:relative;">
+              <label style="display:block;font-size:0.75rem;color:#94a3b8;margin-bottom:5px;">País</label>
+              <input id="simPais" class="table-search" style="width:100%;" value="Brasil" autocomplete="off" oninput="buscarPaisSim(this.value)" onblur="setTimeout(fecharListaPaisSim,250)">
+              <div id="listaPaisSim" class="lista-autocomplete-admin" style="display:none;"></div>
+            </div>
+            <div style="flex:1;min-width:120px;position:relative;">
+              <label style="display:block;font-size:0.75rem;color:#94a3b8;margin-bottom:5px;">Estado</label>
+              <input id="simEstado" class="table-search" style="width:100%;" placeholder="Digite o estado..." autocomplete="off" oninput="buscarEstadoSim(this.value)" onblur="setTimeout(fecharListaEstadoSim,250)">
+              <div id="listaEstadoSim" class="lista-autocomplete-admin" style="display:none;"></div>
+            </div>
+            <div style="flex:1.5;min-width:160px;position:relative;">
+              <label style="display:block;font-size:0.75rem;color:#94a3b8;margin-bottom:5px;">Cidade</label>
+              <input id="simCidade" class="table-search" style="width:100%;" placeholder="Digite a cidade..." autocomplete="off" oninput="buscarCidadeSim(this.value)" onblur="setTimeout(fecharListaCidadeSim,250)">
+              <div id="listaCidadeSim" class="lista-autocomplete-admin" style="display:none;"></div>
+            </div>
+          </div>
+          <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+            <div style="flex:1;min-width:160px;">
+              <label style="display:block;font-size:0.75rem;color:#94a3b8;margin-bottom:5px;">Nº de solicitações de ajuda</label>
+              <input id="simQtdSolicitacoes" type="number" class="table-search" style="width:100%;" value="8" min="0" max="50">
+            </div>
+            <div style="flex:1;min-width:160px;">
+              <label style="display:block;font-size:0.75rem;color:#94a3b8;margin-bottom:5px;">Nº de voluntários</label>
+              <input id="simQtdVoluntarios" type="number" class="table-search" style="width:100%;" value="5" min="0" max="50">
+            </div>
+            <div style="flex:1;min-width:160px;">
+              <label style="display:block;font-size:0.75rem;color:#94a3b8;margin-bottom:5px;">Nº de confirmações</label>
+              <input id="simQtdConfirmacoes" type="number" class="table-search" style="width:100%;" value="6" min="0" max="100">
+            </div>
+            <button class="btn-action btn-reativar-admin" style="padding:9px 18px;" id="btnCriarSimulacao" onclick="criarSimulacao()">🎭 Gerar cenário</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="zona-risco-card" style="border-color:#7C3AED;background:#1a0a2e;">
+        <div class="zona-risco-titulo" style="color:#C4B5FD;">🧹 Limpar simulação ativa</div>
+        <div class="zona-risco-desc">Remove permanentemente todas as solicitações, voluntários e confirmações marcados como simulação — não afeta nenhum dado real de produção.</div>
+        <div id="simResumoAtivo" style="margin:14px 0;font-size:0.85rem;color:#cbd5e1;"></div>
+        <button class="btn-zona-risco" style="background:#5b21b6;border-color:#7C3AED;" onclick="limparSimulacao()">🧹 Apagar toda a simulação</button>
       </div>
     </div>
 
@@ -1681,6 +1737,8 @@ function renderLogs(filtro='') {
     excluir_regiao: { emoji: '☢️', cor: '#FCA5A5' },
     excluir_geral: { emoji: '💣', cor: '#FCA5A5' },
     zerar_ranking: { emoji: '🏆', cor: '#FDE68A' },
+    criar_simulacao: { emoji: '🎭', cor: '#C4B5FD' },
+    limpar_simulacao: { emoji: '🧹', cor: '#C4B5FD' },
     verificar: { emoji: '✅', cor: '#86EFAC' },
     bloquear: { emoji: '🚫', cor: '#FCA5A5' },
     desbloquear: { emoji: '🔓', cor: '#93C5FD' },
@@ -1732,6 +1790,17 @@ function resetarCamposRisco() {
   _rankConfirmado.estado = false;
   _rankConfirmado.cidade = false;
   atualizarCamposRank();
+}
+
+function resetarCamposSim() {
+  document.getElementById('simPais').value = 'Brasil';
+  document.getElementById('simEstado').value = '';
+  document.getElementById('simCidade').value = '';
+  _simConfirmado.pais = true;
+  _simConfirmado.estado = false;
+  _simConfirmado.cidade = false;
+  _simCidadeLat = null;
+  _simCidadeLng = null;
 }
 
 // Autocomplete país/estado/cidade (mesmo padrão usado em Regiões Bloqueadas)
@@ -2277,6 +2346,309 @@ async function executarExclusaoGeral() {
   }
 }
 
+// ── SIMULAÇÃO DE DEMONSTRAÇÃO ──
+const _simConfirmado = { pais: true, estado: false, cidade: false };
+let _simEstadoSelecionado = '';
+
+let _paisSimTimer = null;
+async function buscarPaisSim(valor) {
+  _simConfirmado.pais = false;
+  clearTimeout(_paisSimTimer);
+  const lista = document.getElementById('listaPaisSim');
+  if (!valor || valor.length < 2) { lista.style.display = 'none'; return; }
+  _paisSimTimer = setTimeout(async () => {
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(valor)}&format=json&limit=6&addressdetails=1&featureType=country`);
+      const data = await res.json();
+      const vistos = new Set();
+      const paises = data.filter(r => {
+        const nome = r.address?.country || r.display_name.split(',').pop().trim();
+        if (!nome || vistos.has(nome)) return false;
+        vistos.add(nome); return true;
+      }).slice(0,6);
+      if (!paises.length) { lista.style.display='none'; return; }
+      lista.innerHTML = paises.map(r => {
+        const nome = r.address?.country || r.display_name.split(',').pop().trim();
+        return `<div onclick="selecionarPaisSim('${escapeJsString(nome)}')">🌍 ${escapeHtml(nome)}</div>`;
+      }).join('');
+      lista.style.display = 'block';
+    } catch(e) {}
+  }, 350);
+}
+function selecionarPaisSim(nome) {
+  document.getElementById('simPais').value = nome;
+  document.getElementById('listaPaisSim').style.display = 'none';
+  _simConfirmado.pais = true;
+  _simConfirmado.estado = false;
+  _simConfirmado.cidade = false;
+  document.getElementById('simEstado').value = '';
+  document.getElementById('simCidade').value = '';
+}
+function fecharListaPaisSim() { const el = document.getElementById('listaPaisSim'); if (el) el.style.display = 'none'; }
+
+let _estadoSimTimer = null;
+async function buscarEstadoSim(valor) {
+  _simConfirmado.estado = false;
+  clearTimeout(_estadoSimTimer);
+  const lista = document.getElementById('listaEstadoSim');
+  if (!valor || valor.length < 2) { lista.style.display = 'none'; return; }
+  _estadoSimTimer = setTimeout(async () => {
+    try {
+      const pais = document.getElementById('simPais').value.trim() || 'Brasil';
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(`${valor}, ${pais}`)}&format=json&limit=6&addressdetails=1`);
+      const data = await res.json();
+      const vistos = new Set();
+      const estados = data.filter(r => {
+        const s = r.address?.state || r.display_name.split(',')[0];
+        if (!s || vistos.has(s)) return false;
+        vistos.add(s); return true;
+      }).slice(0,6);
+      if (!estados.length) { lista.style.display='none'; return; }
+      lista.innerHTML = estados.map(r => {
+        const nome = r.address?.state || r.display_name.split(',')[0];
+        return `<div onclick="selecionarEstadoSim('${escapeJsString(nome)}')">📍 ${escapeHtml(nome)}</div>`;
+      }).join('');
+      lista.style.display = 'block';
+    } catch(e) {}
+  }, 350);
+}
+function selecionarEstadoSim(nome) {
+  _simEstadoSelecionado = MAPA_ESTADOS_SIGLA_ADMIN[nome] || nome;
+  document.getElementById('simEstado').value = _simEstadoSelecionado;
+  document.getElementById('listaEstadoSim').style.display = 'none';
+  document.getElementById('simCidade').value = '';
+  _simConfirmado.estado = true;
+  _simConfirmado.cidade = false;
+}
+function fecharListaEstadoSim() { const el = document.getElementById('listaEstadoSim'); if (el) el.style.display = 'none'; }
+
+let _cidadeSimTimer = null;
+let _simCidadeLat = null, _simCidadeLng = null;
+async function buscarCidadeSim(valor) {
+  _simConfirmado.cidade = false;
+  clearTimeout(_cidadeSimTimer);
+  const lista = document.getElementById('listaCidadeSim');
+  if (!valor || valor.length < 2) { lista.style.display = 'none'; return; }
+  _cidadeSimTimer = setTimeout(async () => {
+    try {
+      const estado = document.getElementById('simEstado').value.trim();
+      const pais = document.getElementById('simPais').value.trim() || 'Brasil';
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(`${valor}, ${estado}, ${pais}`)}&format=json&limit=6&addressdetails=1`);
+      const data = await res.json();
+      const vistos = new Set();
+      const cidades = data.filter(r => {
+        const c = r.address?.city || r.address?.town || r.address?.village || r.display_name.split(',')[0];
+        if (!c || vistos.has(c)) return false;
+        vistos.add(c); return true;
+      }).slice(0,6);
+      if (!cidades.length) { lista.style.display='none'; return; }
+      lista.innerHTML = cidades.map(r => {
+        const nome = r.address?.city || r.address?.town || r.address?.village || r.display_name.split(',')[0];
+        return `<div onclick="selecionarCidadeSim('${escapeJsString(nome)}',${r.lat},${r.lon})">🏙️ ${escapeHtml(nome)}</div>`;
+      }).join('');
+      lista.style.display = 'block';
+    } catch(e) {}
+  }, 350);
+}
+function selecionarCidadeSim(nome, lat, lng) {
+  document.getElementById('simCidade').value = nome;
+  document.getElementById('listaCidadeSim').style.display = 'none';
+  _simConfirmado.cidade = true;
+  _simCidadeLat = parseFloat(lat);
+  _simCidadeLng = parseFloat(lng);
+}
+function fecharListaCidadeSim() { const el = document.getElementById('listaCidadeSim'); if (el) el.style.display = 'none'; }
+
+const NOMES_FICTICIOS = ['Solicitante', 'Voluntário Demo'];
+const TIPOS_AJUDA_DEMO = ['Limpeza', 'Retirada de móveis', 'Mantimentos', 'Roupas', 'Transporte', 'Medicamentos'];
+const HABILIDADES_DEMO = ['Limpeza', 'Transporte', 'Mão de obra', 'Mantimentos', 'Resgate'];
+const DESCRICOES_DEMO = [
+  'Casa atingida pela enchente, água subiu até a cintura. Preciso de ajuda para limpeza.',
+  'Perdi móveis e eletrodomésticos. Necessito de ajuda para retirar entulho.',
+  'Família com crianças pequenas precisa de mantimentos básicos urgente.',
+  'Idoso sozinho na residência, precisa de auxílio para retirada de objetos molhados.',
+  'Comércio local inundado, preciso de mão de obra para limpeza do espaço.',
+  'Telhado parcialmente destruído, preciso de ajuda para cobrir e proteger a casa.',
+];
+
+// Gera um pequeno deslocamento aleatório em torno das coordenadas da cidade,
+// para os pins não ficarem todos exatamente empilhados no mesmo ponto do mapa
+function jitterCoordenada(valor) {
+  return valor + (Math.random() - 0.5) * 0.02;
+}
+
+async function criarSimulacao() {
+  if (!_simConfirmado.pais || !_simConfirmado.estado || !_simConfirmado.cidade) {
+    toast('⚠️ Selecione país, estado e cidade a partir da lista de sugestões antes de gerar o cenário.');
+    return;
+  }
+  if (_simCidadeLat === null || _simCidadeLng === null) {
+    toast('⚠️ Não foi possível obter as coordenadas da cidade. Selecione novamente a partir da lista.');
+    return;
+  }
+
+  const pais = document.getElementById('simPais').value.trim();
+  const estado = document.getElementById('simEstado').value.trim();
+  const cidade = document.getElementById('simCidade').value.trim();
+  const qtdSol = parseInt(document.getElementById('simQtdSolicitacoes').value) || 0;
+  const qtdVol = parseInt(document.getElementById('simQtdVoluntarios').value) || 0;
+  const qtdConf = parseInt(document.getElementById('simQtdConfirmacoes').value) || 0;
+
+  if (qtdSol === 0 && qtdVol === 0) {
+    toast('⚠️ Informe ao menos 1 solicitação ou 1 voluntário para gerar.');
+    return;
+  }
+
+  const btn = document.getElementById('btnCriarSimulacao');
+  btn.disabled = true;
+  btn.textContent = '⏳ Gerando...';
+
+  try {
+    const token = usuarioAtual?.access_token || SB_KEY;
+    const idsSolicitacoes = [];
+    const idsVoluntarios = [];
+
+    // Cria solicitações fictícias
+    for (let i = 1; i <= qtdSol; i++) {
+      const urgencias = ['vermelho','amarelo','verde'];
+      const urgencia = urgencias[Math.floor(Math.random()*3)];
+      const tiposEscolhidos = TIPOS_AJUDA_DEMO.filter(() => Math.random() > 0.6).slice(0,3);
+      const criado = await sbFetch('solicitacoes', {
+        method: 'POST',
+        body: JSON.stringify({
+          nome: `Solicitante Demo ${i}`,
+          pais, cidade, estado,
+          endereco: `Rua Exemplo ${i*10}, Bairro Centro`,
+          descricao: DESCRICOES_DEMO[i % DESCRICOES_DEMO.length],
+          tipos_ajuda: tiposEscolhidos.length ? tiposEscolhidos : ['Limpeza'],
+          urgencia,
+          limite_voluntarios: 10 + Math.floor(Math.random()*10),
+          voluntarios_confirmados: 0,
+          ativo: true,
+          lat: jitterCoordenada(_simCidadeLat),
+          lng: jitterCoordenada(_simCidadeLng),
+          expira_em: new Date(Date.now() + 24*60*60*1000).toISOString(),
+          is_simulacao: true,
+        })
+      });
+      if (criado?.[0]?.id) idsSolicitacoes.push(criado[0].id);
+    }
+
+    // Cria voluntários fictícios
+    for (let i = 1; i <= qtdVol; i++) {
+      const habsEscolhidas = HABILIDADES_DEMO.filter(() => Math.random() > 0.5).slice(0,3);
+      const criado = await sbFetch('voluntarios', {
+        method: 'POST',
+        body: JSON.stringify({
+          nome: `Voluntário Demo ${i}`,
+          whatsapp: '',
+          pais, estado, cidade,
+          habilidades: habsEscolhidas.length ? habsEscolhidas : ['Limpeza'],
+          google_id: `demo-${Date.now()}-${i}`,
+          cpf: '',
+          pontos: Math.floor(Math.random()*100),
+          is_simulacao: true,
+        })
+      });
+      if (criado?.[0]?.id) idsVoluntarios.push(criado[0].id);
+    }
+
+    // Cria confirmações ligando voluntários a solicitações (somente se houver dos dois lados)
+    let confsGeradas = 0;
+    if (idsSolicitacoes.length && idsVoluntarios.length) {
+      for (let i = 0; i < qtdConf; i++) {
+        const solId = idsSolicitacoes[Math.floor(Math.random()*idsSolicitacoes.length)];
+        const volId = idsVoluntarios[Math.floor(Math.random()*idsVoluntarios.length)];
+        try {
+          await sbFetch('confirmacoes', {
+            method: 'POST',
+            body: JSON.stringify({
+              solicitacao_id: solId,
+              voluntario_id: volId,
+              status: 'confirmado',
+              is_simulacao: true,
+            })
+          });
+          confsGeradas++;
+        } catch(e) { /* pode falhar por duplicidade, segue tentando as demais */ }
+      }
+      // Atualiza o contador de voluntários confirmados nas solicitações afetadas
+      for (const solId of idsSolicitacoes) {
+        const total = await sbFetch(`confirmacoes?solicitacao_id=eq.${solId}&select=id`);
+        await fetch(`${SB_URL}/rest/v1/solicitacoes?id=eq.${solId}`, {
+          method: 'PATCH',
+          headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+          body: JSON.stringify({ voluntarios_confirmados: total.length })
+        });
+      }
+    }
+
+    registrarLog('criar_simulacao', 'multiplas_tabelas', null, `Gerou simulação em ${cidade}, ${estado}: ${idsSolicitacoes.length} solicitações, ${idsVoluntarios.length} voluntários, ${confsGeradas} confirmações`);
+    toast(`🎭 Simulação criada! ${idsSolicitacoes.length} solicitações, ${idsVoluntarios.length} voluntários, ${confsGeradas} confirmações.`, 'ok');
+    await atualizarResumoSimulacao();
+  } catch(e) {
+    toast('⚠️ Erro ao gerar simulação: ' + e.message, 'err');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🎭 Gerar cenário';
+  }
+}
+
+async function atualizarResumoSimulacao() {
+  const el = document.getElementById('simResumoAtivo');
+  if (!el) return;
+  try {
+    const [sols, vols, confs] = await Promise.all([
+      sbFetch('solicitacoes?is_simulacao=eq.true&select=id,cidade,estado'),
+      sbFetch('voluntarios?is_simulacao=eq.true&select=id,cidade,estado'),
+      sbFetch('confirmacoes?is_simulacao=eq.true&select=id'),
+    ]);
+    if (!sols.length && !vols.length && !confs.length) {
+      el.innerHTML = 'Nenhuma simulação ativa no momento.';
+      return;
+    }
+    const cidades = new Set([...sols, ...vols].map(x => `${x.cidade}, ${x.estado}`));
+    el.innerHTML = `<strong>${sols.length}</strong> solicitações, <strong>${vols.length}</strong> voluntários, <strong>${confs.length}</strong> confirmações ativas`
+      + (cidades.size ? ` — em: ${Array.from(cidades).map(escapeHtml).join(' · ')}` : '');
+  } catch(e) {
+    el.innerHTML = 'Não foi possível verificar o estado atual da simulação.';
+  }
+}
+
+async function limparSimulacao() {
+  const digitado = prompt('Isso vai apagar permanentemente TODAS as solicitações, voluntários e confirmações marcados como simulação, em qualquer cidade.\n\nDigite "LIMPAR SIMULACAO" para confirmar:');
+  if (digitado === null) return;
+  if (digitado.trim().toUpperCase() !== 'LIMPAR SIMULACAO') {
+    toast('⚠️ Texto de confirmação não corresponde. Nada foi apagado.', 'err');
+    return;
+  }
+
+  try {
+    const token = usuarioAtual?.access_token || SB_KEY;
+    const tabelas = ['confirmacoes', 'solicitacoes', 'voluntarios']; // ordem: confirmações antes (dependem das outras)
+    let totalExcluido = 0;
+
+    for (const tabela of tabelas) {
+      const registros = await sbFetch(`${tabela}?is_simulacao=eq.true&select=id`);
+      for (const r of registros) {
+        try {
+          await fetch(`${SB_URL}/rest/v1/${tabela}?id=eq.${r.id}`, {
+            method: 'DELETE',
+            headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' }
+          });
+          totalExcluido++;
+        } catch(e) { /* segue tentando os demais */ }
+      }
+    }
+
+    registrarLog('limpar_simulacao', 'multiplas_tabelas', null, `Removeu toda a simulação: ${totalExcluido} registro(s) no total`);
+    toast(`🧹 Simulação removida! ${totalExcluido} registro(s) excluído(s).`, 'ok');
+    await atualizarResumoSimulacao();
+  } catch(e) {
+    toast('⚠️ Erro ao limpar simulação: ' + e.message, 'err');
+  }
+}
+
 function irPara(pagina) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
@@ -2290,6 +2662,7 @@ function irPara(pagina) {
   if (pagina === 'bloqueios') carregarBloqueios();
   if (pagina === 'logs') carregarLogs();
   if (pagina === 'zonarisco') resetarCamposRisco();
+  if (pagina === 'simulacao') { resetarCamposSim(); atualizarResumoSimulacao(); }
 }
 
 // ── FILTROS ──
