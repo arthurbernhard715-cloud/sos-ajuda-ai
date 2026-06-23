@@ -656,6 +656,7 @@ async function verificarPontoApoioPref(id) {
     });
     toast('✅ Ponto verificado!');
     await carregarPontosApoioPref();
+    atualizarMapa(_dadosExportacao.sols || []);
   } catch(e) {
     toast('⚠️ Erro ao verificar o ponto.');
   }
@@ -696,8 +697,8 @@ async function carregarDados() {
     renderBairros(sols);
     renderHistorico(sols);
     renderTabela(sols);
+    await carregarPontosApoioPref();
     atualizarMapa(sols);
-    carregarPontosApoioPref();
 
   } catch(e) {
     console.error('Erro:', e);
@@ -1027,18 +1028,50 @@ function initMapaPrefeitura() {
   }).addTo(mapaP);
 }
 
+// Desenha um pin de ponto de apoio (abrigo ou doações/mantimentos) no mapa,
+// visualmente diferenciado dos pins de solicitação de ajuda
+function adicionarPinPontoApoio(p, layer) {
+  const ehAbrigo = p.tipo === 'abrigo';
+  const cor = ehAbrigo ? '#D97706' : '#EA580C';
+  const corBorda = ehAbrigo ? '#78350F' : '#7C2D12';
+  const emoji = ehAbrigo ? '🏠' : '📦';
+  const label = ehAbrigo ? 'Abrigo' : 'Doações/Mantimentos';
+
+  const icon = L.divIcon({
+    className: '',
+    html: `<div style="width:30px;height:34px;background:${cor};border:2px solid ${corBorda};border-radius:8px 8px 8px 0;box-shadow:0 2px 8px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;transform:rotate(-45deg);"><span style="transform:rotate(45deg);font-size:13px;">${emoji}</span></div>`,
+    iconSize: [30,34], iconAnchor: [15,34]
+  });
+
+  L.marker([p.lat, p.lng], {icon}).addTo(layer)
+    .bindPopup(`<div style="font-family:'Inter',sans-serif;min-width:160px;">
+      <strong style="color:${corBorda}">${emoji} ${escapeHtml(p.nome)}</strong><br>
+      <small style="color:#64748b">${label} · ${p.verificado ? '✅ Verificado' : '⏳ Pendente'}</small><br>
+      <small style="color:#64748b">${escapeHtml(p.endereco || '')}</small>
+    </div>`);
+}
+
 function atualizarMapa(sols) {
   if (!mapaP) return;
   const comCoords = sols.filter(s => s.lat && s.lng);
-  if (!comCoords.length) return;
+  const pontosComCoords = (_pontosApoioPref || []).filter(p => p.lat && p.lng && p.ativo);
 
   // Remove layers anteriores
   if (heatLayer) mapaP.removeLayer(heatLayer);
   if (pinsLayer) mapaP.removeLayer(pinsLayer);
 
+  if (!comCoords.length && !pontosComCoords.length) return;
+
   if (modoMapa === 'calor') {
-    const points = comCoords.map(s => [s.lat, s.lng, s.urgencia==='vermelho'?1.0:0.5]);
-    heatLayer = L.heatLayer(points, {radius:35,blur:20,maxZoom:15,gradient:{0.4:'#1A3C8F',0.6:'#D97706',0.8:'#D92B2B'}}).addTo(mapaP);
+    if (comCoords.length) {
+      const points = comCoords.map(s => [s.lat, s.lng, s.urgencia==='vermelho'?1.0:0.5]);
+      heatLayer = L.heatLayer(points, {radius:35,blur:20,maxZoom:15,gradient:{0.4:'#1A3C8F',0.6:'#D97706',0.8:'#D92B2B'}}).addTo(mapaP);
+    }
+    // Pontos de apoio também aparecem como pins no modo calor, já que não fazem
+    // sentido como parte do mapa de densidade de urgência
+    pinsLayer = L.layerGroup();
+    pontosComCoords.forEach(p => adicionarPinPontoApoio(p, pinsLayer));
+    pinsLayer.addTo(mapaP);
   } else {
     pinsLayer = L.layerGroup();
     comCoords.forEach(s => {
@@ -1051,12 +1084,15 @@ function atualizarMapa(sols) {
       L.marker([s.lat,s.lng],{icon}).addTo(pinsLayer)
         .bindPopup(`<div style="font-family:'Inter',sans-serif;min-width:160px;"><strong style="color:#1A3C8F">${escapeHtml(s.nome)}</strong><br><small style="color:#64748b">📍 ${escapeHtml(s.cidade)} · ${s.voluntarios_confirmados}/${s.limite_voluntarios} vol.</small></div>`);
     });
+    pontosComCoords.forEach(p => adicionarPinPontoApoio(p, pinsLayer));
     pinsLayer.addTo(mapaP);
   }
 
-  // Centraliza no centróide
-  const lats = comCoords.map(s=>s.lat);
-  const lngs = comCoords.map(s=>s.lng);
+  // Centraliza no centróide (considerando solicitações e pontos de apoio juntos)
+  const todosLats = [...comCoords.map(s=>s.lat), ...pontosComCoords.map(p=>p.lat)];
+  const todosLngs = [...comCoords.map(s=>s.lng), ...pontosComCoords.map(p=>p.lng)];
+  const lats = todosLats;
+  const lngs = todosLngs;
   const centroLat = lats.reduce((a,b)=>a+b,0)/lats.length;
   const centroLng = lngs.reduce((a,b)=>a+b,0)/lngs.length;
   mapaP.setView([centroLat, centroLng], 13);
