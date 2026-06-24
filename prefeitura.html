@@ -90,6 +90,8 @@ body{font-family:'Inter',sans-serif;background:#0a0f1a;color:#e2e8f0;min-height:
 .charts-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:28px;}
 .chart-card{background:#0d1117;border:1px solid #1e2535;border-radius:14px;padding:20px;}
 .chart-card h3{font-family:'Montserrat',sans-serif;font-weight:700;font-size:0.88rem;color:#fff;margin-bottom:16px;}
+.form-control-pref{width:100%;padding:8px 10px;border:1px solid #CBD5E1;border-radius:7px;font-size:0.83rem;font-family:'Inter',sans-serif;color:#1e293b;background:#fff;box-sizing:border-box;}
+.form-control-pref:focus{outline:none;border-color:#1A3C8F;}
 
 /* BAR CHART */
 .bar-chart{display:flex;flex-direction:column;gap:10px;}
@@ -236,9 +238,40 @@ tbody tr:last-child td{border-bottom:none;}
 
     <!-- CHUVA -->
     <div class="chart-card" id="cardChuva" style="margin-bottom:24px;">
-      <h3>🌧️ Volume de chuva no período</h3>
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+        <h3 style="margin:0;">🌧️ Volume de chuva no período</h3>
+        <button id="btnAbrirChuvaManual" onclick="toggleFormChuvaManual()" style="background:none;border:1px solid #1A3C8F;color:#1A3C8F;border-radius:8px;padding:6px 12px;font-size:0.78rem;font-weight:600;cursor:pointer;">
+          📡 Usar dado de estação local
+        </button>
+      </div>
       <div id="chuvaConteudo" style="padding:10px 0;">
         <div style="text-align:center;color:#64748b;padding:20px;">⏳ Carregando dados meteorológicos...</div>
+      </div>
+
+      <div id="formChuvaManual" style="display:none;margin-top:14px;padding:16px;background:#F8FAFC;border-radius:10px;border:1px solid #E2E8F0;">
+        <div style="font-size:0.82rem;color:#475569;margin-bottom:12px;">
+          Se sua cidade tem uma estação meteorológica própria, ou um dado mais preciso (boletim da Defesa Civil, INMET consultado manualmente), registre aqui — ele passa a ser usado no lugar da estimativa automática para o período informado.
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+          <div style="flex:1;min-width:130px;">
+            <label style="display:block;font-size:0.72rem;color:#94a3b8;margin-bottom:4px;">Data início</label>
+            <input type="date" id="chuvaManualInicio" class="form-control-pref">
+          </div>
+          <div style="flex:1;min-width:130px;">
+            <label style="display:block;font-size:0.72rem;color:#94a3b8;margin-bottom:4px;">Data fim</label>
+            <input type="date" id="chuvaManualFim" class="form-control-pref">
+          </div>
+          <div style="flex:1;min-width:110px;">
+            <label style="display:block;font-size:0.72rem;color:#94a3b8;margin-bottom:4px;">Total (mm)</label>
+            <input type="number" step="0.1" min="0" id="chuvaManualTotal" class="form-control-pref" placeholder="Ex: 120.5">
+          </div>
+          <div style="flex:1.4;min-width:160px;">
+            <label style="display:block;font-size:0.72rem;color:#94a3b8;margin-bottom:4px;">Fonte (opcional)</label>
+            <input type="text" id="chuvaManualFonte" class="form-control-pref" placeholder="Ex: Defesa Civil municipal">
+          </div>
+          <button onclick="salvarChuvaManual()" style="background:#1A3C8F;color:#fff;border:none;border-radius:8px;padding:9px 16px;font-size:0.82rem;font-weight:700;cursor:pointer;white-space:nowrap;">Salvar</button>
+        </div>
+        <div id="chuvaManualLista" style="margin-top:14px;"></div>
       </div>
     </div>
 
@@ -378,6 +411,7 @@ tbody tr:last-child td{border-bottom:none;}
       <div style="background:#EFF6FF;border-radius:14px;padding:16px 10px;text-align:center;">
         <div id="kpiChuva" style="font-family:'Montserrat',sans-serif;font-weight:900;font-size:1.9rem;color:#2563EB;">—</div>
         <div style="font-size:0.72rem;color:#475569;font-weight:600;">Chuva acumulada (mm)</div>
+        <div id="kpiChuvaFonte" style="font-size:0.62rem;color:#94a3b8;margin-top:2px;"></div>
       </div>
     </div>
 
@@ -594,6 +628,25 @@ async function sbPatch(endpoint, body) {
   });
 }
 
+async function sbPost(endpoint, body) {
+  const res = await fetch(SB_URL + '/rest/v1/' + endpoint, {
+    method: 'POST',
+    headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) throw new Error(await res.text());
+  const text = await res.text();
+  return text ? JSON.parse(text) : [];
+}
+
+async function sbDelete(endpoint) {
+  const res = await fetch(SB_URL + '/rest/v1/' + endpoint, {
+    method: 'DELETE',
+    headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' }
+  });
+  if (!res.ok) throw new Error(await res.text());
+}
+
 let _pontosApoioPref = [];
 
 async function carregarPontosApoioPref() {
@@ -699,6 +752,34 @@ async function obterCoordenadasCidade(cidade, estado) {
 }
 
 // Retorna o volume de chuva (mm) acumulado no período, e o detalhe por dia
+// Função principal usada pelo carregamento de dados: verifica primeiro se há
+// um registro manual cobrindo o período; se não houver, recorre à estimativa
+// automática via Open-Meteo.
+async function obterDadosChuva(cidade, estado, dias) {
+  const hoje = new Date();
+  const dataFimISO = hoje.toISOString().slice(0, 10);
+  const diasConsulta = dias > 0 ? dias : 30;
+  const dataInicioISO = new Date(hoje.getTime() - diasConsulta * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
+  const manual = await buscarChuvaManualNoPeriodo(cidade, estado, dataInicioISO, dataFimISO);
+  if (manual) {
+    return {
+      totalMm: manual.total_mm,
+      maximoDiarioMm: null,
+      diaMaisChuvoso: null,
+      diasComChuva: null,
+      serie: [],
+      origem: 'manual',
+      fonteManual: manual.fonte,
+      periodoManual: { inicio: manual.data_inicio, fim: manual.data_fim },
+    };
+  }
+
+  const estimativa = await buscarVolumeChuva(cidade, estado, dias);
+  if (estimativa) estimativa.origem = 'estimativa';
+  return estimativa;
+}
+
 async function buscarVolumeChuva(cidade, estado, dias) {
   try {
     const coord = await obterCoordenadasCidade(cidade, estado);
@@ -745,6 +826,97 @@ function classificarVolumeChuva(totalMm) {
   return { label: 'Baixo', cor: '#64748B' };
 }
 
+// ── CHUVA MANUAL (ESTAÇÃO LOCAL) ──
+function toggleFormChuvaManual() {
+  const form = document.getElementById('formChuvaManual');
+  const aberto = form.style.display === 'block';
+  form.style.display = aberto ? 'none' : 'block';
+  if (!aberto) carregarChuvaManual();
+}
+
+async function salvarChuvaManual() {
+  const dataInicio = document.getElementById('chuvaManualInicio').value;
+  const dataFim = document.getElementById('chuvaManualFim').value;
+  const totalMm = parseFloat(document.getElementById('chuvaManualTotal').value);
+  const fonte = document.getElementById('chuvaManualFonte').value.trim();
+
+  if (!dataInicio || !dataFim) { toast('⚠️ Informe a data de início e fim do período.'); return; }
+  if (new Date(dataFim) < new Date(dataInicio)) { toast('⚠️ A data fim não pode ser anterior à data início.'); return; }
+  if (isNaN(totalMm) || totalMm < 0) { toast('⚠️ Informe um volume de chuva válido (em mm).'); return; }
+
+  try {
+    await sbPost('chuva_manual', {
+      cidade: _cidadeAtual.cidade,
+      estado: _cidadeAtual.estado,
+      data_inicio: dataInicio,
+      data_fim: dataFim,
+      total_mm: totalMm,
+      fonte: fonte || null,
+      registrado_por: `Prefeitura de ${_cidadeAtual.cidade}`,
+    });
+    toast('✅ Dado de chuva registrado!');
+    document.getElementById('chuvaManualTotal').value = '';
+    document.getElementById('chuvaManualFonte').value = '';
+    await carregarChuvaManual();
+    await carregarDados(); // recarrega para já refletir a prioridade do dado manual
+  } catch(e) {
+    toast('⚠️ Erro ao salvar: ' + e.message);
+  }
+}
+
+async function carregarChuvaManual() {
+  const el = document.getElementById('chuvaManualLista');
+  if (!el || !_cidadeAtual) return;
+  try {
+    const cidadeEsc = encodeURIComponent(_cidadeAtual.cidade);
+    const estadoEsc = encodeURIComponent(_cidadeAtual.estado);
+    const registros = await sbFetch(`chuva_manual?cidade=eq.${cidadeEsc}&estado=eq.${estadoEsc}&order=data_inicio.desc&select=*`);
+    if (!registros.length) {
+      el.innerHTML = `<div style="font-size:0.78rem;color:#94a3b8;">Nenhum registro manual cadastrado ainda.</div>`;
+      return;
+    }
+    el.innerHTML = registros.map(r => `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #E2E8F0;font-size:0.8rem;">
+        <div>
+          <strong style="color:#1A3C8F;">${r.total_mm} mm</strong>
+          <span style="color:#64748b;"> · ${new Date(r.data_inicio+'T12:00:00').toLocaleDateString('pt-BR')} a ${new Date(r.data_fim+'T12:00:00').toLocaleDateString('pt-BR')}</span>
+          ${r.fonte ? `<span style="color:#94a3b8;"> · ${escapeHtml(r.fonte)}</span>` : ''}
+        </div>
+        <button onclick="excluirChuvaManual('${r.id}')" style="background:none;border:none;color:#D92B2B;cursor:pointer;font-size:0.85rem;">🗑️</button>
+      </div>
+    `).join('');
+  } catch(e) {
+    el.innerHTML = `<div style="font-size:0.78rem;color:#94a3b8;">Não foi possível carregar os registros.</div>`;
+  }
+}
+
+async function excluirChuvaManual(id) {
+  if (!confirm('Remover este registro manual de chuva?')) return;
+  try {
+    await sbDelete(`chuva_manual?id=eq.${id}`);
+    toast('✅ Registro removido.');
+    await carregarChuvaManual();
+    await carregarDados();
+  } catch(e) {
+    toast('⚠️ Erro ao remover: ' + e.message);
+  }
+}
+
+// Busca um registro manual que cubra (ao menos parcialmente) o período solicitado.
+// Prioriza o registro mais recente em caso de múltiplos sobrepostos.
+async function buscarChuvaManualNoPeriodo(cidade, estado, dataInicioISO, dataFimISO) {
+  try {
+    const cidadeEsc = encodeURIComponent(cidade);
+    const estadoEsc = encodeURIComponent(estado);
+    const registros = await sbFetch(
+      `chuva_manual?cidade=eq.${cidadeEsc}&estado=eq.${estadoEsc}&data_inicio=lte.${dataFimISO}&data_fim=gte.${dataInicioISO}&order=criado_em.desc&select=*`
+    );
+    return registros[0] || null;
+  } catch(e) {
+    return null;
+  }
+}
+
 async function carregarDados() {
   if (!_cidadeAtual) return;
   const dias = parseInt(document.getElementById('periodoSelect').value);
@@ -767,7 +939,7 @@ async function carregarDados() {
       sbFetch(`voluntarios?cidade=ilike.*${encodeURIComponent(cidade)}*&select=*`),
       sbFetch(`confirmacoes?select=*,solicitacoes!inner(cidade)&solicitacoes.cidade=ilike.*${encodeURIComponent(cidade)}*${filtroData}`),
       sbFetch(`avaliacoes?select=estrelas${filtroData}`),
-      buscarVolumeChuva(cidade, _cidadeAtual.estado, dias)
+      obterDadosChuva(cidade, _cidadeAtual.estado, dias)
     ]);
 
     _dadosExportacao = { sols, vols, confs, avals, periodo: labelPeriodo, chuva };
@@ -818,6 +990,26 @@ function renderChuva(chuva) {
   }
 
   const classif = classificarVolumeChuva(chuva.totalMm);
+  const ehManual = chuva.origem === 'manual';
+
+  if (ehManual) {
+    const ini = new Date(chuva.periodoManual.inicio + 'T12:00:00').toLocaleDateString('pt-BR');
+    const fim = new Date(chuva.periodoManual.fim + 'T12:00:00').toLocaleDateString('pt-BR');
+    el.innerHTML = `
+      <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
+        <div>
+          <div style="font-size:2rem;font-weight:900;color:${classif.cor};">${chuva.totalMm}<span style="font-size:1rem;font-weight:600;"> mm</span></div>
+          <div style="font-size:0.78rem;color:#64748b;">Volume registrado manualmente (${ini} a ${fim})</div>
+          <div style="display:inline-block;margin-top:6px;padding:3px 10px;border-radius:6px;background:${classif.cor}22;color:${classif.cor};font-size:0.75rem;font-weight:700;">${classif.label}</div>
+        </div>
+      </div>
+      <div style="margin-top:14px;font-size:0.72rem;color:#16A34A;">
+        ✅ Dado informado pela prefeitura${chuva.fonteManual ? ' — fonte: ' + escapeHtml(chuva.fonteManual) : ''}. Tem prioridade sobre a estimativa automática.
+      </div>
+    `;
+    return;
+  }
+
   const dataChuvosaFmt = chuva.diaMaisChuvoso ? new Date(chuva.diaMaisChuvoso + 'T12:00:00').toLocaleDateString('pt-BR') : '—';
 
   el.innerHTML = `
@@ -837,7 +1029,7 @@ function renderChuva(chuva) {
       </div>
     </div>
     <div style="margin-top:14px;font-size:0.72rem;color:#94a3b8;">
-      Dados estimados por modelo meteorológico (Open-Meteo), não substituem medição local oficial.
+      Dados estimados por modelo meteorológico (Open-Meteo), não substituem medição local oficial. Tem uma fonte mais precisa? <a href="#" onclick="toggleFormChuvaManual();return false;" style="color:#2563EB;">Registre aqui</a>.
     </div>
   `;
 }
@@ -1011,12 +1203,15 @@ async function exportarRelatorio() {
     document.getElementById('kpiVoluntarios').textContent = vols.length;
 
     const kpiChuvaEl = document.getElementById('kpiChuva');
+    const kpiChuvaFonteEl = document.getElementById('kpiChuvaFonte');
     if (chuva) {
       const classif = classificarVolumeChuva(chuva.totalMm);
       kpiChuvaEl.textContent = chuva.totalMm;
       kpiChuvaEl.style.color = classif.cor;
+      kpiChuvaFonteEl.textContent = chuva.origem === 'manual' ? '✅ dado da prefeitura' : '(estimativa)';
     } else {
       kpiChuvaEl.textContent = '—';
+      kpiChuvaFonteEl.textContent = '';
     }
 
     // Gráfico 1: tipos de ajuda (pizza)
