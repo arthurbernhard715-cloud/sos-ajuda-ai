@@ -1038,17 +1038,37 @@ textarea.form-control { resize: vertical; min-height: 88px; }
 <div class="modal-overlay" id="modal-pix">
   <div class="modal" style="max-width:380px;text-align:center;">
     <button class="modal-close" onclick="fecharModal('modal-pix')">✕</button>
-    <h2>💛 Doar via Pix</h2>
+    <h2>💛 Apoiar o projeto</h2>
     <p class="modal-sub" id="pixValorTexto">Sua contribuição mantém o SOS Ajuda Aí no ar.</p>
 
-    <img id="pixQrImg" src="" alt="QR Code Pix" style="width:220px;height:220px;margin:18px auto;border-radius:12px;border:1px solid var(--cinza-b);display:block;">
-
-    <div style="background:#F4F6FA;border:1.5px solid #E2E8F0;border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:10px;margin-bottom:16px;">
-      <span style="flex:1;font-size:0.8rem;color:var(--cinza-t);word-break:break-all;text-align:left;" id="pixChaveTexto">6987632a-621a-4832-a6e4-4a60d5b0e788</span>
-      <button type="button" onclick="copiarChavePix()" style="background:var(--azul);color:#fff;border:none;border-radius:8px;padding:8px 12px;font-weight:700;font-size:0.78rem;cursor:pointer;white-space:nowrap;">Copiar</button>
+    <div class="doacao-tabs" style="display:flex;gap:8px;margin:16px 0;">
+      <button type="button" class="doacao-tab ativo" id="tabPix" onclick="alternarAbaDoacao('pix')" style="flex:1;padding:9px;border-radius:99px;border:1.5px solid var(--azul);background:var(--azul);color:#fff;font-family:'Montserrat',sans-serif;font-weight:700;font-size:0.82rem;cursor:pointer;">💛 Pix</button>
+      <button type="button" class="doacao-tab" id="tabBitcoin" onclick="alternarAbaDoacao('bitcoin')" style="flex:1;padding:9px;border-radius:99px;border:1.5px solid var(--cinza-b);background:#fff;color:var(--cinza-t);font-family:'Montserrat',sans-serif;font-weight:700;font-size:0.82rem;cursor:pointer;">₿ Bitcoin</button>
     </div>
 
-    <p style="font-size:0.78rem;color:var(--cinza-t);">Abra o app do seu banco, escolha Pix, escaneie o QR Code ou cole a chave acima. Chave do tipo <strong>aleatória</strong>.</p>
+    <!-- PAINEL PIX -->
+    <div id="painelDoacaoPix">
+      <img id="pixQrImg" src="" alt="QR Code Pix" style="width:220px;height:220px;margin:6px auto 18px;border-radius:12px;border:1px solid var(--cinza-b);display:block;">
+
+      <div style="background:#F4F6FA;border:1.5px solid #E2E8F0;border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+        <span style="flex:1;font-size:0.8rem;color:var(--cinza-t);word-break:break-all;text-align:left;" id="pixChaveTexto">6987632a-621a-4832-a6e4-4a60d5b0e788</span>
+        <button type="button" onclick="copiarChavePix()" style="background:var(--azul);color:#fff;border:none;border-radius:8px;padding:8px 12px;font-weight:700;font-size:0.78rem;cursor:pointer;white-space:nowrap;">Copiar</button>
+      </div>
+
+      <p style="font-size:0.78rem;color:var(--cinza-t);">Abra o app do seu banco, escolha Pix, escaneie o QR Code ou cole a chave acima. Chave do tipo <strong>aleatória</strong>.</p>
+    </div>
+
+    <!-- PAINEL BITCOIN -->
+    <div id="painelDoacaoBitcoin" style="display:none;">
+      <img id="btcQrImg" src="" alt="QR Code Bitcoin" style="width:220px;height:220px;margin:6px auto 18px;border-radius:12px;border:1px solid var(--cinza-b);display:block;">
+
+      <div style="background:#F4F6FA;border:1.5px solid #E2E8F0;border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+        <span style="flex:1;font-size:0.78rem;color:var(--cinza-t);word-break:break-all;text-align:left;" id="btcEnderecoTexto">—</span>
+        <button type="button" onclick="copiarEnderecoBitcoin()" style="background:#F7931A;color:#fff;border:none;border-radius:8px;padding:8px 12px;font-weight:700;font-size:0.78rem;cursor:pointer;white-space:nowrap;">Copiar</button>
+      </div>
+
+      <p style="font-size:0.78rem;color:var(--cinza-t);">Escaneie o QR Code ou copie o endereço acima no seu app de carteira Bitcoin. Um novo endereço é gerado a cada doação, por segurança.</p>
+    </div>
   </div>
 </div>
 
@@ -1709,6 +1729,10 @@ function abrirModal(id){document.getElementById(id).classList.add('open');docume
 function fecharModal(id){
   document.getElementById(id).classList.remove('open');
   document.body.style.overflow='';
+  if (id === 'modal-pix') {
+    _enderecoBitcoinAtual = null;
+    alternarAbaDoacao('pix');
+  }
   if (id === 'modal-atingido') {
     removerFoto();
     const comp = document.getElementById('complementoInput');
@@ -2028,6 +2052,67 @@ function gerarPayloadPix(valor) {
     '6304';
 
   return payload + crc16(payload);
+}
+
+function alternarAbaDoacao(aba) {
+  const ehPix = aba === 'pix';
+  document.getElementById('tabPix').style.background = ehPix ? 'var(--azul)' : '#fff';
+  document.getElementById('tabPix').style.color = ehPix ? '#fff' : 'var(--cinza-t)';
+  document.getElementById('tabPix').style.borderColor = ehPix ? 'var(--azul)' : 'var(--cinza-b)';
+  document.getElementById('tabBitcoin').style.background = ehPix ? '#fff' : '#F7931A';
+  document.getElementById('tabBitcoin').style.color = ehPix ? 'var(--cinza-t)' : '#fff';
+  document.getElementById('tabBitcoin').style.borderColor = ehPix ? 'var(--cinza-b)' : '#F7931A';
+  document.getElementById('painelDoacaoPix').style.display = ehPix ? 'block' : 'none';
+  document.getElementById('painelDoacaoBitcoin').style.display = ehPix ? 'none' : 'block';
+
+  if (!ehPix && !_enderecoBitcoinAtual) carregarProximoEnderecoBitcoin();
+}
+
+// ── RODÍZIO DE ENDEREÇOS BITCOIN ──
+// Garante que cada doação mostre um endereço diferente, evitando que
+// todas as doações fiquem visíveis sob o mesmo endereço público.
+let _enderecoBitcoinAtual = null;
+
+async function carregarProximoEnderecoBitcoin() {
+  const txtEl = document.getElementById('btcEnderecoTexto');
+  const qrEl = document.getElementById('btcQrImg');
+  txtEl.textContent = '⏳ Carregando endereço...';
+
+  try {
+    // Busca o estado atual do rodízio e a lista de endereços ativos, em paralelo
+    const [estadoArr, enderecos] = await Promise.all([
+      sbFetch('bitcoin_rodizio_estado?id=eq.1&select=*'),
+      sbFetch('enderecos_bitcoin?ativo=eq.true&order=ordem.asc&select=*')
+    ]);
+
+    if (!enderecos.length) {
+      txtEl.textContent = 'Nenhum endereço Bitcoin configurado no momento.';
+      return;
+    }
+
+    const estado = estadoArr[0] || { ultimo_indice_usado: -1 };
+    const proximoIndice = (estado.ultimo_indice_usado + 1) % enderecos.length;
+    const proximoEndereco = enderecos[proximoIndice];
+
+    // Atualiza o estado do rodízio para o próximo visitante já receber o seguinte
+    await sbFetch(`bitcoin_rodizio_estado?id=eq.1`, {
+      method: 'PATCH',
+      body: JSON.stringify({ ultimo_indice_usado: proximoEndereco.ordem, atualizado_em: new Date().toISOString() })
+    });
+
+    _enderecoBitcoinAtual = proximoEndereco.endereco;
+    txtEl.textContent = _enderecoBitcoinAtual;
+    qrEl.src = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent('bitcoin:' + _enderecoBitcoinAtual)}`;
+  } catch(e) {
+    console.error('Erro ao obter endereço Bitcoin:', e);
+    txtEl.textContent = '⚠️ Erro ao carregar endereço. Tente novamente.';
+  }
+}
+
+function copiarEnderecoBitcoin() {
+  if (!_enderecoBitcoinAtual) return;
+  navigator.clipboard.writeText(_enderecoBitcoinAtual);
+  toast('₿ Endereço copiado!', 'ok');
 }
 
 function abrirModalPix() {
