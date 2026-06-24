@@ -725,6 +725,14 @@ tbody tr:last-child td{border-bottom:none;}
       <div class="page-title" style="color:#FCA5A5;">☢️ Zona de Risco</div>
       <div class="page-sub">Ações nesta página são <strong>permanentes e não podem ser desfeitas</strong> pelo sistema. Um backup em JSON é baixado automaticamente antes de qualquer exclusão, mas a restauração precisa ser feita manualmente no banco de dados.</div>
 
+      <!-- BACKUP COMPLETO -->
+      <div class="zona-risco-card" style="border-color:#15803D;background:#0a1f12;">
+        <div class="zona-risco-titulo" style="color:#86EFAC;">💾 Backup completo do site</div>
+        <div class="zona-risco-desc">Baixa um arquivo JSON com todos os dados de todas as tabelas do site (solicitações, voluntários, confirmações, pontos de apoio, prefeituras, bloqueios, avaliações, registros de chuva, endereços bitcoin, e demais). Ação segura — não exclui nem altera nada, só faz uma cópia.</div>
+        <div id="backupCompletoStatus" style="margin:12px 0;font-size:0.82rem;color:#86EFAC;"></div>
+        <button class="btn-zona-risco" id="btnBackupCompleto" style="background:#15803D;border-color:#22C55E;" onclick="gerarBackupCompleto()">💾 Gerar e baixar backup completo</button>
+      </div>
+
       <!-- EXCLUSÃO REGIONAL -->
       <div class="zona-risco-card">
         <div class="zona-risco-titulo">🗺️ Excluir dados por região</div>
@@ -1805,6 +1813,7 @@ function renderLogs(filtro='') {
     excluir_geral: { emoji: '💣', cor: '#FCA5A5' },
     zerar_ranking: { emoji: '🏆', cor: '#FDE68A' },
     criar_simulacao: { emoji: '🎭', cor: '#C4B5FD' },
+    backup_completo: { emoji: '💾', cor: '#86EFAC' },
     limpar_simulacao: { emoji: '🧹', cor: '#C4B5FD' },
     verificar: { emoji: '✅', cor: '#86EFAC' },
     bloquear: { emoji: '🚫', cor: '#FCA5A5' },
@@ -1979,6 +1988,53 @@ function selecionarCidadeRisco(nome) {
 function fecharListaCidadeRisco() { const el = document.getElementById('listaCidadeRisco'); if (el) el.style.display = 'none'; }
 
 // Faz o backup em JSON de tudo que será excluído, e dispara o download no navegador
+// Lista de todas as tabelas do projeto, usada pelo backup completo
+const TODAS_TABELAS_BACKUP = [
+  'solicitacoes', 'voluntarios', 'confirmacoes', 'avaliacoes',
+  'pontos_apoio', 'prefeituras', 'regioes_bloqueadas',
+  'chuva_manual', 'enderecos_bitcoin', 'bitcoin_rodizio_estado',
+  'logs_admin', 'termos_aceitos',
+];
+
+async function gerarBackupCompleto() {
+  const btn = document.getElementById('btnBackupCompleto');
+  const statusEl = document.getElementById('backupCompletoStatus');
+  btn.disabled = true;
+  btn.textContent = '⏳ Buscando dados...';
+  statusEl.textContent = '';
+
+  const registrosPorTabela = {};
+  const falhas = [];
+
+  for (const tabela of TODAS_TABELAS_BACKUP) {
+    try {
+      registrosPorTabela[tabela] = await sbFetch(`${tabela}?select=*`);
+    } catch(e) {
+      registrosPorTabela[tabela] = [];
+      falhas.push(tabela);
+    }
+  }
+
+  const totalRegistros = Object.values(registrosPorTabela).reduce((s, arr) => s + arr.length, 0);
+
+  btn.textContent = '⏳ Gerando arquivo...';
+  await baixarBackupAntesDeExcluir(registrosPorTabela, 'backup_completo_manual');
+
+  registrarLog('backup_completo', 'todas_tabelas', null, `Gerou backup completo: ${totalRegistros} registro(s) em ${TODAS_TABELAS_BACKUP.length} tabelas`);
+
+  if (falhas.length) {
+    statusEl.innerHTML = `⚠️ Backup gerado com ${totalRegistros} registros, mas ${falhas.length} tabela(s) falharam: ${falhas.join(', ')}`;
+    statusEl.style.color = '#FDE68A';
+  } else {
+    statusEl.textContent = `✅ Backup completo gerado: ${totalRegistros} registros em ${TODAS_TABELAS_BACKUP.length} tabelas.`;
+    statusEl.style.color = '#86EFAC';
+  }
+
+  toast(falhas.length ? '⚠️ Backup gerado com algumas falhas.' : '💾 Backup completo gerado com sucesso!', falhas.length ? 'err' : 'ok');
+  btn.disabled = false;
+  btn.textContent = '💾 Gerar e baixar backup completo';
+}
+
 async function baixarBackupAntesDeExcluir(registrosPorTabela, etiqueta) {
   const backup = {
     gerado_em: new Date().toISOString(),
