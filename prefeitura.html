@@ -234,6 +234,14 @@ tbody tr:last-child td{border-bottom:none;}
       </div>
     </div>
 
+    <!-- CHUVA -->
+    <div class="chart-card" id="cardChuva" style="margin-bottom:24px;">
+      <h3>🌧️ Volume de chuva no período</h3>
+      <div id="chuvaConteudo" style="padding:10px 0;">
+        <div style="text-align:center;color:#64748b;padding:20px;">⏳ Carregando dados meteorológicos...</div>
+      </div>
+    </div>
+
     <!-- CHARTS -->
     <div class="charts-row">
       <!-- Tipos de ajuda -->
@@ -350,22 +358,26 @@ tbody tr:last-child td{border-bottom:none;}
     </div>
 
     <!-- KPIs -->
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:30px;">
-      <div style="background:#EFF6FF;border-radius:14px;padding:18px;text-align:center;">
-        <div id="kpiTotal" style="font-family:'Montserrat',sans-serif;font-weight:900;font-size:2.1rem;color:#1A3C8F;">0</div>
-        <div style="font-size:0.78rem;color:#475569;font-weight:600;">Solicitações no período</div>
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:30px;">
+      <div style="background:#EFF6FF;border-radius:14px;padding:16px 10px;text-align:center;">
+        <div id="kpiTotal" style="font-family:'Montserrat',sans-serif;font-weight:900;font-size:1.9rem;color:#1A3C8F;">0</div>
+        <div style="font-size:0.72rem;color:#475569;font-weight:600;">Solicitações no período</div>
       </div>
-      <div style="background:#FEF2F2;border-radius:14px;padding:18px;text-align:center;">
-        <div id="kpiUrgentes" style="font-family:'Montserrat',sans-serif;font-weight:900;font-size:2.1rem;color:#D92B2B;">0</div>
-        <div style="font-size:0.78rem;color:#475569;font-weight:600;">Urgentes</div>
+      <div style="background:#FEF2F2;border-radius:14px;padding:16px 10px;text-align:center;">
+        <div id="kpiUrgentes" style="font-family:'Montserrat',sans-serif;font-weight:900;font-size:1.9rem;color:#D92B2B;">0</div>
+        <div style="font-size:0.72rem;color:#475569;font-weight:600;">Urgentes</div>
       </div>
-      <div style="background:#FFFBEB;border-radius:14px;padding:18px;text-align:center;">
-        <div id="kpiSemVol" style="font-family:'Montserrat',sans-serif;font-weight:900;font-size:2.1rem;color:#D97706;">0</div>
-        <div style="font-size:0.78rem;color:#475569;font-weight:600;">Sem voluntário</div>
+      <div style="background:#FFFBEB;border-radius:14px;padding:16px 10px;text-align:center;">
+        <div id="kpiSemVol" style="font-family:'Montserrat',sans-serif;font-weight:900;font-size:1.9rem;color:#D97706;">0</div>
+        <div style="font-size:0.72rem;color:#475569;font-weight:600;">Sem voluntário</div>
       </div>
-      <div style="background:#ECFDF5;border-radius:14px;padding:18px;text-align:center;">
-        <div id="kpiVoluntarios" style="font-family:'Montserrat',sans-serif;font-weight:900;font-size:2.1rem;color:#059669;">0</div>
-        <div style="font-size:0.78rem;color:#475569;font-weight:600;">Voluntários na cidade</div>
+      <div style="background:#ECFDF5;border-radius:14px;padding:16px 10px;text-align:center;">
+        <div id="kpiVoluntarios" style="font-family:'Montserrat',sans-serif;font-weight:900;font-size:1.9rem;color:#059669;">0</div>
+        <div style="font-size:0.72rem;color:#475569;font-weight:600;">Voluntários na cidade</div>
+      </div>
+      <div style="background:#EFF6FF;border-radius:14px;padding:16px 10px;text-align:center;">
+        <div id="kpiChuva" style="font-family:'Montserrat',sans-serif;font-weight:900;font-size:1.9rem;color:#2563EB;">—</div>
+        <div style="font-size:0.72rem;color:#475569;font-weight:600;">Chuva acumulada (mm)</div>
       </div>
     </div>
 
@@ -665,6 +677,74 @@ async function verificarPontoApoioPref(id) {
 // ── CARREGAR DADOS ──
 let _dadosExportacao = { sols: [], vols: [], confs: [], avals: [], periodo: '' };
 
+// ── DADOS DE CHUVA (OPEN-METEO) ──
+let _coordCidadeCache = {}; // evita geocodificar a mesma cidade repetidamente
+
+async function obterCoordenadasCidade(cidade, estado) {
+  const chave = `${cidade}|${estado}`;
+  if (_coordCidadeCache[chave]) return _coordCidadeCache[chave];
+
+  try {
+    const q = encodeURIComponent(`${cidade}, ${estado}, Brasil`);
+    const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1`);
+    const data = await res.json();
+    if (!data.length) return null;
+    const coord = { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+    _coordCidadeCache[chave] = coord;
+    return coord;
+  } catch(e) {
+    console.warn('Erro ao geocodificar cidade para busca de chuva:', e);
+    return null;
+  }
+}
+
+// Retorna o volume de chuva (mm) acumulado no período, e o detalhe por dia
+async function buscarVolumeChuva(cidade, estado, dias) {
+  try {
+    const coord = await obterCoordenadasCidade(cidade, estado);
+    if (!coord) return null;
+
+    const hoje = new Date();
+    const dataFim = hoje.toISOString().slice(0, 10);
+    // Open-Meteo tem uma pequena defasagem na disponibilidade dos dados mais recentes;
+    // usamos pelo menos 7 dias para garantir uma janela com dados, mesmo em "todo o período"
+    const diasConsulta = dias > 0 ? dias : 30;
+    const dataInicio = new Date(hoje.getTime() - diasConsulta * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
+    const url = `https://archive-api.open-meteo.com/v1/archive?latitude=${coord.lat}&longitude=${coord.lng}&start_date=${dataInicio}&end_date=${dataFim}&daily=precipitation_sum&timezone=America%2FSao_Paulo`;
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const data = await res.json();
+
+    const valores = (data.daily?.precipitation_sum || []).filter(v => v !== null);
+    if (!valores.length) return null;
+
+    const total = valores.reduce((a, b) => a + b, 0);
+    const maximoDiario = Math.max(...valores);
+    const diaMaisChuvoso = data.daily.time[data.daily.precipitation_sum.indexOf(maximoDiario)];
+
+    return {
+      totalMm: Math.round(total * 10) / 10,
+      maximoDiarioMm: Math.round(maximoDiario * 10) / 10,
+      diaMaisChuvoso,
+      diasComChuva: valores.filter(v => v > 0).length,
+      serie: data.daily.time.map((t, i) => ({ data: t, mm: data.daily.precipitation_sum[i] })),
+    };
+  } catch(e) {
+    console.warn('Erro ao buscar volume de chuva:', e);
+    return null;
+  }
+}
+
+function classificarVolumeChuva(totalMm) {
+  // Faixas de referência aproximadas para volume acumulado em poucos dias
+  if (totalMm >= 150) return { label: 'Extremo', cor: '#D92B2B' };
+  if (totalMm >= 80) return { label: 'Muito alto', cor: '#D97706' };
+  if (totalMm >= 30) return { label: 'Alto', cor: '#CA8A04' };
+  if (totalMm >= 10) return { label: 'Moderado', cor: '#2563EB' };
+  return { label: 'Baixo', cor: '#64748B' };
+}
+
 async function carregarDados() {
   if (!_cidadeAtual) return;
   const dias = parseInt(document.getElementById('periodoSelect').value);
@@ -682,14 +762,15 @@ async function carregarDados() {
 
   try {
     // Busca dados da cidade
-    const [sols, vols, confs, avals] = await Promise.all([
+    const [sols, vols, confs, avals, chuva] = await Promise.all([
       sbFetch(`solicitacoes?cidade=ilike.*${encodeURIComponent(cidade)}*&order=criado_em.desc&select=*${filtroData}`),
       sbFetch(`voluntarios?cidade=ilike.*${encodeURIComponent(cidade)}*&select=*`),
       sbFetch(`confirmacoes?select=*,solicitacoes!inner(cidade)&solicitacoes.cidade=ilike.*${encodeURIComponent(cidade)}*${filtroData}`),
-      sbFetch(`avaliacoes?select=estrelas${filtroData}`)
+      sbFetch(`avaliacoes?select=estrelas${filtroData}`),
+      buscarVolumeChuva(cidade, _cidadeAtual.estado, dias)
     ]);
 
-    _dadosExportacao = { sols, vols, confs, avals, periodo: labelPeriodo };
+    _dadosExportacao = { sols, vols, confs, avals, periodo: labelPeriodo, chuva };
 
     renderStats(sols, vols, confs, avals);
     renderTipos(sols);
@@ -697,6 +778,7 @@ async function carregarDados() {
     renderBairros(sols);
     renderHistorico(sols);
     renderTabela(sols);
+    renderChuva(chuva);
     await carregarPontosApoioPref();
     atualizarMapa(sols);
 
@@ -724,6 +806,42 @@ function renderStats(sols, vols, confs, avals) {
 }
 
 // ── TIPOS DE AJUDA ──
+function renderChuva(chuva) {
+  const el = document.getElementById('chuvaConteudo');
+  if (!el) return;
+
+  if (!chuva) {
+    el.innerHTML = `<div style="text-align:center;color:#64748b;padding:20px;font-size:0.85rem;">
+      Não foi possível obter dados de chuva para esta cidade no momento.
+    </div>`;
+    return;
+  }
+
+  const classif = classificarVolumeChuva(chuva.totalMm);
+  const dataChuvosaFmt = chuva.diaMaisChuvoso ? new Date(chuva.diaMaisChuvoso + 'T12:00:00').toLocaleDateString('pt-BR') : '—';
+
+  el.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;">
+      <div>
+        <div style="font-size:2rem;font-weight:900;color:${classif.cor};">${chuva.totalMm}<span style="font-size:1rem;font-weight:600;"> mm</span></div>
+        <div style="font-size:0.78rem;color:#64748b;">Volume acumulado no período</div>
+        <div style="display:inline-block;margin-top:6px;padding:3px 10px;border-radius:6px;background:${classif.cor}22;color:${classif.cor};font-size:0.75rem;font-weight:700;">${classif.label}</div>
+      </div>
+      <div>
+        <div style="font-size:1.4rem;font-weight:800;color:#1A3C8F;">${chuva.maximoDiarioMm} mm</div>
+        <div style="font-size:0.78rem;color:#64748b;">Dia mais chuvoso (${dataChuvosaFmt})</div>
+      </div>
+      <div>
+        <div style="font-size:1.4rem;font-weight:800;color:#1A3C8F;">${chuva.diasComChuva}</div>
+        <div style="font-size:0.78rem;color:#64748b;">Dias com chuva registrada</div>
+      </div>
+    </div>
+    <div style="margin-top:14px;font-size:0.72rem;color:#94a3b8;">
+      Dados estimados por modelo meteorológico (Open-Meteo), não substituem medição local oficial.
+    </div>
+  `;
+}
+
 function renderTipos(sols) {
   const contagem = {};
   sols.forEach(s => (s.tipos_ajuda||[]).forEach(t => {
@@ -873,7 +991,7 @@ async function exportarRelatorio() {
   btn.textContent = '⏳ Gerando PDF...';
 
   try {
-    const { sols, vols, confs, avals, periodo } = _dadosExportacao;
+    const { sols, vols, confs, avals, periodo, chuva } = _dadosExportacao;
     const cidade = _cidadeAtual?.nome || '—';
 
     const urgentes = sols.filter(s => s.urgencia === 'vermelho');
@@ -891,6 +1009,15 @@ async function exportarRelatorio() {
     document.getElementById('kpiUrgentes').textContent = urgentes.length;
     document.getElementById('kpiSemVol').textContent = semVoluntarios.length;
     document.getElementById('kpiVoluntarios').textContent = vols.length;
+
+    const kpiChuvaEl = document.getElementById('kpiChuva');
+    if (chuva) {
+      const classif = classificarVolumeChuva(chuva.totalMm);
+      kpiChuvaEl.textContent = chuva.totalMm;
+      kpiChuvaEl.style.color = classif.cor;
+    } else {
+      kpiChuvaEl.textContent = '—';
+    }
 
     // Gráfico 1: tipos de ajuda (pizza)
     const contagemTipos = {};
@@ -1067,11 +1194,6 @@ function atualizarMapa(sols) {
       const points = comCoords.map(s => [s.lat, s.lng, s.urgencia==='vermelho'?1.0:0.5]);
       heatLayer = L.heatLayer(points, {radius:35,blur:20,maxZoom:15,gradient:{0.4:'#1A3C8F',0.6:'#D97706',0.8:'#D92B2B'}}).addTo(mapaP);
     }
-    // Pontos de apoio também aparecem como pins no modo calor, já que não fazem
-    // sentido como parte do mapa de densidade de urgência
-    pinsLayer = L.layerGroup();
-    pontosComCoords.forEach(p => adicionarPinPontoApoio(p, pinsLayer));
-    pinsLayer.addTo(mapaP);
   } else {
     pinsLayer = L.layerGroup();
     comCoords.forEach(s => {
