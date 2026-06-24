@@ -733,6 +733,15 @@ tbody tr:last-child td{border-bottom:none;}
         <button class="btn-zona-risco" id="btnBackupCompleto" style="background:#15803D;border-color:#22C55E;" onclick="gerarBackupCompleto()">💾 Gerar e baixar backup completo</button>
       </div>
 
+      <!-- RESTAURAR BACKUP -->
+      <div class="zona-risco-card" style="border-color:#B45309;background:#1f1505;">
+        <div class="zona-risco-titulo" style="color:#FCD34D;">📤 Restaurar a partir de um backup</div>
+        <div class="zona-risco-desc">Envie um arquivo de backup (gerado pela opção acima) para reimportar os dados. Registros com o mesmo ID são atualizados; registros novos são criados. Use em caso de pane, perda de dados, ou ataque.</div>
+        <input type="file" id="inputRestaurarBackup" accept=".json" style="display:none;" onchange="prepararRestauracaoBackup(event)">
+        <button class="btn-zona-risco" style="background:#B45309;border-color:#D97706;margin-top:10px;" onclick="document.getElementById('inputRestaurarBackup').click()">📤 Selecionar arquivo de backup (.json)</button>
+        <div id="restauracaoStatus" style="margin-top:12px;font-size:0.82rem;color:#FCD34D;"></div>
+      </div>
+
       <!-- EXCLUSÃO REGIONAL -->
       <div class="zona-risco-card">
         <div class="zona-risco-titulo">🗺️ Excluir dados por região</div>
@@ -1814,6 +1823,7 @@ function renderLogs(filtro='') {
     zerar_ranking: { emoji: '🏆', cor: '#FDE68A' },
     criar_simulacao: { emoji: '🎭', cor: '#C4B5FD' },
     backup_completo: { emoji: '💾', cor: '#86EFAC' },
+    restaurar_backup: { emoji: '📤', cor: '#FCD34D' },
     limpar_simulacao: { emoji: '🧹', cor: '#C4B5FD' },
     verificar: { emoji: '✅', cor: '#86EFAC' },
     bloquear: { emoji: '🚫', cor: '#FCA5A5' },
@@ -2033,6 +2043,112 @@ async function gerarBackupCompleto() {
   toast(falhas.length ? '⚠️ Backup gerado com algumas falhas.' : '💾 Backup completo gerado com sucesso!', falhas.length ? 'err' : 'ok');
   btn.disabled = false;
   btn.textContent = '💾 Gerar e baixar backup completo';
+}
+
+// ── RESTAURAÇÃO DE BACKUP ──
+let _backupParaRestaurar = null;
+
+function prepararRestauracaoBackup(event) {
+  const arquivo = event.target.files[0];
+  const statusEl = document.getElementById('restauracaoStatus');
+  if (!arquivo) return;
+
+  const leitor = new FileReader();
+  leitor.onload = async (e) => {
+    try {
+      const conteudo = JSON.parse(e.target.result);
+      if (!conteudo.dados || typeof conteudo.dados !== 'object') {
+        throw new Error('Arquivo não tem o formato esperado de backup (faltando campo "dados").');
+      }
+
+      _backupParaRestaurar = conteudo;
+      const tabelasNoArquivo = Object.keys(conteudo.dados).filter(t => Array.isArray(conteudo.dados[t]) && conteudo.dados[t].length > 0);
+      const totalRegistros = tabelasNoArquivo.reduce((s, t) => s + conteudo.dados[t].length, 0);
+
+      const resumoTabelas = tabelasNoArquivo.map(t => `• ${t}: ${conteudo.dados[t].length} registro(s)`).join('\n');
+      const geradoEm = conteudo.gerado_em ? new Date(conteudo.gerado_em).toLocaleString('pt-BR') : 'data desconhecida';
+
+      statusEl.innerHTML = `
+        <div style="background:#2a1a05;border:1px solid #B45309;border-radius:8px;padding:12px;margin-bottom:10px;">
+          <strong>Backup gerado em:</strong> ${geradoEm}<br>
+          <strong>Total:</strong> ${totalRegistros} registro(s) em ${tabelasNoArquivo.length} tabela(s)<br>
+          <pre style="white-space:pre-wrap;font-size:0.78rem;margin:8px 0 0;color:#FCD34D;">${resumoTabelas}</pre>
+        </div>
+        <button class="btn-zona-risco" style="background:#B45309;border-color:#D97706;" onclick="confirmarRestauracaoBackup()">⚠️ Confirmar e restaurar estes dados</button>
+      `;
+    } catch(err) {
+      statusEl.innerHTML = `<div style="color:#FCA5A5;">⚠️ Não foi possível ler o arquivo: ${err.message}</div>`;
+      _backupParaRestaurar = null;
+    }
+  };
+  leitor.readAsText(arquivo);
+}
+
+async function confirmarRestauracaoBackup() {
+  if (!_backupParaRestaurar) return;
+
+  const digitado = prompt('Isso vai inserir ou atualizar registros no banco de dados a partir do arquivo de backup. Registros existentes com o mesmo ID serão sobrescritos pelos dados do backup.\n\nDigite "RESTAURAR" para confirmar:');
+  if (digitado === null) return;
+  if (digitado.trim().toUpperCase() !== 'RESTAURAR') {
+    toast('⚠️ Texto de confirmação não corresponde. Nada foi restaurado.', 'err');
+    return;
+  }
+
+  const totpOk = await exigirCodigoTOTP();
+  if (!totpOk) return;
+
+  await executarRestauracaoBackup(_backupParaRestaurar);
+}
+
+async function executarRestauracaoBackup(backup) {
+  const statusEl = document.getElementById('restauracaoStatus');
+  const token = usuarioAtual?.access_token || SB_KEY;
+  const resultadoPorTabela = {};
+
+  const tabelas = Object.keys(backup.dados).filter(t => Array.isArray(backup.dados[t]) && backup.dados[t].length > 0);
+
+  for (const tabela of tabelas) {
+    statusEl.innerHTML = `⏳ Restaurando "${tabela}"...`;
+    const registros = backup.dados[tabela];
+    let sucesso = 0, falha = 0;
+
+    for (const registro of registros) {
+      try {
+        const res = await fetch(`${SB_URL}/rest/v1/${tabela}`, {
+          method: 'POST',
+          headers: {
+            'apikey': SB_KEY, 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json',
+            'Prefer': 'resolution=merge-duplicates,return=minimal'
+          },
+          body: JSON.stringify(registro)
+        });
+        if (!res.ok) throw new Error(await res.text());
+        sucesso++;
+      } catch(e) {
+        falha++;
+      }
+    }
+    resultadoPorTabela[tabela] = { sucesso, falha };
+  }
+
+  const totalSucesso = Object.values(resultadoPorTabela).reduce((s, r) => s + r.sucesso, 0);
+  const totalFalha = Object.values(resultadoPorTabela).reduce((s, r) => s + r.falha, 0);
+
+  const detalhamento = Object.entries(resultadoPorTabela)
+    .map(([t, r]) => `• ${t}: ${r.sucesso} restaurado(s)${r.falha ? `, ${r.falha} falharam` : ''}`)
+    .join('\n');
+
+  statusEl.innerHTML = `
+    <div style="background:${totalFalha ? '#2a1005' : '#0a1f12'};border:1px solid ${totalFalha ? '#B45309' : '#15803D'};border-radius:8px;padding:12px;">
+      <strong style="color:${totalFalha ? '#FCD34D' : '#86EFAC'};">${totalFalha ? '⚠️ Restauração concluída com falhas' : '✅ Restauração concluída'}</strong><br>
+      <pre style="white-space:pre-wrap;font-size:0.78rem;margin:8px 0 0;color:#cbd5e1;">${detalhamento}</pre>
+    </div>
+  `;
+
+  registrarLog('restaurar_backup', 'multiplas_tabelas', null, `Restaurou backup: ${totalSucesso} registro(s) restaurado(s), ${totalFalha} falha(s), em ${tabelas.length} tabela(s)`);
+  toast(totalFalha ? '⚠️ Restauração concluída com algumas falhas.' : '✅ Backup restaurado com sucesso!', totalFalha ? 'err' : 'ok');
+  _backupParaRestaurar = null;
+  document.getElementById('inputRestaurarBackup').value = '';
 }
 
 async function baixarBackupAntesDeExcluir(registrosPorTabela, etiqueta) {
