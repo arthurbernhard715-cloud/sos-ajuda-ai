@@ -4981,6 +4981,46 @@ function previsualizarFoto(input, prefixo) {
   uploadFotoCloudinary(file, prefixo);
 }
 
+// Comprime uma imagem no próprio navegador antes do upload, reduzindo
+// drasticamente o consumo de banda/armazenamento na Cloudinary sem perda
+// perceptível de qualidade: redimensiona para no máximo 1200px de largura
+// e reexporta como JPEG a 75% de qualidade.
+function comprimirImagem(file, larguraMaxima = 1200, qualidade = 0.75) {
+  return new Promise((resolve) => {
+    // Arquivos que não são imagem (ex: alguns formatos exóticos) seguem sem alteração
+    if (!file.type.startsWith('image/')) { resolve(file); return; }
+
+    const img = new Image();
+    const leitor = new FileReader();
+
+    leitor.onload = (e) => {
+      img.onload = () => {
+        let { width, height } = img;
+        if (width > larguraMaxima) {
+          height = Math.round(height * (larguraMaxima / width));
+          width = larguraMaxima;
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+
+        canvas.toBlob((blob) => {
+          if (!blob) { resolve(file); return; } // fallback: se a compressão falhar, usa o arquivo original
+          const arquivoComprimido = new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg' });
+          resolve(arquivoComprimido);
+        }, 'image/jpeg', qualidade);
+      };
+      img.onerror = () => resolve(file); // fallback: arquivo corrompido ou formato não suportado pelo navegador
+      img.src = e.target.result;
+    };
+    leitor.onerror = () => resolve(file);
+    leitor.readAsDataURL(file);
+  });
+}
+
 async function uploadFotoCloudinary(file, prefixo) {
   prefixo = prefixo || '';
   const uploading = document.getElementById(prefixo + 'fotoUploading');
@@ -4988,8 +5028,13 @@ async function uploadFotoCloudinary(file, prefixo) {
   if (prefixo === 'ponto-') { _fotoUrlPonto = null; } else { _fotoUrl = null; }
 
   try {
+    const tamanhoOriginalKb = Math.round(file.size / 1024);
+    const fileComprimido = await comprimirImagem(file);
+    const tamanhoFinalKb = Math.round(fileComprimido.size / 1024);
+    console.log(`Foto comprimida: ${tamanhoOriginalKb}KB → ${tamanhoFinalKb}KB`);
+
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append('file', fileComprimido);
     formData.append('upload_preset', CLOUDINARY_PRESET);
     formData.append('folder', 'sos-ajuda-ai');
 
