@@ -3686,10 +3686,10 @@ async function abrirAvaliacaoBanner() {
     document.getElementById('avaliacao-sub').textContent = 'Avalie o voluntário';
   } else {
     // Voluntário avaliando a pessoa que recebeu ajuda: não existe um "id de
-    // usuário" para o atingido, então usamos o e-mail da solicitação como
-    // identificador de quem está sendo avaliado.
+    // usuário" para o atingido (avaliado_id é uuid e exige referenciar um
+    // voluntário real), então guardamos o e-mail em avaliado_email, e
+    // avaliado_id fica nulo nesse caso.
     nomeAvaliado = _avalPendente.nome;
-    _avalPendente.avaliado_id = _avalPendente.email_dono || null;
     document.getElementById('avaliacao-nome').textContent = nomeAvaliado;
     document.getElementById('avaliacao-tipo-txt').textContent = 'Como foi ajudar esta família?';
     document.getElementById('avaliacao-sub').textContent = 'Avalie a experiência';
@@ -3698,7 +3698,8 @@ async function abrirAvaliacaoBanner() {
   _avaliacaoData = {
     confirmacao_id: _avalPendente.confirmacao_id,
     avaliador_id:   _avalPendente.avaliador_id,
-    avaliado_id:    _avalPendente.avaliado_id,
+    avaliado_id:    tipo === 'atingido_avalia_voluntario' ? _avalPendente.avaliado_id : null,
+    avaliado_email: tipo === 'voluntario_avalia_atingido' ? (_avalPendente.email_dono || null) : null,
     tipo
   };
 
@@ -3710,11 +3711,12 @@ async function abrirAvaliacaoBanner() {
 }
 
 // Botão avaliar no histórico do painel do voluntário
-async function abrirAvaliacaoHistorico(confId, solNome, avaliadorId, avaliadoId) {
+async function abrirAvaliacaoHistorico(confId, solNome, avaliadorId, avaliadoEmail) {
   _avaliacaoData = {
     confirmacao_id: confId,
     avaliador_id: avaliadorId,
-    avaliado_id: avaliadoId,
+    avaliado_id: null,
+    avaliado_email: avaliadoEmail || null,
     tipo: 'voluntario_avalia_atingido'
   };
   _avalPendente = { confirmacao_id: confId };
