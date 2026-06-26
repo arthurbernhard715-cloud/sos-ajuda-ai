@@ -2752,6 +2752,39 @@ async function confirmarPresenca(solId, btn) {
 // Consulta a tabela regioes_bloqueadas e verifica se o país/estado/cidade
 // informado está impedido de cadastrar. Retorna null se liberado, ou uma
 // mensagem de erro se bloqueado.
+// Verifica se o Modo Priorização está ativo e, se estiver, se a cidade
+// informada está na lista de regiões permitidas. Diferente da verificação
+// de bloqueio (que é sempre ativa), esta só tem efeito quando o admin
+// liga o interruptor manualmente — pensado para momentos de pico, quando
+// é preciso proteger a operação das cidades que já são clientes.
+async function verificarModoPriorizacao(pais, estado, cidade) {
+  try {
+    const config = await sbFetch('config_priorizacao?id=eq.1&select=ativo');
+    const ativo = config?.[0]?.ativo;
+    if (!ativo) return null; // modo desligado: comportamento normal, sem restrição
+
+    const permitidas = await sbFetch('regioes_permitidas?select=*');
+    const norm = (s) => (s || '').trim().toLowerCase();
+    const estadoSigla = norm(siglaDoEstado(estado));
+
+    const permitido = permitidas.find(p => {
+      const permEstadoSigla = norm(siglaDoEstado(p.estado));
+      if (p.nivel === 'pais') return norm(p.pais) === norm(pais);
+      if (p.nivel === 'estado') return norm(p.pais) === norm(pais) && permEstadoSigla === estadoSigla;
+      if (p.nivel === 'cidade') return norm(p.pais) === norm(pais) && permEstadoSigla === estadoSigla && norm(p.cidade) === norm(cidade);
+      return false;
+    });
+
+    if (!permitido) {
+      return '⚠️ Devido ao alto volume de solicitações no momento, o cadastro está temporariamente priorizado para regiões específicas. Tente novamente mais tarde, ou entre em contato com o suporte.';
+    }
+    return null;
+  } catch(e) {
+    console.warn('Erro ao verificar Modo Priorização:', e);
+    return null; // em caso de falha na verificação, não bloqueia o cadastro
+  }
+}
+
 async function verificarRegiaoBloqueada(pais, estado, cidade) {
   try {
     const bloqueios = await sbFetch('regioes_bloqueadas?select=*');
@@ -2809,6 +2842,11 @@ async function submeterCadastroReal() {
   // Verifica se a região está bloqueada para novos cadastros
   const erroRegiao = await verificarRegiaoBloqueada(pais, estado, cidade);
   if (erroRegiao) { toast(erroRegiao); return; }
+
+  // Verifica o Modo Priorização (só tem efeito quando ativado pelo admin
+  // em momento de pico, limitando novas solicitações a cidades específicas)
+  const erroPriorizacao = await verificarModoPriorizacao(pais, estado, cidade);
+  if (erroPriorizacao) { toast(erroPriorizacao); return; }
 
   // Verifica se já existe solicitação ativa neste endereço + complemento
   try {

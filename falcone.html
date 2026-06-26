@@ -372,6 +372,9 @@ tbody tr:last-child td{border-bottom:none;}
       <div class="nav-item" data-page="bloqueios" onclick="irPara('bloqueios')">
         <span class="ni-icon">🚫</span> Regiões Bloqueadas
       </div>
+      <div class="nav-item" data-page="permitidas" onclick="irPara('permitidas')">
+        <span class="ni-icon">🎯</span> Modo Priorização
+      </div>
       <div class="nav-item" data-page="logs" onclick="irPara('logs')">
         <span class="ni-icon">📜</span> Histórico de Ações
       </div>
@@ -872,6 +875,73 @@ tbody tr:last-child td{border-bottom:none;}
         <table>
           <thead><tr><th>Nível</th><th>Local bloqueado</th><th>Motivo</th><th>Criado em</th><th>Ações</th></tr></thead>
           <tbody id="tbody-bloq">
+            <tr class="loading-row"><td colspan="5">⏳ Carregando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- MODO PRIORIZAÇÃO -->
+    <div class="page" id="page-permitidas">
+      <div class="page-title">🎯 Modo Priorização</div>
+      <div class="page-sub">Em momentos de pico (ex: enchente afetando várias cidades ao mesmo tempo), use isto para limitar novas <strong>solicitações de ajuda</strong> apenas às cidades cadastradas abaixo — protegendo a operação para quem já é cliente da plataforma. Cadastro de voluntários continua liberado normalmente em qualquer lugar.</div>
+
+      <div class="zona-risco-card" id="cardInterruptorPriorizacao" style="border-color:#475569;background:#0f1521;">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;">
+          <div>
+            <div class="zona-risco-titulo" id="tituloInterruptorPriorizacao" style="color:#94a3b8;">⚪ Modo Priorização: Desativado</div>
+            <div class="zona-risco-desc" style="margin-top:4px;">Hoje, qualquer cidade pode cadastrar solicitação normalmente.</div>
+          </div>
+          <button class="btn-zona-risco" id="btnToggleInterruptorPriorizacao" style="background:#334155;border-color:#475569;white-space:nowrap;" onclick="alternarModoPriorizacao()">
+            🎯 Ativar Modo Priorização
+          </button>
+        </div>
+      </div>
+
+      <div class="table-wrap" style="margin-bottom:20px;margin-top:20px;">
+        <div class="table-header">
+          <div class="table-title">➕ Adicionar cidade permitida</div>
+        </div>
+        <div style="padding:18px 20px;display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+          <div style="flex:1;min-width:140px;">
+            <label style="display:block;font-size:0.75rem;color:#94a3b8;margin-bottom:5px;">Nível</label>
+            <select id="permNivel" class="table-search" style="width:100%;cursor:pointer;" onchange="atualizarCamposPermissao()">
+              <option value="pais">País</option>
+              <option value="estado">Estado</option>
+              <option value="cidade" selected>Cidade</option>
+            </select>
+          </div>
+          <div style="flex:1;min-width:140px;position:relative;">
+            <label style="display:block;font-size:0.75rem;color:#94a3b8;margin-bottom:5px;">País</label>
+            <input id="permPais" class="table-search" style="width:100%;" value="Brasil" autocomplete="off" oninput="buscarPaisPerm(this.value)" onblur="setTimeout(fecharListaPaisPerm,250)">
+            <div id="listaPaisPerm" class="lista-autocomplete-admin" style="display:none;"></div>
+          </div>
+          <div style="flex:1;min-width:120px;position:relative;" id="wrapPermEstado">
+            <label style="display:block;font-size:0.75rem;color:#94a3b8;margin-bottom:5px;">Estado</label>
+            <input id="permEstado" class="table-search" style="width:100%;" placeholder="Digite o estado..." autocomplete="off" oninput="buscarEstadoPerm(this.value)" onblur="setTimeout(fecharListaEstadoPerm,250)">
+            <div id="listaEstadoPerm" class="lista-autocomplete-admin" style="display:none;"></div>
+          </div>
+          <div style="flex:1.5;min-width:160px;position:relative;" id="wrapPermCidade">
+            <label style="display:block;font-size:0.75rem;color:#94a3b8;margin-bottom:5px;">Cidade</label>
+            <input id="permCidade" class="table-search" style="width:100%;" placeholder="Digite a cidade..." autocomplete="off" oninput="buscarCidadePerm(this.value)" onblur="setTimeout(fecharListaCidadePerm,250)">
+            <div id="listaCidadePerm" class="lista-autocomplete-admin" style="display:none;"></div>
+          </div>
+          <div style="flex:2;min-width:200px;">
+            <label style="display:block;font-size:0.75rem;color:#94a3b8;margin-bottom:5px;">Motivo (opcional, nota interna)</label>
+            <input id="permMotivo" class="table-search" style="width:100%;" placeholder="Ex: Cliente desde jan/2026">
+          </div>
+          <button class="btn-action btn-reativar-admin" style="padding:9px 18px;" onclick="adicionarPermissao()">Permitir</button>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <div class="table-header">
+          <div class="table-title">🎯 Cidades permitidas (quando o modo estiver ativo)</div>
+          <input class="table-search" placeholder="🔍 Buscar..." oninput="filtrarTabela('perm',this.value)">
+        </div>
+        <table>
+          <thead><tr><th>Nível</th><th>Local permitido</th><th>Motivo</th><th>Criado em</th><th>Ações</th></tr></thead>
+          <tbody id="tbody-perm">
             <tr class="loading-row"><td colspan="5">⏳ Carregando...</td></tr>
           </tbody>
         </table>
@@ -1772,6 +1842,292 @@ async function adicionarBloqueio() {
   }
 }
 
+// ── REGIÕES PERMITIDAS (MODO PRIORIZAÇÃO) ──
+let dadosPerm = [];
+let _modoPriorizacaoAtivo = false;
+
+async function carregarConfigPriorizacao() {
+  try {
+    const config = await sbFetch('config_priorizacao?id=eq.1&select=*');
+    _modoPriorizacaoAtivo = config?.[0]?.ativo || false;
+    atualizarVisualInterruptorPriorizacao();
+  } catch(e) {
+    console.warn('Erro ao carregar configuração de priorização:', e);
+  }
+}
+
+function atualizarVisualInterruptorPriorizacao() {
+  const titulo = document.getElementById('tituloInterruptorPriorizacao');
+  const btn = document.getElementById('btnToggleInterruptorPriorizacao');
+  const card = document.getElementById('cardInterruptorPriorizacao');
+  if (!titulo || !btn || !card) return;
+
+  if (_modoPriorizacaoAtivo) {
+    titulo.textContent = '🟢 Modo Priorização: ATIVADO';
+    titulo.style.color = '#86EFAC';
+    titulo.nextElementSibling.textContent = 'Somente as cidades da lista abaixo podem cadastrar novas solicitações de ajuda agora.';
+    btn.textContent = '⏸️ Desativar Modo Priorização';
+    btn.style.background = '#B45309';
+    btn.style.borderColor = '#D97706';
+    card.style.borderColor = '#15803D';
+    card.style.background = '#0a1f12';
+  } else {
+    titulo.textContent = '⚪ Modo Priorização: Desativado';
+    titulo.style.color = '#94a3b8';
+    titulo.nextElementSibling.textContent = 'Hoje, qualquer cidade pode cadastrar solicitação normalmente.';
+    btn.textContent = '🎯 Ativar Modo Priorização';
+    btn.style.background = '#334155';
+    btn.style.borderColor = '#475569';
+    card.style.borderColor = '#475569';
+    card.style.background = '#0f1521';
+  }
+}
+
+async function alternarModoPriorizacao() {
+  const novoEstado = !_modoPriorizacaoAtivo;
+
+  if (novoEstado && !dadosPerm.length) {
+    toast('⚠️ Adicione ao menos uma cidade permitida antes de ativar o Modo Priorização.', 'err');
+    return;
+  }
+
+  const mensagem = novoEstado
+    ? 'Ativar o Modo Priorização? A partir de agora, SÓ as cidades da lista abaixo poderão cadastrar novas solicitações de ajuda. Voluntários continuam liberados normalmente.'
+    : 'Desativar o Modo Priorização? Qualquer cidade voltará a poder cadastrar solicitações normalmente.';
+  if (!confirm(mensagem)) return;
+
+  try {
+    await sbFetch('config_priorizacao?id=eq.1', {
+      method: 'PATCH',
+      body: JSON.stringify({
+        ativo: novoEstado,
+        ativado_em: novoEstado ? new Date().toISOString() : null,
+        ativado_por: novoEstado ? (usuarioAtual?.email || 'admin') : null,
+      })
+    });
+    _modoPriorizacaoAtivo = novoEstado;
+    atualizarVisualInterruptorPriorizacao();
+    registrarLog(novoEstado ? 'ativar_priorizacao' : 'desativar_priorizacao', 'config_priorizacao', null, novoEstado ? 'Ativou o Modo Priorização' : 'Desativou o Modo Priorização');
+    toast(novoEstado ? '🎯 Modo Priorização ativado!' : '✅ Modo Priorização desativado.', 'ok');
+  } catch(e) {
+    toast('⚠️ Erro ao alternar o modo: ' + e.message, 'err');
+  }
+}
+
+async function carregarPermissoes() {
+  try {
+    dadosPerm = await sbFetch('regioes_permitidas?order=criado_em.desc&select=*');
+    renderPermissoes();
+  } catch(e) { toast('Erro ao carregar regiões permitidas: ' + e.message, 'err'); }
+}
+
+function renderPermissoes(filtro='') {
+  const tbody = document.getElementById('tbody-perm');
+  if (!tbody) return;
+
+  let lista = dadosPerm;
+  if (filtro) lista = lista.filter(p =>
+    p.pais?.toLowerCase().includes(filtro) ||
+    p.estado?.toLowerCase().includes(filtro) ||
+    p.cidade?.toLowerCase().includes(filtro) ||
+    p.motivo?.toLowerCase().includes(filtro)
+  );
+
+  if (!lista.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:32px;color:#475569;">Nenhuma cidade permitida cadastrada ainda.</td></tr>';
+    return;
+  }
+
+  const nivelLabel = { pais: '🌎 País', estado: '🗺️ Estado', cidade: '🏙️ Cidade' };
+  const localLabel = (p) => {
+    if (p.nivel === 'pais') return escapeHtml(p.pais);
+    if (p.nivel === 'estado') return `${escapeHtml(p.estado)}, ${escapeHtml(p.pais)}`;
+    return `${escapeHtml(p.cidade)}, ${escapeHtml(p.estado)} — ${escapeHtml(p.pais)}`;
+  };
+
+  tbody.innerHTML = lista.map(p => `
+    <tr>
+      <td><strong style="color:#fff">${nivelLabel[p.nivel] || escapeHtml(p.nivel)}</strong></td>
+      <td style="font-size:0.85rem;color:#e2e8f0;">${localLabel(p)}</td>
+      <td style="font-size:0.78rem;color:#94a3b8;">${escapeHtml(p.motivo || '—')}</td>
+      <td style="font-size:0.78rem;color:#64748b">${new Date(p.criado_em).toLocaleDateString('pt-BR')}</td>
+      <td><button class="btn-action btn-del" onclick="removerPermissao('${p.id}')">🗑️ Remover</button></td>
+    </tr>`).join('');
+}
+
+function atualizarCamposPermissao() {
+  const nivel = document.getElementById('permNivel').value;
+  document.getElementById('wrapPermEstado').style.display = (nivel === 'estado' || nivel === 'cidade') ? '' : 'none';
+  document.getElementById('wrapPermCidade').style.display = (nivel === 'cidade') ? '' : 'none';
+}
+
+const _permConfirmado = { pais: false, estado: false, cidade: false };
+
+let _paisPermTimer = null;
+async function buscarPaisPerm(valor) {
+  _permConfirmado.pais = false;
+  clearTimeout(_paisPermTimer);
+  const lista = document.getElementById('listaPaisPerm');
+  if (!valor || valor.length < 2) { lista.style.display = 'none'; return; }
+  _paisPermTimer = setTimeout(async () => {
+    try {
+      const q = encodeURIComponent(valor);
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=6&addressdetails=1&featureType=country`);
+      const data = await res.json();
+      const vistos = new Set();
+      const paises = data.filter(r => {
+        const nome = r.address?.country || r.display_name.split(',').pop().trim();
+        if (!nome || vistos.has(nome)) return false;
+        vistos.add(nome); return true;
+      }).slice(0,6);
+      if (!paises.length) { lista.style.display='none'; return; }
+      lista.innerHTML = paises.map(r => {
+        const nome = r.address?.country || r.display_name.split(',').pop().trim();
+        return `<div onclick="selecionarPaisPerm('${escapeJsString(nome)}')">🌍 ${nome}</div>`;
+      }).join('');
+      lista.style.display = 'block';
+    } catch(e) {}
+  }, 350);
+}
+function selecionarPaisPerm(nome) {
+  document.getElementById('permPais').value = nome;
+  document.getElementById('listaPaisPerm').style.display = 'none';
+  _permConfirmado.pais = true;
+  _permConfirmado.estado = false;
+  _permConfirmado.cidade = false;
+}
+function fecharListaPaisPerm() { document.getElementById('listaPaisPerm').style.display = 'none'; }
+
+let _estadoPermTimer = null;
+async function buscarEstadoPerm(valor) {
+  _permConfirmado.estado = false;
+  clearTimeout(_estadoPermTimer);
+  const lista = document.getElementById('listaEstadoPerm');
+  if (!valor || valor.length < 2) { lista.style.display = 'none'; return; }
+  _estadoPermTimer = setTimeout(async () => {
+    try {
+      const pais = document.getElementById('permPais').value.trim() || 'Brasil';
+      const q = encodeURIComponent(`${valor}, ${pais}`);
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=6&addressdetails=1`);
+      const data = await res.json();
+      const vistos = new Set();
+      const estados = data.filter(r => {
+        const nome = r.address?.state;
+        if (!nome || vistos.has(nome)) return false;
+        vistos.add(nome); return true;
+      }).slice(0,6);
+      if (!estados.length) { lista.style.display='none'; return; }
+      lista.innerHTML = estados.map(r => {
+        const nome = r.address.state;
+        return `<div onclick="selecionarEstadoPerm('${escapeJsString(nome)}')">🗺️ ${nome}</div>`;
+      }).join('');
+      lista.style.display = 'block';
+    } catch(e) {}
+  }, 350);
+}
+function selecionarEstadoPerm(nome) {
+  document.getElementById('permEstado').value = nome;
+  document.getElementById('listaEstadoPerm').style.display = 'none';
+  _permConfirmado.estado = true;
+  _permConfirmado.cidade = false;
+}
+function fecharListaEstadoPerm() { document.getElementById('listaEstadoPerm').style.display = 'none'; }
+
+let _cidadePermTimer = null;
+async function buscarCidadePerm(valor) {
+  _permConfirmado.cidade = false;
+  clearTimeout(_cidadePermTimer);
+  const lista = document.getElementById('listaCidadePerm');
+  if (!valor || valor.length < 2) { lista.style.display = 'none'; return; }
+  _cidadePermTimer = setTimeout(async () => {
+    try {
+      const estado = document.getElementById('permEstado').value.trim();
+      const pais = document.getElementById('permPais').value.trim() || 'Brasil';
+      const q = encodeURIComponent(`${valor}, ${estado}, ${pais}`);
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=6&addressdetails=1`);
+      const data = await res.json();
+      const vistos = new Set();
+      const cidades = data.filter(r => {
+        const nome = r.address?.city || r.address?.town || r.address?.village;
+        if (!nome || vistos.has(nome)) return false;
+        vistos.add(nome); return true;
+      }).slice(0,6);
+      if (!cidades.length) { lista.style.display='none'; return; }
+      lista.innerHTML = cidades.map(r => {
+        const nome = r.address.city || r.address.town || r.address.village;
+        return `<div onclick="selecionarCidadePerm('${escapeJsString(nome)}')">🏙️ ${nome}</div>`;
+      }).join('');
+      lista.style.display = 'block';
+    } catch(e) {}
+  }, 350);
+}
+function selecionarCidadePerm(nome) {
+  document.getElementById('permCidade').value = nome;
+  document.getElementById('listaCidadePerm').style.display = 'none';
+  _permConfirmado.cidade = true;
+}
+function fecharListaCidadePerm() { document.getElementById('listaCidadePerm').style.display = 'none'; }
+
+async function adicionarPermissao() {
+  const nivel = document.getElementById('permNivel').value;
+  const pais = document.getElementById('permPais').value.trim() || 'Brasil';
+  const estadoDigitado = document.getElementById('permEstado').value.trim();
+  const estado = MAPA_ESTADOS_SIGLA_ADMIN[estadoDigitado] || estadoDigitado.toUpperCase();
+  const cidade = document.getElementById('permCidade').value.trim();
+  const motivo = document.getElementById('permMotivo').value.trim();
+
+  if (!_permConfirmado.pais) {
+    toast('⚠️ Selecione o país a partir da lista de sugestões (não basta digitar).');
+    return;
+  }
+  if ((nivel === 'estado' || nivel === 'cidade') && !_permConfirmado.estado) {
+    toast('⚠️ Selecione o estado a partir da lista de sugestões (não basta digitar).');
+    return;
+  }
+  if (nivel === 'cidade' && !_permConfirmado.cidade) {
+    toast('⚠️ Selecione a cidade a partir da lista de sugestões (não basta digitar).');
+    return;
+  }
+
+  const payload = {
+    nivel, pais,
+    estado: nivel !== 'pais' ? estado : null,
+    cidade: nivel === 'cidade' ? cidade : null,
+    motivo: motivo || null,
+  };
+
+  try {
+    const criado = await sbFetch('regioes_permitidas', { method: 'POST', body: JSON.stringify(payload) });
+    const local = nivel === 'pais' ? pais : nivel === 'estado' ? `${estado}, ${pais}` : `${cidade}, ${estado}`;
+    registrarLog('permitir', 'regioes_permitidas', criado?.[0]?.id, `Adicionou à lista de priorização: ${local}`);
+    toast('🎯 Cidade adicionada à lista de priorização!', 'ok');
+    document.getElementById('permEstado').value = '';
+    document.getElementById('permCidade').value = '';
+    document.getElementById('permMotivo').value = '';
+    _permConfirmado.estado = false;
+    _permConfirmado.cidade = false;
+    await carregarPermissoes();
+  } catch(e) {
+    toast('⚠️ Erro ao adicionar: ' + e.message, 'err');
+  }
+}
+
+async function removerPermissao(id) {
+  if (!confirm('Remover esta cidade da lista de priorização?')) return;
+  try {
+    const item = dadosPerm.find(p => p.id === id);
+    const local = item ? (item.nivel === 'pais' ? item.pais : item.nivel === 'estado' ? `${item.estado}, ${item.pais}` : `${item.cidade}, ${item.estado}`) : id;
+    const token = usuarioAtual?.access_token || SB_KEY;
+    await fetch(`${SB_URL}/rest/v1/regioes_permitidas?id=eq.${id}`, {
+      method: 'DELETE',
+      headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' }
+    });
+    registrarLog('remover_permissao', 'regioes_permitidas', id, `Removeu da lista de priorização: ${local}`);
+    toast('✅ Removido da lista!', 'ok');
+    await carregarPermissoes();
+  } catch(e) { toast('Erro: ' + e.message, 'err'); }
+}
+
 async function removerBloqueio(id) {
   if (!confirm('Remover este bloqueio? A região voltará a poder cadastrar normalmente.')) return;
   try {
@@ -1823,6 +2179,10 @@ function renderLogs(filtro='') {
     zerar_ranking: { emoji: '🏆', cor: '#FDE68A' },
     criar_simulacao: { emoji: '🎭', cor: '#C4B5FD' },
     backup_completo: { emoji: '💾', cor: '#86EFAC' },
+    permitir: { emoji: '🎯', cor: '#86EFAC' },
+    remover_permissao: { emoji: '🎯', cor: '#94a3b8' },
+    ativar_priorizacao: { emoji: '🟢', cor: '#86EFAC' },
+    desativar_priorizacao: { emoji: '⚪', cor: '#94a3b8' },
     restaurar_backup: { emoji: '📤', cor: '#FCD34D' },
     limpar_simulacao: { emoji: '🧹', cor: '#C4B5FD' },
     verificar: { emoji: '✅', cor: '#86EFAC' },
@@ -3046,6 +3406,7 @@ function irPara(pagina) {
   if (pagina === 'pontosapoio') carregarPontosApoioAdmin();
   if (pagina === 'dados') {} // carregamento manual via botão — não busca automaticamente
   if (pagina === 'bloqueios') carregarBloqueios();
+  if (pagina === 'permitidas') { carregarConfigPriorizacao(); carregarPermissoes(); }
   if (pagina === 'logs') carregarLogs();
   if (pagina === 'zonarisco') resetarCamposRisco();
   if (pagina === 'simulacao') { resetarCamposSim(); atualizarResumoSimulacao(); }
@@ -3060,6 +3421,7 @@ function filtrarTabela(tipo, valor) {
   if (tipo === 'pref') renderPrefeituras(v);
   if (tipo === 'pontosapoio') renderPontosApoioAdmin(v);
   if (tipo === 'bloq') renderBloqueios(v);
+  if (tipo === 'perm') renderPermissoes(v);
   if (tipo === 'log') renderLogs(v);
 }
 
