@@ -1072,6 +1072,25 @@ textarea.form-control { resize: vertical; min-height: 88px; }
   </div>
 </div>
 
+<!-- MODAL: CONVITE DE DOAÇÃO PÓS-AVALIAÇÃO -->
+<div class="modal-overlay" id="modal-convite-doacao">
+  <div class="modal" style="max-width:380px;text-align:center;">
+    <button class="modal-close" onclick="fecharModal('modal-convite-doacao')">✕</button>
+    <div style="font-size:2.6rem;margin-bottom:6px;">🤝</div>
+    <h2 id="conviteDoacaoTitulo">Que bom que a ajuda aconteceu!</h2>
+    <p class="modal-sub" id="conviteDoacaoTexto">Histórias como essa só são possíveis porque o site continua no ar. Topa ajudar a manter o SOS Ajuda Aí funcionando para a próxima família?</p>
+
+    <button type="button" onclick="fecharModal('modal-convite-doacao');abrirModalPix();"
+      style="width:100%;background:var(--verm);color:#fff;border:none;border-radius:12px;padding:14px;font-family:'Montserrat',sans-serif;font-weight:700;font-size:0.95rem;cursor:pointer;margin-top:18px;">
+      💛 Quero contribuir
+    </button>
+    <button type="button" onclick="fecharModal('modal-convite-doacao')"
+      style="width:100%;background:transparent;color:var(--cinza-t);border:none;padding:12px;font-family:'Montserrat',sans-serif;font-weight:600;font-size:0.85rem;cursor:pointer;margin-top:4px;">
+      Agora não
+    </button>
+  </div>
+</div>
+
 <!-- MODAL: PONTO DE APOIO (abrigo, mantimentos, doações) -->
 <div class="modal-overlay" id="modal-ponto-apoio">
   <div class="modal">
@@ -4402,10 +4421,32 @@ async function enviarAvaliacao() {
       toast('📨 O voluntário também receberá um convite para te avaliar.', '');
     }, 2000);
 
+    // Convite de doação, com mensagem contextual de acordo com quem está avaliando
+    setTimeout(() => abrirConviteDoacao(_avaliacaoData.tipo), 2600);
+
   } catch(e) {
     toast('⚠️ Erro ao enviar avaliação. Tente novamente.');
     console.error(e);
   }
+}
+
+// Exibe o convite de doação logo após uma avaliação ser enviada — momento em
+// que a ajuda já se concretizou e a pessoa está mais propensa a contribuir.
+function abrirConviteDoacao(tipo) {
+  const titulo = document.getElementById('conviteDoacaoTitulo');
+  const texto = document.getElementById('conviteDoacaoTexto');
+
+  if (tipo === 'atingido_avalia_voluntario') {
+    // Quem foi ajudado, avaliando o voluntário
+    titulo.textContent = 'Que bom que você recebeu ajuda!';
+    texto.textContent = 'Histórias como essa só são possíveis porque o site continua no ar. Se puder, ajude o SOS Ajuda Aí a continuar conectando quem precisa com quem quer ajudar.';
+  } else {
+    // Voluntário, avaliando a pessoa que ele ajudou
+    titulo.textContent = 'Obrigado por fazer a diferença!';
+    texto.textContent = 'Sua ajuda mudou o dia de uma família. Topa também contribuir para manter o site funcionando para a próxima pessoa que precisar?';
+  }
+
+  abrirModal('modal-convite-doacao');
 }
 
 async function atualizarMediaVoluntario(volId) {
