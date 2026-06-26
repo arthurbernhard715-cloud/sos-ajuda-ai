@@ -4,30 +4,25 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SOS Ajuda Aí — Conectando quem precisa, com quem quer ajudar!</title>
-<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Barlow:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root {
-  --azul:     #0B1F4D;
-  --azul-esc: #071534;
-  --azul-med: #15326B;
-  --verm:     #E63946;
-  --verm-c:   #C42836;
-  --ambar:    #F4A300;
-  --verde:    #1B998B;
-  --cinza-f:  #FFFDF7;
-  --cinza-b:  #E5E1D6;
-  --cinza-t:  #5A6B8C;
+  --azul:     #1A3C8F;
+  --azul-esc: #0F2460;
+  --azul-med: #2255C4;
+  --verm:     #D92B2B;
+  --verm-c:   #b91c1c;
+  --cinza-f:  #F4F6FA;
+  --cinza-b:  #E2E8F0;
+  --cinza-t:  #64748B;
   --branco:   #FFFFFF;
-  --sombra:   0 4px 24px rgba(11,31,77,0.10);
-  --sombra-f: 0 8px 40px rgba(11,31,77,0.18);
-  --radius:   8px;
-  --font-display: 'Archivo Black', sans-serif;
-  --font-corpo: 'Barlow', sans-serif;
-  --font-dado: 'JetBrains Mono', monospace;
+  --sombra:   0 4px 24px rgba(26,60,143,0.10);
+  --sombra-f: 0 8px 40px rgba(26,60,143,0.18);
+  --radius:   16px;
 }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
-body { font-family: var(--font-corpo); background: var(--cinza-f); color: #1E2A4A; overflow-x: hidden; }
+body { font-family: 'Inter', sans-serif; background: var(--cinza-f); color: #1E293B; overflow-x: hidden; }
 
 /* ── NAV ── */
 nav {
@@ -56,107 +51,76 @@ nav.scrolled {
   display: grid;
   grid-template-columns: 1.15fr 0.85fr;
   min-height: 100vh;
-  background: var(--azul);
-  position: relative;
-  overflow: hidden;
-  padding-top: 70px;
+  padding-top: 0;
 }
-.hero-livebar {
-  position: absolute; top: 70px; left: 0; right: 0; height: 38px;
-  background: var(--azul-esc);
-  display: flex; align-items: center; padding: 0 32px; gap: 10px;
-  border-bottom: 1px solid rgba(255,255,255,0.08);
-  z-index: 5;
+.hero-img {
+  position: relative; overflow: hidden;
 }
-.hero-live-dot {
-  width: 7px; height: 7px; border-radius: 50%; background: var(--verm);
-  animation: hero-pulse 1.6s infinite;
+.hero-img img {
+  width: 100%; height: 100%;
+  object-fit: cover; object-position: center top;
+  display: block;
 }
-@keyframes hero-pulse {
-  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(230,57,70,0.5); }
-  50% { opacity: 0.6; box-shadow: 0 0 0 5px rgba(230,57,70,0); }
+.hero-img::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(to right, transparent 65%, rgba(255,255,255,0.97) 100%);
+  pointer-events: none;
 }
-.hero-live-label {
-  font-family: var(--font-dado); font-size: .7rem; font-weight: 700;
-  color: #FFD9DC; letter-spacing: .1em; text-transform: uppercase;
-}
-.hero-live-info { font-family: var(--font-dado); font-size: .7rem; color: #A8B8E0; }
-
-.hero-painel {
-  padding: 130px 48px 56px;
-  display: flex; flex-direction: column; justify-content: center;
-}
-.hero-eyebrow {
-  font-family: var(--font-dado); font-size: .72rem; color: var(--ambar);
-  letter-spacing: .1em; text-transform: uppercase; margin-bottom: 16px; font-weight: 700;
-}
-.hero-titulo {
-  font-family: var(--font-display); font-size: 2.6rem; line-height: 1.06;
-  color: #fff; margin-bottom: 18px; letter-spacing: -0.01em;
-}
-.hero-destaque { color: var(--ambar); }
-.hero-subtitulo {
-  font-family: var(--font-corpo); font-size: .98rem; color: #B9C4E8;
-  line-height: 1.6; max-width: 420px; margin-bottom: 32px;
-}
-.hero-numeros { display: flex; gap: 30px; flex-wrap: wrap; }
-.hero-numero {
-  font-family: var(--font-dado); font-weight: 700; font-size: 1.85rem; color: #fff;
-}
-.hero-numero-urgente { color: #FF6B73; }
-.hero-numero-label {
-  font-family: var(--font-corpo); font-size: .68rem; color: #7E8FC2;
-  text-transform: uppercase; letter-spacing: .05em; margin-top: 3px; font-weight: 600;
-}
-
-.hero-acoes {
-  background: var(--cinza-f);
-  padding: 130px 48px 56px;
-  display: flex; flex-direction: column; justify-content: center;
+.hero-panel {
+  background: rgba(255,255,255,0.92);
+  backdrop-filter: blur(10px);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 90px 52px; text-align: center;
   position: relative;
 }
-.hero-acoes::before {
-  content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 5px;
-  background: var(--ambar);
+.hero-panel::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
+  background: linear-gradient(90deg, var(--azul), var(--verm));
 }
-.hero-btn-principal {
-  background: var(--verm); color: #fff; border: none; border-radius: var(--radius);
-  padding: 18px 22px; font-family: var(--font-corpo); font-weight: 700; font-size: 1.02rem;
-  text-align: left; cursor: pointer; display: flex; align-items: center; gap: 12px;
-  margin-bottom: 12px; width: 100%; max-width: 360px;
-  box-shadow: 0 4px 0 var(--verm-c); transition: transform .1s;
+.panel-logo { 
+  height: 180px; width: auto; margin-bottom: 18px;
+  object-fit: contain;
 }
-.hero-btn-principal:hover { transform: translateY(2px); box-shadow: 0 2px 0 var(--verm-c); }
-.hero-btn-icone { font-size: 1.4rem; flex-shrink: 0; }
-.hero-btn-textos { display: flex; flex-direction: column; }
-.hero-btn-label { font-size: 1rem; }
-.hero-btn-sub { font-size: .72rem; font-weight: 400; opacity: .85; margin-top: 2px; }
-.hero-btn-secundario {
-  background: #fff; color: var(--azul); border: 2px solid var(--azul); border-radius: var(--radius);
-  padding: 14px 22px; font-family: var(--font-corpo); font-weight: 600; font-size: .92rem;
-  text-align: left; cursor: pointer; display: flex; align-items: center; gap: 12px;
-  margin-bottom: 10px; width: 100%; max-width: 360px; transition: all .2s;
+.panel-slogan { font-size: 1rem; color: var(--cinza-t); line-height: 1.75; max-width: 290px; margin-bottom: 28px; font-style: italic; }
+.panel-slogan strong { color: var(--verm); font-style: normal; }
+.btn-verm {
+  width: 100%; max-width: 290px; display: block;
+  background: var(--verm); color: #fff;
+  padding: 14px; border-radius: 12px; border: none; cursor: pointer;
+  font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: .93rem;
+  box-shadow: 0 4px 18px rgba(217,43,43,0.32); transition: all .2s; margin-bottom: 11px;
 }
-.hero-btn-secundario:hover { background: var(--azul); color: #fff; }
-.hero-btn-terciario {
-  background: transparent; color: var(--cinza-t); border: 1.5px dashed var(--cinza-b); border-radius: var(--radius);
-  padding: 11px 22px; font-family: var(--font-corpo); font-weight: 600; font-size: .84rem;
-  text-align: left; cursor: pointer; display: flex; align-items: center; gap: 10px;
-  width: 100%; max-width: 360px; transition: all .2s;
+.btn-verm:hover { background: var(--verm-c); transform: translateY(-1px); }
+.btn-azul {
+  width: 100%; max-width: 290px; display: block;
+  background: transparent; color: var(--azul);
+  padding: 13px; border-radius: 12px; border: 2px solid var(--azul); cursor: pointer;
+  font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: .93rem; transition: all .2s;
 }
-.hero-btn-terciario:hover { border-color: var(--ambar); color: var(--ambar); background: rgba(244,163,0,0.06); }
-.hero-citacao {
-  margin-top: 24px; font-family: var(--font-corpo); font-style: italic; font-weight: 500;
-  font-size: .85rem; color: var(--cinza-t); border-left: 3px solid var(--ambar); padding-left: 12px;
-  max-width: 360px;
+.btn-azul:hover { background: var(--azul); color: #fff; }
+.btn-apoiar {
+  width: 100%; max-width: 290px; display: block;
+  background: transparent; color: var(--cinza-t);
+  padding: 11px; border-radius: 12px; border: 1.5px dashed var(--cinza-b); cursor: pointer;
+  font-family: 'Montserrat', sans-serif; font-weight: 600; font-size: .85rem; transition: all .2s;
+  margin-top: 11px;
 }
+.btn-apoiar:hover { border-color: #C9A227; color: #C9A227; background: rgba(201,162,39,0.06); }
+.panel-divider { width: 100%; max-width: 290px; height: 1px; background: var(--cinza-b); margin: 24px 0; }
+.stats { display: grid; grid-template-columns: repeat(2,1fr); gap: 10px; width: 100%; max-width: 290px; }
+.stat { background: var(--cinza-f); border-radius: 12px; padding: 14px 10px; text-align: center; border: 1.5px solid var(--cinza-b); transition: border-color .2s; }
+.stat:hover { border-color: var(--azul-med); }
+.stat-n { font-family: 'Montserrat', sans-serif; font-weight: 900; font-size: 1.4rem; color: var(--azul); line-height: 1; }
+.stat-n em { color: var(--verm); font-size: .75rem; font-style: normal; }
+.stat-l { font-size: .65rem; color: #94a3b8; margin-top: 4px; text-transform: uppercase; letter-spacing: .03em; }
 
 /* ── SECTION BASE ── */
 .section { padding: 80px 5%; }
 .section-title { text-align: center; margin-bottom: 52px; }
 .section-title .eyebrow { display: inline-block; background: #EEF2FF; color: var(--azul-med); font-size: .73rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; padding: 5px 14px; border-radius: 99px; margin-bottom: 12px; }
 .section-title .eyebrow-red { background: #FEF2F2; color: var(--verm); }
-.section-title h2 { font-family:var(--font-display); font-weight: 900; font-size: clamp(1.6rem,3vw,2.2rem); color: var(--azul-esc); margin-bottom: 10px; }
+.section-title h2 { font-family: 'Montserrat', sans-serif; font-weight: 900; font-size: clamp(1.6rem,3vw,2.2rem); color: var(--azul-esc); margin-bottom: 10px; }
 .section-title p { color: var(--cinza-t); font-size: 1rem; max-width: 480px; margin: 0 auto; line-height: 1.65; }
 
 /* ── COMO FUNCIONA ── */
@@ -164,18 +128,18 @@ nav.scrolled {
 .steps { display: grid; grid-template-columns: repeat(4,1fr); gap: 24px; max-width: 1060px; margin: 0 auto; }
 .step { background: var(--cinza-f); border-radius: var(--radius); padding: 32px 22px; text-align: center; border: 1.5px solid var(--cinza-b); transition: box-shadow .2s, transform .2s; }
 .step:hover { box-shadow: var(--sombra-f); transform: translateY(-4px); }
-.step-num { width: 44px; height: 44px; background: var(--azul); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family:var(--font-display); font-weight: 900; font-size: 1.1rem; margin: 0 auto 16px; }
+.step-num { width: 44px; height: 44px; background: var(--azul); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'Montserrat', sans-serif; font-weight: 900; font-size: 1.1rem; margin: 0 auto 16px; }
 .step-icon { font-size: 2.2rem; margin-bottom: 14px; }
-.step h3 { font-family:var(--font-display); font-weight: 700; font-size: .97rem; color: var(--azul); margin-bottom: 8px; }
+.step h3 { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: .97rem; color: var(--azul); margin-bottom: 8px; }
 .step p { font-size: .85rem; color: var(--cinza-t); line-height: 1.6; }
 
 /* ── SOLICITAÇÕES ── */
 .solicitacoes { background: var(--cinza-f); }
 .busca-wrap { max-width: 640px; margin: 0 auto 32px; background: #fff; border-radius: var(--radius); padding: 28px 32px; box-shadow: var(--sombra); }
 .busca-row { display: flex; gap: 10px; margin-bottom: 18px; }
-.busca-input { flex: 1; padding: 12px 16px; border: 2px solid var(--cinza-b); border-radius: 10px; font-size: .93rem; font-family:var(--font-corpo); outline: none; transition: border .2s; }
+.busca-input { flex: 1; padding: 12px 16px; border: 2px solid var(--cinza-b); border-radius: 10px; font-size: .93rem; font-family: 'Inter', sans-serif; outline: none; transition: border .2s; }
 .busca-input:focus { border-color: var(--azul-med); }
-.busca-btn { background: var(--azul); color: #fff; border: none; border-radius: 10px; padding: 0 22px; font-weight: 700; font-size: .88rem; font-family:var(--font-display); cursor: pointer; transition: background .2s; white-space: nowrap; }
+.busca-btn { background: var(--azul); color: #fff; border: none; border-radius: 10px; padding: 0 22px; font-weight: 700; font-size: .88rem; font-family: 'Montserrat', sans-serif; cursor: pointer; transition: background .2s; white-space: nowrap; }
 .busca-btn:hover { background: var(--azul-med); }
 .filtros { display: flex; gap: 8px; flex-wrap: wrap; }
 .filtro { background: #fff; border: 1.5px solid var(--cinza-b); color: #475569; border-radius: 99px; padding: 6px 16px; font-size: .82rem; font-weight: 600; cursor: pointer; transition: all .15s; }
@@ -189,7 +153,7 @@ nav.scrolled {
 .btn-cadastrar-ponto {
   display: block; margin: 14px auto 0; background: #fff; color: #C9A227;
   border: 1.5px solid #C9A227; border-radius: 12px; padding: 11px 20px;
-  font-family:var(--font-display); font-weight: 700; font-size: .85rem;
+  font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: .85rem;
   cursor: pointer; transition: all .2s;
 }
 .btn-cadastrar-ponto:hover { background: #C9A227; color: #fff; }
@@ -207,14 +171,14 @@ nav.scrolled {
 }
 .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px,1fr)); gap: 20px; max-width: 1100px; margin: 0 auto; }
 .carregar-mais-wrap { display: flex; justify-content: center; max-width: 1100px; margin: 28px auto 0; }
-.btn-carregar-mais { background: #fff; color: #1A3C8F; border: 1.5px solid #1A3C8F; border-radius: 99px; padding: 12px 28px; font-family:var(--font-display); font-weight: 700; font-size: 0.9rem; cursor: pointer; transition: background .2s, color .2s; }
+.btn-carregar-mais { background: #fff; color: #1A3C8F; border: 1.5px solid #1A3C8F; border-radius: 99px; padding: 12px 28px; font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 0.9rem; cursor: pointer; transition: background .2s, color .2s; }
 .btn-carregar-mais:hover { background: #1A3C8F; color: #fff; }
 .card { background: #fff; border-radius: var(--radius); overflow: hidden; box-shadow: var(--sombra); border: 1.5px solid var(--cinza-b); transition: box-shadow .2s, transform .2s; cursor: pointer; }
 .card:hover { box-shadow: var(--sombra-f); transform: translateY(-3px); }
 .card-img { height: 150px; background: linear-gradient(135deg,#1e3a8a,#374151); display: flex; align-items: center; justify-content: center; font-size: 3rem; position: relative; }
 .badge-urgente { position: absolute; top: 12px; right: 12px; background: var(--verm); color: #fff; font-size: .7rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: 4px 10px; border-radius: 6px; }
 .card-body { padding: 18px; }
-.card-nome { font-family:var(--font-display); font-weight: 700; font-size: .97rem; color: var(--azul); margin-bottom: 3px; }
+.card-nome { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: .97rem; color: var(--azul); margin-bottom: 3px; }
 .card-local { font-size: .8rem; color: var(--cinza-t); margin-bottom: 9px; }
 .card-desc { font-size: .83rem; color: #475569; line-height: 1.55; margin-bottom: 12px; }
 .card-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
@@ -224,7 +188,7 @@ nav.scrolled {
 .vol-label { font-size: .75rem; color: var(--cinza-t); margin-bottom: 4px; }
 .bar-bg { height: 5px; background: var(--cinza-b); border-radius: 99px; overflow: hidden; }
 .bar-fill { height: 100%; background: linear-gradient(90deg,var(--azul-med),var(--verm)); border-radius: 99px; }
-.btn-ajudar { background: var(--verm); color: #fff; border: none; border-radius: 8px; cursor: pointer; padding: 8px 16px; font-weight: 700; font-size: .8rem; font-family:var(--font-display); transition: background .2s; white-space: nowrap; }
+.btn-ajudar { background: var(--verm); color: #fff; border: none; border-radius: 8px; cursor: pointer; padding: 8px 16px; font-weight: 700; font-size: .8rem; font-family: 'Montserrat', sans-serif; transition: background .2s; white-space: nowrap; }
 .btn-ajudar:hover { background: var(--verm-c); }
 .card-add { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; border: 2px dashed var(--cinza-b); cursor: pointer; background: #fff; }
 .card-add:hover { border-color: var(--azul-med); background: #F8FAFF; }
@@ -234,7 +198,7 @@ nav.scrolled {
 .ranking-tabs { display: flex; justify-content: center; gap: 8px; margin-bottom: 28px; }
 .ranking-tab {
   background: #fff; border: 1.5px solid var(--cinza-b); color: #475569;
-  border-radius: 99px; padding: 9px 20px; font-family:var(--font-display);
+  border-radius: 99px; padding: 9px 20px; font-family: 'Montserrat', sans-serif;
   font-weight: 700; font-size: .85rem; cursor: pointer; transition: all .2s;
 }
 .ranking-tab:hover { border-color: var(--azul-med); color: var(--azul); }
@@ -242,7 +206,7 @@ nav.scrolled {
 .ranking-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(280px,1fr)); gap: 18px; max-width: 960px; margin: 0 auto; }
 .rank-card { background: var(--cinza-f); border-radius: var(--radius); padding: 22px; display: flex; align-items: center; gap: 14px; border: 1.5px solid var(--cinza-b); transition: box-shadow .2s; }
 .rank-card:hover { box-shadow: var(--sombra); }
-.rank-pos { width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family:var(--font-display); font-weight: 900; font-size: 1.1rem; flex-shrink: 0; }
+.rank-pos { width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'Montserrat', sans-serif; font-weight: 900; font-size: 1.1rem; flex-shrink: 0; }
 .gold { background: #FEF3C7; color: #D97706; }
 .silver { background: #F1F5F9; color: #64748B; }
 .bronze { background: #FEF0E6; color: #C2693C; }
@@ -252,16 +216,16 @@ nav.scrolled {
 .rank-cidade { font-size: .78rem; color: var(--cinza-t); }
 .rank-badges { display: flex; gap: 3px; margin-top: 3px; font-size: .9rem; }
 .rank-pts { text-align: right; }
-.rank-pts-n { font-family:var(--font-display); font-weight: 900; font-size: 1.15rem; color: var(--verm); }
+.rank-pts-n { font-family: 'Montserrat', sans-serif; font-weight: 900; font-size: 1.15rem; color: var(--verm); }
 .rank-pts-l { font-size: .7rem; color: var(--cinza-t); }
 
 /* ── APOIE ── */
 .apoie { background: linear-gradient(135deg,#FEF2F2,#FFF5F5); border-top: 3px solid #FCA5A5; text-align: center; }
 .apoie h2 { color: var(--verm) !important; }
 .doacao-opcoes { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin: 24px 0; }
-.d-val { background: #fff; border: 2px solid #FECACA; color: var(--verm); border-radius: 12px; padding: 12px 26px; cursor: pointer; font-family:var(--font-display); font-weight: 800; font-size: 1rem; transition: all .15s; }
+.d-val { background: #fff; border: 2px solid #FECACA; color: var(--verm); border-radius: 12px; padding: 12px 26px; cursor: pointer; font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: 1rem; transition: all .15s; }
 .d-val:hover, .d-val.ativo { background: var(--verm); color: #fff; border-color: var(--verm); }
-.btn-doar { background: var(--verm); color: #fff; padding: 15px 40px; border-radius: 12px; border: none; cursor: pointer; font-family:var(--font-display); font-weight: 700; font-size: 1rem; box-shadow: 0 4px 18px rgba(217,43,43,0.3); transition: all .2s; }
+.btn-doar { background: var(--verm); color: #fff; padding: 15px 40px; border-radius: 12px; border: none; cursor: pointer; font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 1rem; box-shadow: 0 4px 18px rgba(217,43,43,0.3); transition: all .2s; }
 .btn-doar:hover { background: var(--verm-c); transform: translateY(-1px); }
 .quem-somos {
   display: flex; gap: 18px; align-items: flex-start; text-align: left;
@@ -272,7 +236,7 @@ nav.scrolled {
   flex-shrink: 0; width: 72px; height: 72px; border-radius: 50%;
   object-fit: cover; border: 2px solid var(--azul);
 }
-.quem-somos-titulo { font-family:var(--font-display); font-weight: 700; color: var(--azul); font-size: .92rem; margin-bottom: 8px; }
+.quem-somos-titulo { font-family: 'Montserrat', sans-serif; font-weight: 700; color: var(--azul); font-size: .92rem; margin-bottom: 8px; }
 .quem-somos-texto p { font-size: .85rem; color: #475569; line-height: 1.6; }
 .quem-somos-texto a { color: var(--azul); font-weight: 600; }
 .parceiros { margin-top: 36px; }
@@ -287,7 +251,7 @@ footer { background: var(--azul-esc); padding: 52px 5% 24px; color: #93C5FD; }
 .footer-brand { max-width: 260px; }
 .footer-brand img { height: 56px; width: auto; margin-bottom: 12px; }
 .footer-brand p { font-size: .84rem; line-height: 1.65; color: #93C5FD; }
-.footer-col h4 { font-family:var(--font-display); font-weight: 700; color: #fff; font-size: .88rem; margin-bottom: 14px; }
+.footer-col h4 { font-family: 'Montserrat', sans-serif; font-weight: 700; color: #fff; font-size: .88rem; margin-bottom: 14px; }
 .footer-col a { display: block; font-size: .83rem; color: #93C5FD; text-decoration: none; margin-bottom: 8px; transition: color .2s; }
 .footer-col a:hover { color: #fff; }
 .footer-bottom { border-top: 1px solid rgba(255,255,255,0.08); padding-top: 20px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
@@ -299,7 +263,7 @@ footer { background: var(--azul-esc); padding: 52px 5% 24px; color: #93C5FD; }
 .footer-strip { background: var(--azul-esc); padding: 20px 5%; display: flex; justify-content: center; gap: 48px; flex-wrap: wrap; border-top: 3px solid var(--verm); }
 .fs-item { display: flex; align-items: center; gap: 10px; }
 .fs-icon { font-size: 1.3rem; }
-.fs-txt { font-family:var(--font-display); font-weight: 700; font-size: .79rem; color: #fff; line-height: 1.3; }
+.fs-txt { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: .79rem; color: #fff; line-height: 1.3; }
 .fs-txt small { display: block; color: #475569; font-weight: 400; font-size: .69rem; }
 
 /* ── MODAIS ── */
@@ -308,11 +272,11 @@ footer { background: var(--azul-esc); padding: 52px 5% 24px; color: #93C5FD; }
 .modal { background: #fff; border-radius: var(--radius); padding: 36px; max-width: 520px; width: 100%; max-height: 90vh; overflow-y: auto; position: relative; box-shadow: 0 20px 60px rgba(0,0,0,.35); }
 .modal-close { position: absolute; top: 14px; right: 14px; width: 32px; height: 32px; background: var(--cinza-f); border: none; border-radius: 8px; cursor: pointer; font-size: 1rem; display: flex; align-items: center; justify-content: center; }
 .modal-close:hover { background: var(--cinza-b); }
-.modal h2 { font-family:var(--font-display); font-weight: 900; font-size: 1.35rem; color: var(--azul); margin-bottom: 6px; }
+.modal h2 { font-family: 'Montserrat', sans-serif; font-weight: 900; font-size: 1.35rem; color: var(--azul); margin-bottom: 6px; }
 .modal-sub { font-size: .86rem; color: var(--cinza-t); margin-bottom: 24px; }
 .form-group { margin-bottom: 16px; }
 .form-group label { display: block; font-size: .83rem; font-weight: 600; color: #374151; margin-bottom: 5px; }
-.form-control { width: 100%; padding: 11px 13px; border: 2px solid var(--cinza-b); border-radius: 10px; font-size: .9rem; font-family:var(--font-corpo); outline: none; transition: border .2s; }
+.form-control { width: 100%; padding: 11px 13px; border: 2px solid var(--cinza-b); border-radius: 10px; font-size: .9rem; font-family: 'Inter',sans-serif; outline: none; transition: border .2s; }
 .form-control:focus { border-color: var(--azul-med); }
 textarea.form-control { resize: vertical; min-height: 88px; }
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -326,9 +290,9 @@ textarea.form-control { resize: vertical; min-height: 88px; }
 .urg.ativo.amarelo { background: #fffbeb; border-color: #d97706; }
 .urg.ativo.vermelho { background: #fef2f2; border-color: var(--verm); }
 .modal-footer { margin-top: 22px; display: flex; gap: 10px; }
-.btn-cancel { flex: 1; padding: 12px; border-radius: 10px; border: 2px solid var(--cinza-b); background: #fff; color: #64748b; font-weight: 700; font-size: .88rem; font-family:var(--font-display); cursor: pointer; }
+.btn-cancel { flex: 1; padding: 12px; border-radius: 10px; border: 2px solid var(--cinza-b); background: #fff; color: #64748b; font-weight: 700; font-size: .88rem; font-family: 'Montserrat',sans-serif; cursor: pointer; }
 .btn-cancel:hover { border-color: #94a3b8; }
-.btn-submit { flex: 2; padding: 12px; border-radius: 10px; border: none; background: var(--verm); color: #fff; font-weight: 700; font-size: .88rem; font-family:var(--font-display); cursor: pointer; box-shadow: 0 2px 12px rgba(217,43,43,0.28); }
+.btn-submit { flex: 2; padding: 12px; border-radius: 10px; border: none; background: var(--verm); color: #fff; font-weight: 700; font-size: .88rem; font-family: 'Montserrat',sans-serif; cursor: pointer; box-shadow: 0 2px 12px rgba(217,43,43,0.28); }
 .btn-submit:hover { background: var(--verm-c); }
 
 
@@ -341,7 +305,7 @@ textarea.form-control { resize: vertical; min-height: 88px; }
 .btn-reativar {
   width:100%; padding:13px; border-radius:12px; border:none;
   background:linear-gradient(135deg,#1A3C8F,#2255C4);
-  color:#fff; font-family:var(--font-display); font-weight:700; font-size:.93rem;
+  color:#fff; font-family:'Montserrat',sans-serif; font-weight:700; font-size:.93rem;
   cursor:pointer; box-shadow:0 4px 16px rgba(26,60,143,0.3);
   transition:all .2s; margin-bottom:10px;
 }
@@ -442,13 +406,13 @@ textarea.form-control { resize: vertical; min-height: 88px; }
   from { transform: translateY(20px); opacity: 0; }
   to   { transform: translateY(0);    opacity: 1; }
 }
-.aval-banner-title { font-family:var(--font-display); font-weight:900; font-size:0.9rem; color:#1E293B; margin-bottom:4px; }
+.aval-banner-title { font-family:'Montserrat',sans-serif; font-weight:900; font-size:0.9rem; color:#1E293B; margin-bottom:4px; }
 .aval-banner-sub { font-size:0.78rem; color:#64748b; margin-bottom:12px; line-height:1.5; }
 .aval-banner-btns { display:flex; gap:8px; }
 .aval-banner-btn {
   flex:1; padding:8px; border-radius:9px; border:none;
   font-size:0.8rem; font-weight:700; cursor:pointer;
-  font-family:var(--font-display); transition:all .2s;
+  font-family:'Montserrat',sans-serif; transition:all .2s;
 }
 .aval-banner-btn.primary { background:var(--azul); color:#fff; }
 .aval-banner-btn.primary:hover { background:var(--azul-med); }
@@ -464,7 +428,7 @@ textarea.form-control { resize: vertical; min-height: 88px; }
   border-radius:9px; border:1.5px solid #FDE68A;
   background:#FFFBEB; color:#D97706;
   font-size:0.8rem; font-weight:700; cursor:pointer;
-  transition:all .2s; font-family:var(--font-display);
+  transition:all .2s; font-family:'Montserrat',sans-serif;
 }
 .btn-avaliar-hist:hover { background:#FEF3C7; }
 
@@ -498,7 +462,7 @@ textarea.form-control { resize: vertical; min-height: 88px; }
   flex-shrink:0; border:3px solid rgba(255,255,255,0.3);
 }
 .vol-header-info { flex:1; }
-.vol-header-nome { font-family:var(--font-display); font-weight:900; font-size:1rem; color:#fff; }
+.vol-header-nome { font-family:'Montserrat',sans-serif; font-weight:900; font-size:1rem; color:#fff; }
 .vol-header-email { font-size:0.75rem; color:#93C5FD; margin-top:2px; }
 .vol-header-pts { display:flex; align-items:center; gap:6px; margin-top:6px; }
 .vol-pts-badge {
@@ -542,7 +506,7 @@ textarea.form-control { resize: vertical; min-height: 88px; }
   transition:box-shadow .2s;
 }
 .vol-item:hover { box-shadow:0 4px 12px rgba(26,60,143,0.08); }
-.vol-item-nome { font-family:var(--font-display); font-weight:700; font-size:0.9rem; color:var(--azul); margin-bottom:3px; }
+.vol-item-nome { font-family:'Montserrat',sans-serif; font-weight:700; font-size:0.9rem; color:var(--azul); margin-bottom:3px; }
 .vol-item-local { font-size:0.78rem; color:#64748b; margin-bottom:6px; }
 .vol-item-tags { display:flex; gap:5px; flex-wrap:wrap; margin-bottom:8px; }
 .vol-item-footer { display:flex; align-items:center; justify-content:space-between; }
@@ -559,17 +523,17 @@ textarea.form-control { resize: vertical; min-height: 88px; }
 /* Stats row */
 .vol-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:20px; }
 .vol-stat-card { background:#F4F6FA; border-radius:12px; padding:14px; text-align:center; border:1.5px solid #e2e8f0; }
-.vol-stat-n { font-family:var(--font-display); font-weight:900; font-size:1.6rem; color:var(--azul); }
+.vol-stat-n { font-family:'Montserrat',sans-serif; font-weight:900; font-size:1.6rem; color:var(--azul); }
 .vol-stat-n.red { color:var(--verm); }
 .vol-stat-n.gold { color:#D97706; }
 .vol-stat-l { font-size:0.68rem; color:#94a3b8; margin-top:2px; text-transform:uppercase; letter-spacing:.03em; }
 
 /* Perfil */
 .vol-perfil-section { margin-bottom:20px; }
-.vol-perfil-section h4 { font-family:var(--font-display); font-weight:700; font-size:0.88rem; color:var(--azul); margin-bottom:10px; }
+.vol-perfil-section h4 { font-family:'Montserrat',sans-serif; font-weight:700; font-size:0.88rem; color:var(--azul); margin-bottom:10px; }
 .btn-salvar-perfil {
   width:100%; padding:12px; border-radius:10px; border:none;
-  background:var(--azul); color:#fff; font-family:var(--font-display);
+  background:var(--azul); color:#fff; font-family:'Montserrat',sans-serif;
   font-weight:700; font-size:0.9rem; cursor:pointer; transition:all .2s;
   margin-top:12px;
 }
@@ -590,7 +554,7 @@ textarea.form-control { resize: vertical; min-height: 88px; }
   font-size:0.82rem; color:#334155; line-height:1.7;
   border:1.5px solid #e2e8f0;
 }
-.termos-body h4 { font-family:var(--font-display); font-weight:700; color:var(--azul); margin:12px 0 6px; font-size:0.85rem; }
+.termos-body h4 { font-family:'Montserrat',sans-serif; font-weight:700; color:var(--azul); margin:12px 0 6px; font-size:0.85rem; }
 .termos-body p { margin-bottom:8px; }
 .termos-body ul { padding-left:18px; margin-bottom:8px; }
 .termos-body li { margin-bottom:4px; }
@@ -605,7 +569,7 @@ textarea.form-control { resize: vertical; min-height: 88px; }
 .btn-aceitar-termos {
   width:100%; padding:13px; border-radius:12px; border:none;
   background:linear-gradient(135deg,var(--azul),var(--azul-med));
-  color:#fff; font-family:var(--font-display); font-weight:700;
+  color:#fff; font-family:'Montserrat',sans-serif; font-weight:700;
   font-size:0.93rem; cursor:pointer; transition:all .2s;
   opacity:0.5; pointer-events:none;
 }
@@ -614,7 +578,7 @@ textarea.form-control { resize: vertical; min-height: 88px; }
 
 /* ── QR CODE ── */
 .modal-qr { max-width: 380px; text-align: center; }
-.qr-titulo { font-family:var(--font-display); font-weight:900; font-size:1.1rem; color:var(--azul); margin-bottom:6px; }
+.qr-titulo { font-family:'Montserrat',sans-serif; font-weight:900; font-size:1.1rem; color:var(--azul); margin-bottom:6px; }
 .qr-sub { font-size:0.83rem; color:#64748b; margin-bottom:20px; line-height:1.6; }
 .qr-box {
   background:#F4F6FA; border-radius:16px; padding:20px;
@@ -622,12 +586,12 @@ textarea.form-control { resize: vertical; min-height: 88px; }
   gap:12px; margin-bottom:16px; border:1.5px solid #e2e8f0;
 }
 .qr-canvas { border-radius:10px; }
-.qr-nome { font-family:var(--font-display); font-weight:700; font-size:0.9rem; color:var(--azul); }
+.qr-nome { font-family:'Montserrat',sans-serif; font-weight:700; font-size:0.9rem; color:var(--azul); }
 .qr-end { font-size:0.75rem; color:#64748b; }
 .btn-compartilhar {
   width:100%; padding:12px; border-radius:12px; border:none;
   background:linear-gradient(135deg,#25D366,#128C7E);
-  color:#fff; font-family:var(--font-display); font-weight:700;
+  color:#fff; font-family:'Montserrat',sans-serif; font-weight:700;
   font-size:0.9rem; cursor:pointer; transition:all .2s;
   display:flex; align-items:center; justify-content:center; gap:8px;
   margin-bottom:8px;
@@ -636,7 +600,7 @@ textarea.form-control { resize: vertical; min-height: 88px; }
 .btn-baixar-qr {
   width:100%; padding:10px; border-radius:12px;
   border:1.5px solid #e2e8f0; background:transparent;
-  color:#64748b; font-family:var(--font-display); font-weight:600;
+  color:#64748b; font-family:'Montserrat',sans-serif; font-weight:600;
   font-size:0.85rem; cursor:pointer; transition:all .2s;
 }
 .btn-baixar-qr:hover { border-color:var(--azul); color:var(--azul); }
@@ -654,13 +618,13 @@ textarea.form-control { resize: vertical; min-height: 88px; }
   background:#F4F6FA; border-radius:12px; padding:20px;
   border:1.5px solid #E2E8F0; margin-bottom:12px;
 }
-.avaliacao-card h4 { font-family:var(--font-display); font-weight:700; font-size:0.95rem; color:var(--azul); margin-bottom:4px; }
+.avaliacao-card h4 { font-family:'Montserrat',sans-serif; font-weight:700; font-size:0.95rem; color:var(--azul); margin-bottom:4px; }
 .avaliacao-card .stars-display { color:#F59E0B; font-size:1.1rem; letter-spacing:2px; }
 .avaliacao-card .comentario { font-size:0.83rem; color:#64748b; margin-top:6px; font-style:italic; }
 .btn-concluir {
   width:100%; padding:13px; border-radius:12px; border:none;
   background:linear-gradient(135deg,#15803D,#16a34a);
-  color:#fff; font-family:var(--font-display); font-weight:700;
+  color:#fff; font-family:'Montserrat',sans-serif; font-weight:700;
   font-size:0.93rem; cursor:pointer; transition:all .2s;
   box-shadow:0 4px 14px rgba(21,128,61,0.3); margin-bottom:10px;
 }
@@ -728,7 +692,7 @@ textarea.form-control { resize: vertical; min-height: 88px; }
 .auth-divisor::before, .auth-divisor::after { content: ''; flex: 1; height: 1px; background: var(--cinza-b); }
 .auth-divisor span { font-size: 0.78rem; color: #94a3b8; }
 .auth-tabs { display: flex; gap: 6px; background: var(--cinza-f); border-radius: 10px; padding: 4px; margin-bottom: 16px; }
-.auth-tab { flex: 1; padding: 9px; border: none; background: transparent; border-radius: 8px; font-size: 0.82rem; font-weight: 600; color: #64748b; cursor: pointer; transition: all .15s; font-family:var(--font-corpo); }
+.auth-tab { flex: 1; padding: 9px; border: none; background: transparent; border-radius: 8px; font-size: 0.82rem; font-weight: 600; color: #64748b; cursor: pointer; transition: all .15s; font-family: 'Inter', sans-serif; }
 .auth-tab.ativo { background: #fff; color: var(--azul); box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
 .auth-link { font-size: 0.8rem; color: var(--azul); margin-top: 12px; cursor: pointer; text-align: center; }
 .auth-link:hover { text-decoration: underline; }
@@ -743,14 +707,14 @@ textarea.form-control { resize: vertical; min-height: 88px; }
 .mapa-sidebar::-webkit-scrollbar-track { background: #F4F6FA; border-radius: 99px; }
 .mapa-sidebar::-webkit-scrollbar-thumb { background: #C7D2E8; border-radius: 99px; }
 .mapa-sidebar::-webkit-scrollbar-thumb:hover { background: #9FB3DC; }
-.mapa-lista-title { font-family:var(--font-display); font-weight: 900; font-size: 0.85rem; color: #0F2460; background: #F4F6FA; padding: 12px 16px; border-radius: 12px; border: 1.5px solid #E2E8F0; position: sticky; top: 0; z-index: 2; }
+.mapa-lista-title { font-family: 'Montserrat', sans-serif; font-weight: 900; font-size: 0.85rem; color: #0F2460; background: #F4F6FA; padding: 12px 16px; border-radius: 12px; border: 1.5px solid #E2E8F0; position: sticky; top: 0; z-index: 2; }
 .mapa-card { background: #fff; border-radius: 12px; padding: 14px; border: 1.5px solid #E2E8F0; cursor: pointer; transition: box-shadow .2s, border-color .2s; }
 .mapa-card:hover { box-shadow: 0 4px 16px rgba(26,60,143,0.12); border-color: #2255C4; }
 .mapa-card-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
 .pin-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
 .pin-urg { background: #D92B2B; }
 .pin-ok  { background: #1A3C8F; }
-.mapa-card-nome { font-family:var(--font-display); font-weight: 700; font-size: 0.85rem; color: #1A3C8F; }
+.mapa-card-nome { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 0.85rem; color: #1A3C8F; }
 .mapa-card-local { font-size: 0.72rem; color: #64748b; }
 .mapa-card-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 8px; }
 .mapa-tag { background: #EEF2FF; color: #1A3C8F; font-size: 0.68rem; font-weight: 600; padding: 2px 8px; border-radius: 5px; }
@@ -759,7 +723,7 @@ textarea.form-control { resize: vertical; min-height: 88px; }
 .mapa-vol { font-size: 0.7rem; color: #94a3b8; }
 .urgentes-box { background: #FEF2F2; border-radius: 12px; padding: 16px; border: 1.5px solid #FECACA; text-align: center; }
 .urgentes-box .ub-icon { font-size: 1.6rem; margin-bottom: 6px; }
-.urgentes-box .ub-num { font-family:var(--font-display); font-weight: 900; font-size: 1.1rem; color: #D92B2B; }
+.urgentes-box .ub-num { font-family: 'Montserrat', sans-serif; font-weight: 900; font-size: 1.1rem; color: #D92B2B; }
 .urgentes-box .ub-label { font-size: 0.75rem; color: #64748b; margin-top: 2px; }
 .leaflet-popup-content-wrapper { border-radius: 12px !important; box-shadow: 0 4px 20px rgba(0,0,0,0.15) !important; }
 .leaflet-popup-content { margin: 14px 16px !important; }
@@ -802,51 +766,22 @@ textarea.form-control { resize: vertical; min-height: 88px; }
 
 <!-- HERO -->
 <div class="hero">
-  <div class="hero-livebar">
-    <span class="hero-live-dot"></span>
-    <span class="hero-live-label">Ao vivo</span>
-    <span class="hero-live-info" id="heroUltimaAtualizacao">conectando voluntários em tempo real</span>
+  <div class="hero-img">
+    <img src="hero.jpg" alt="Voluntários ajudando em enchente — SOS Ajuda Aí">
   </div>
-
-  <div class="hero-painel">
-    <div class="hero-eyebrow">Rio Grande do Sul</div>
-    <h1 class="hero-titulo">Quem precisa<br>de ajuda <span class="hero-destaque">agora</span></h1>
-    <p class="hero-subtitulo">Conectamos pessoas atingidas por enchentes com voluntários da região, em tempo real. Sem burocracia, sem demora.</p>
-
-    <div class="hero-numeros">
-      <div class="hero-numero-card">
-        <div class="hero-numero hero-numero-urgente" id="heroNumPedidos">—</div>
-        <div class="hero-numero-label">Pedidos ativos</div>
-      </div>
-      <div class="hero-numero-card">
-        <div class="hero-numero" id="heroNumVoluntarios">847</div>
-        <div class="hero-numero-label">Voluntários prontos</div>
-      </div>
-      <div class="hero-numero-card">
-        <div class="hero-numero">38</div>
-        <div class="hero-numero-label">Municípios</div>
-      </div>
+  <div class="hero-panel">
+    <img class="panel-logo" src="logo.png" alt="SOS Ajuda Aí">
+    <p class="panel-slogan">"Conectando quem precisa,<br>com quem quer <strong>ajudar!</strong>"</p>
+    <button class="btn-verm" onclick="if(!usuarioAtual){abrirModal('modal-auth')}else{verificarTermos('atingido',()=>{ limparLocalizacao(); abrirModal('modal-atingido'); })}">🏠 Fui atingido — preciso de ajuda</button>
+    <button class="btn-azul" onclick="if(!usuarioAtual){abrirModal('modal-auth')}else{verificarTermos('voluntario',()=>abrirModalVoluntario())}">🤝 Quero ser voluntário</button>
+    <button class="btn-apoiar" onclick="document.getElementById('apoie').scrollIntoView({behavior:'smooth'})">💛 Apoiar financeiramente</button>
+    <div class="panel-divider"></div>
+    <div class="stats">
+      <div class="stat"><div class="stat-n">2.4<em>mil</em></div><div class="stat-l">Pessoas ajudadas</div></div>
+      <div class="stat"><div class="stat-n">847</div><div class="stat-l">Voluntários ativos</div></div>
+      <div class="stat"><div class="stat-n">38</div><div class="stat-l">Municípios</div></div>
+      <div class="stat"><div class="stat-n">98<em>%</em></div><div class="stat-l">Atendidos</div></div>
     </div>
-  </div>
-
-  <div class="hero-acoes">
-    <button class="hero-btn-principal" onclick="if(!usuarioAtual){abrirModal('modal-auth')}else{verificarTermos('atingido',()=>{ limparLocalizacao(); abrirModal('modal-atingido'); })}">
-      <span class="hero-btn-icone">🆘</span>
-      <span class="hero-btn-textos">
-        <span class="hero-btn-label">Fui atingido, preciso de ajuda</span>
-        <span class="hero-btn-sub">Cadastro leva menos de 3 minutos</span>
-      </span>
-    </button>
-    <button class="hero-btn-secundario" onclick="if(!usuarioAtual){abrirModal('modal-auth')}else{verificarTermos('voluntario',()=>abrirModalVoluntario())}">
-      <span class="hero-btn-icone">🤝</span>
-      <span>Quero ser voluntário</span>
-    </button>
-    <button class="hero-btn-terciario" onclick="document.getElementById('apoie').scrollIntoView({behavior:'smooth'})">
-      <span class="hero-btn-icone">💛</span>
-      <span>Apoiar financeiramente</span>
-    </button>
-
-    <div class="hero-citacao">"Conectando quem precisa, com quem quer ajudar."</div>
   </div>
 </div>
 
@@ -911,7 +846,7 @@ textarea.form-control { resize: vertical; min-height: 88px; }
     <div class="step"><div class="step-num">4</div><div class="step-icon">✅</div><h3>Ajuda acontece</h3><p>Voluntários chegam organizados. Após a ajuda, ambos se avaliam.</p></div>
   </div>
   <div style="text-align:center;margin-top:32px;">
-    <a href="manual.html" style="display:inline-flex;align-items:center;gap:8px;background:#fff;color:#1A3C8F;border:1.5px solid #1A3C8F;border-radius:99px;padding:11px 24px;font-family:var(--font-display);font-weight:700;font-size:.85rem;text-decoration:none;transition:all .2s;">
+    <a href="manual.html" style="display:inline-flex;align-items:center;gap:8px;background:#fff;color:#1A3C8F;border:1.5px solid #1A3C8F;border-radius:99px;padding:11px 24px;font-family:'Montserrat',sans-serif;font-weight:700;font-size:.85rem;text-decoration:none;transition:all .2s;">
       📖 Ver manual completo de funcionalidades
     </a>
   </div>
@@ -929,7 +864,7 @@ textarea.form-control { resize: vertical; min-height: 88px; }
 
     <div class="card card-add" onclick="abrirModal('modal-atingido')">
       <div style="font-size:2.2rem;margin-bottom:12px">➕</div>
-      <div style="font-family:var(--font-display);font-weight:700;color:var(--azul);margin-bottom:5px">Cadastrar minha necessidade</div>
+      <div style="font-family:'Montserrat',sans-serif;font-weight:700;color:var(--azul);margin-bottom:5px">Cadastrar minha necessidade</div>
       <div style="font-size:.83rem;color:var(--cinza-t);text-align:center">Fui atingido e preciso de voluntários</div>
     </div>
   </div>
@@ -1107,8 +1042,8 @@ textarea.form-control { resize: vertical; min-height: 88px; }
     <p class="modal-sub" id="pixValorTexto">Sua contribuição mantém o SOS Ajuda Aí no ar.</p>
 
     <div class="doacao-tabs" style="display:flex;gap:8px;margin:16px 0;">
-      <button type="button" class="doacao-tab ativo" id="tabPix" onclick="alternarAbaDoacao('pix')" style="flex:1;padding:9px;border-radius:99px;border:1.5px solid var(--azul);background:var(--azul);color:#fff;font-family:var(--font-display);font-weight:700;font-size:0.82rem;cursor:pointer;">💛 Pix</button>
-      <button type="button" class="doacao-tab" id="tabBitcoin" onclick="alternarAbaDoacao('bitcoin')" style="flex:1;padding:9px;border-radius:99px;border:1.5px solid var(--cinza-b);background:#fff;color:var(--cinza-t);font-family:var(--font-display);font-weight:700;font-size:0.82rem;cursor:pointer;">₿ Bitcoin</button>
+      <button type="button" class="doacao-tab ativo" id="tabPix" onclick="alternarAbaDoacao('pix')" style="flex:1;padding:9px;border-radius:99px;border:1.5px solid var(--azul);background:var(--azul);color:#fff;font-family:'Montserrat',sans-serif;font-weight:700;font-size:0.82rem;cursor:pointer;">💛 Pix</button>
+      <button type="button" class="doacao-tab" id="tabBitcoin" onclick="alternarAbaDoacao('bitcoin')" style="flex:1;padding:9px;border-radius:99px;border:1.5px solid var(--cinza-b);background:#fff;color:var(--cinza-t);font-family:'Montserrat',sans-serif;font-weight:700;font-size:0.82rem;cursor:pointer;">₿ Bitcoin</button>
     </div>
 
     <!-- PAINEL PIX -->
@@ -1770,7 +1705,7 @@ textarea.form-control { resize: vertical; min-height: 88px; }
       <button class="btn-concluir" onclick="marcarConcluido()">✅ Marcar como concluído</button>
     </div>
     <!-- Botão cancelar presença (aparece quando já confirmou) -->
-    <button id="btn-cancelar-presenca" style="display:none;width:100%;padding:12px;border-radius:12px;border:2px solid #D92B2B;background:transparent;color:#D92B2B;font-family:var(--font-display);font-weight:700;font-size:0.9rem;cursor:pointer;margin-bottom:10px;transition:all .2s;"
+    <button id="btn-cancelar-presenca" style="display:none;width:100%;padding:12px;border-radius:12px;border:2px solid #D92B2B;background:transparent;color:#D92B2B;font-family:'Montserrat',sans-serif;font-weight:700;font-size:0.9rem;cursor:pointer;margin-bottom:10px;transition:all .2s;"
       onmouseover="this.style.background='#FEF2F2'" onmouseout="this.style.background='transparent'"
       onclick="cancelarPresenca(this)">
       ❌ Cancelar minha confirmação
@@ -2345,37 +2280,6 @@ async function sbFetch(endpoint, options = {}) {
 // ── CARREGAR SOLICITAÇÕES DO BANCO ──
 let _pontosApoio = [];
 
-// Atualiza o painel "ao vivo" do hero com dados reais: número de pedidos
-// ativos agora, e há quanto tempo foi a última solicitação cadastrada.
-function atualizarHeroAoVivo(solicitacoes) {
-  const elNum = document.getElementById('heroNumPedidos');
-  const elInfo = document.getElementById('heroUltimaAtualizacao');
-  if (!elNum) return;
-
-  elNum.textContent = solicitacoes.length;
-
-  if (!elInfo) return;
-  if (!solicitacoes.length) {
-    elInfo.textContent = 'nenhum pedido ativo no momento';
-    return;
-  }
-
-  // As solicitações já vêm ordenadas por criado_em desc (mais recente primeiro)
-  const maisRecente = solicitacoes[0];
-  const minutosAtras = Math.round((Date.now() - new Date(maisRecente.criado_em).getTime()) / 60000);
-
-  let textoTempo;
-  if (minutosAtras < 1) textoTempo = 'agora mesmo';
-  else if (minutosAtras < 60) textoTempo = `há ${minutosAtras} min`;
-  else if (minutosAtras < 1440) textoTempo = `há ${Math.round(minutosAtras / 60)}h`;
-  else {
-    const dias = Math.round(minutosAtras / 1440);
-    textoTempo = `há ${dias} dia${dias > 1 ? 's' : ''}`;
-  }
-
-  elInfo.innerHTML = `última solicitação <strong style="color:var(--ambar);">${textoTempo}</strong>`;
-}
-
 async function carregarSolicitacoes() {
   try {
     const agora = new Date().toISOString();
@@ -2385,7 +2289,6 @@ async function carregarSolicitacoes() {
     ]);
     renderizarCards(data);
     atualizarContadorUrgentes(data);
-    atualizarHeroAoVivo(data);
     console.log(`✅ ${data.length} solicitações carregadas`);
     // Sempre tenta renderizar no mapa
     if (mapaObj) {
@@ -2523,12 +2426,12 @@ function renderizarMapaPins(solicitacoes, pontosApoio) {
     const m = L.marker([s.lat, s.lng], {icon})
       .addTo(mapaObj)
       .bindPopup(`
-        <div style="font-family:var(--font-corpo);min-width:190px;">
+        <div style="font-family:'Inter',sans-serif;min-width:190px;">
           <div style="font-weight:700;color:#1A3C8F;font-size:0.92rem;margin-bottom:4px;">${escapeHtml(s.nome)}</div>
           <div style="font-size:0.78rem;color:#64748b;margin-bottom:4px;">📍 ${escapeHtml(s.cidade)}, ${escapeHtml(s.estado)}</div>
           <div style="font-size:0.78rem;color:#64748b;margin-bottom:4px;">🏷️ ${(s.tipos_ajuda||[]).map(escapeHtml).join(', ')}</div>
           <div style="font-size:0.76rem;color:#64748b;margin-bottom:10px;">👥 ${s.voluntarios_confirmados}/${s.limite_voluntarios} voluntários</div>
-          <button onclick="abrirDetalheReal(pontosMapa[${i}])" style="width:100%;background:#D92B2B;color:#fff;border:none;border-radius:8px;padding:8px;font-weight:700;font-size:0.8rem;cursor:pointer;font-family:var(--font-display);">Ver detalhes</button>
+          <button onclick="abrirDetalheReal(pontosMapa[${i}])" style="width:100%;background:#D92B2B;color:#fff;border:none;border-radius:8px;padding:8px;font-weight:700;font-size:0.8rem;cursor:pointer;font-family:'Montserrat',sans-serif;">Ver detalhes</button>
         </div>
       `);
     marcadores.push(m);
@@ -2596,14 +2499,14 @@ function renderizarPinsApoio(pontosApoio) {
     const m = L.marker([p.lat, p.lng], {icon})
       .addTo(mapaObj)
       .bindPopup(`
-        <div style="font-family:var(--font-corpo);min-width:190px;">
+        <div style="font-family:'Inter',sans-serif;min-width:190px;">
           ${p.foto_url ? `<img src="${p.foto_url}" alt="Foto do local" style="width:100%;height:110px;object-fit:cover;border-radius:8px;margin-bottom:8px;">` : ''}
           <div style="font-weight:700;color:${vis.cor};font-size:0.92rem;margin-bottom:4px;">${vis.emoji} ${escapeHtml(p.nome)} ${selo}</div>
           <div style="font-size:0.78rem;color:#64748b;margin-bottom:4px;">📍 ${escapeHtml(p.endereco)}, ${escapeHtml(p.cidade)}</div>
           ${infoExtra}
           ${p.descricao ? `<div style="font-size:0.78rem;color:#64748b;margin-bottom:8px;">${escapeHtml(p.descricao)}</div>` : ''}
           <div style="font-size:0.72rem;color:${p.verificado ? '#16a34a' : '#94a3b8'};font-weight:600;margin-bottom:10px;">${p.verificado ? '✅ Verificado' : '⏳ Aguardando verificação'}</div>
-          <button onclick="abrirDetalhePonto(${i})" style="width:100%;background:${vis.cor};color:#fff;border:none;border-radius:8px;padding:8px;font-weight:700;font-size:0.8rem;cursor:pointer;font-family:var(--font-display);">Ver detalhes</button>
+          <button onclick="abrirDetalhePonto(${i})" style="width:100%;background:${vis.cor};color:#fff;border:none;border-radius:8px;padding:8px;font-weight:700;font-size:0.8rem;cursor:pointer;font-family:'Montserrat',sans-serif;">Ver detalhes</button>
         </div>
       `);
     marcadoresApoio.push(m);
@@ -4518,7 +4421,7 @@ function exibirEstrelasDetalhe(media, total) {
   </div>
   <!-- Barra de ações rápidas -->
   <div style="padding:10px 16px;background:#f8faff;border-bottom:1px solid #e2e8f0;display:flex;justify-content:flex-end;">
-    <button onclick="sairDoPainel()" style="display:flex;align-items:center;gap:6px;background:transparent;border:1.5px solid #FECACA;color:#D92B2B;padding:6px 14px;border-radius:8px;cursor:pointer;font-size:0.78rem;font-weight:700;font-family:var(--font-display);transition:all .2s;"
+    <button onclick="sairDoPainel()" style="display:flex;align-items:center;gap:6px;background:transparent;border:1.5px solid #FECACA;color:#D92B2B;padding:6px 14px;border-radius:8px;cursor:pointer;font-size:0.78rem;font-weight:700;font-family:'Montserrat',sans-serif;transition:all .2s;"
       onmouseover="this.style.background='#FEF2F2'" onmouseout="this.style.background='transparent'">
       🚪 Sair da conta
     </button>
@@ -4872,7 +4775,7 @@ function obterEstadoDoVisitante() {
 
 function cardConviteRanking() {
   return `<div class="rank-card" style="cursor:pointer;justify-content:center" onclick="if(!usuarioAtual){abrirModal('modal-auth')}else{verificarTermos('voluntario',()=>abrirModalVoluntario())}">
-    <div style="text-align:center;width:100%"><div style="font-size:1.6rem;margin-bottom:8px">🙋</div><div style="font-family:var(--font-display);font-weight:700;color:var(--azul);font-size:.9rem">Seja o próximo destaque</div><div style="font-size:.8rem;color:var(--cinza-t);margin-top:4px">Cadastre-se como voluntário</div></div>
+    <div style="text-align:center;width:100%"><div style="font-size:1.6rem;margin-bottom:8px">🙋</div><div style="font-family:'Montserrat',sans-serif;font-weight:700;color:var(--azul);font-size:.9rem">Seja o próximo destaque</div><div style="font-size:.8rem;color:var(--cinza-t);margin-top:4px">Cadastre-se como voluntário</div></div>
   </div>`;
 }
 
@@ -5003,7 +4906,7 @@ function renderListaConfirmadas(confs) {
       <button onclick="cancelarPresencaPainel('${c.id}','${s.id || ''}')"
         style="width:100%;margin-top:10px;padding:9px;border-radius:9px;
         border:1.5px solid #FECACA;background:transparent;color:#D92B2B;
-        font-size:0.8rem;font-weight:700;cursor:pointer;transition:all .2s;font-family:var(--font-display);"
+        font-size:0.8rem;font-weight:700;cursor:pointer;transition:all .2s;font-family:'Montserrat',sans-serif;"
         onmouseover="this.style.background='#FEF2F2'" 
         onmouseout="this.style.background='transparent'">
         ❌ Cancelar confirmação
