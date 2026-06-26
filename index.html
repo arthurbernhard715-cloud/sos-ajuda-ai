@@ -2943,6 +2943,8 @@ async function reativarSolicitacao() {
       method: 'PATCH',
       body: JSON.stringify({
         ativo: true,
+        concluida: false,
+        concluida_em: null,
         expira_em: novaExpiracao
       })
     });
@@ -4590,10 +4592,10 @@ async function carregarMinhasSolicitacoes() {
           ${ativa ? `<button onclick="marcarSolicitacaoConcluida('${s.id}')"
             style="flex:1;padding:9px;border-radius:9px;border:1.5px solid #A7F3D0;background:#ECFDF5;color:#15803D;font-size:0.8rem;font-weight:700;cursor:pointer;">
             ✅ Já recebi ajuda
-          </button>` : (!s.concluida ? `<button onclick="reativarDoPainel('${s.id}')"
+          </button>` : `<button onclick="reativarDoPainel('${s.id}')"
             style="flex:1;padding:9px;border-radius:9px;border:1.5px solid #A7F3D0;background:#ECFDF5;color:#15803D;font-size:0.8rem;font-weight:700;cursor:pointer;">
             🔁 Reativar
-          </button>` : '')}
+          </button>`}
         </div>
       </div>`;
     }).join('');
@@ -4658,6 +4660,8 @@ async function reativarDoPainel(solId) {
       method: 'PATCH',
       body: JSON.stringify({
         ativo: true,
+        concluida: false,
+        concluida_em: null,
         expira_em: new Date(Date.now() + 24*60*60*1000).toISOString()
       })
     });
