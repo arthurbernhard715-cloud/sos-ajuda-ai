@@ -3682,10 +3682,12 @@ function mostrarBannerAval(titulo, sub) {
 }
 
 function fecharBannerAval() {
+  const tipoPendente = _avalPendente?.tipo;
   document.getElementById('avalBanner').style.display = 'none';
   // Marca como "ignorado" por hoje no localStorage
   localStorage.setItem('aval_ignorada_' + (_avalPendente?.confirmacao_id || ''), Date.now());
   _avalPendente = null;
+  setTimeout(() => abrirConviteDoacao(tipoPendente), 400);
 }
 
 async function abrirAvaliacaoBanner() {
