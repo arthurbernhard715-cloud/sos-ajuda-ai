@@ -3754,56 +3754,57 @@ async function verificarAvaliacoesPendentes() {
   if (!googleId) return;
 
   try {
-    // Busca voluntário pelo google_id
+    // Busca voluntário pelo google_id (pode não existir, se a pessoa só pediu ajuda)
     const volReg = await sbFetch(`voluntarios?google_id=eq.${googleId}&select=id,nome`);
-    if (!volReg.length) return;
-    const volId = volReg[0].id;
-    const volNome = volReg[0].nome;
+    const volId = volReg[0]?.id || null;
 
-    // Busca confirmações em solicitações EXPIRADAS (ativas=false) nos últimos 7 dias
-    const seteDiasAtras = new Date(Date.now() - 7*24*60*60*1000).toISOString();
-    const confs = await sbFetch(
-      `confirmacoes?voluntario_id=eq.${volId}&criado_em=gte.${seteDiasAtras}&select=id,solicitacao_id,solicitacoes(id,nome,ativo,expira_em,email_dono)`
-    );
-
-    // Filtra só as de solicitações expiradas
-    const expiradas = confs.filter(c =>
-      c.solicitacoes && !c.solicitacoes.ativo
-    );
-
-    if (!expiradas.length) return;
-
-    // Verifica quais ainda não foram avaliadas
-    for (const conf of expiradas) {
-      const jaAvaliou = await sbFetch(
-        `avaliacoes?confirmacao_id=eq.${conf.id}&avaliador_id=eq.${volId}&select=id`
+    // Parte 1: pendências do VOLUNTÁRIO avaliando quem ele ajudou
+    // (só roda se a pessoa de fato tem cadastro de voluntário)
+    if (volId) {
+      // Busca confirmações em solicitações EXPIRADAS (ativas=false) nos últimos 7 dias
+      const seteDiasAtras = new Date(Date.now() - 7*24*60*60*1000).toISOString();
+      const confs = await sbFetch(
+        `confirmacoes?voluntario_id=eq.${volId}&criado_em=gte.${seteDiasAtras}&select=id,solicitacao_id,solicitacoes(id,nome,ativo,expira_em,email_dono)`
       );
-      if (!jaAvaliou.length) {
-        // Encontrou pendente! Mostra banner
-        _avalPendente = {
-          confirmacao_id: conf.id,
-          avaliador_id: volId,
-          avaliado_id: null, // Será buscado ao abrir
-          tipo: 'voluntario_avalia_atingido',
-          nome: conf.solicitacoes.nome,
-          sol_id: conf.solicitacoes.id,
-          email_dono: conf.solicitacoes.email_dono
-        };
-        mostrarBannerAval(
-          `Como foi ajudar ${conf.solicitacoes.nome}?`,
-          'Sua avaliação é opcional e ajuda a melhorar a plataforma.'
+
+      // Filtra só as de solicitações expiradas
+      const expiradas = confs.filter(c =>
+        c.solicitacoes && !c.solicitacoes.ativo
+      );
+
+      // Verifica quais ainda não foram avaliadas
+      for (const conf of expiradas) {
+        const jaAvaliou = await sbFetch(
+          `avaliacoes?confirmacao_id=eq.${conf.id}&avaliador_id=eq.${volId}&select=id`
         );
-        return; // Mostra um por vez
+        if (!jaAvaliou.length) {
+          // Encontrou pendente! Mostra banner
+          _avalPendente = {
+            confirmacao_id: conf.id,
+            avaliador_id: volId,
+            avaliado_id: null, // Será buscado ao abrir
+            tipo: 'voluntario_avalia_atingido',
+            nome: conf.solicitacoes.nome,
+            sol_id: conf.solicitacoes.id,
+            email_dono: conf.solicitacoes.email_dono
+          };
+          mostrarBannerAval(
+            `Como foi ajudar ${conf.solicitacoes.nome}?`,
+            'Sua avaliação é opcional e ajuda a melhorar a plataforma.'
+          );
+          return; // Mostra um por vez
+        }
       }
     }
 
-    // Verifica se o atingido tem solicitações expiradas para avaliar voluntários
-    await verificarAvaliacoesPendentesAtingido(googleId, volId);
+    // Parte 2: pendências de quem RECEBEU ajuda, avaliando o(s) voluntário(s)
+    // — roda sempre, independente de a pessoa também ser voluntário ou não
+    await verificarAvaliacoesPendentesAtingido();
 
   } catch(e) { console.warn('Erro ao verificar avaliações:', e); }
 }
 
-async function verificarAvaliacoesPendentesAtingido(googleId, volId) {
+async function verificarAvaliacoesPendentesAtingido() {
   try {
     const email = usuarioAtual.user?.email;
     if (!email) return;
@@ -3821,14 +3822,17 @@ async function verificarAvaliacoesPendentesAtingido(googleId, volId) {
       );
 
       for (const conf of confs) {
-        // Verifica se já avaliou este voluntário
+        // Verifica se já existe avaliação registrada para esta confirmação,
+        // do tipo "atingido avalia voluntário" (não existe avaliador_id de
+        // voluntário nesse caso, então checamos por tipo + confirmacao_id)
         const jaAvaliou = await sbFetch(
-          `avaliacoes?confirmacao_id=eq.${conf.id}&avaliador_id=eq.${volId}&select=id`
+          `avaliacoes?confirmacao_id=eq.${conf.id}&tipo=eq.atingido_avalia_voluntario&select=id`
         );
         if (!jaAvaliou.length) {
           _avalPendente = {
             confirmacao_id: conf.id,
-            avaliador_id: volId,
+            avaliador_id: null,
+            avaliador_email: email,
             avaliado_id: conf.voluntario_id,
             tipo: 'atingido_avalia_voluntario',
             nome: sol.nome
@@ -3889,7 +3893,8 @@ async function abrirAvaliacaoBanner() {
 
   _avaliacaoData = {
     confirmacao_id: _avalPendente.confirmacao_id,
-    avaliador_id:   _avalPendente.avaliador_id,
+    avaliador_id:   tipo === 'voluntario_avalia_atingido' ? _avalPendente.avaliador_id : null,
+    avaliador_email: tipo === 'atingido_avalia_voluntario' ? (_avalPendente.avaliador_email || null) : null,
     avaliado_id:    tipo === 'atingido_avalia_voluntario' ? _avalPendente.avaliado_id : null,
     avaliado_email: tipo === 'voluntario_avalia_atingido' ? (_avalPendente.email_dono || null) : null,
     tipo
