@@ -754,6 +754,21 @@ textarea.form-control { resize: vertical; min-height: 88px; }
     <button id="navBtnLogin" onclick="abrirModal('modal-auth')" style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.12);border:1.5px solid rgba(255,255,255,0.25);color:#fff;padding:7px 14px;border-radius:9px;cursor:pointer;font-size:0.83rem;font-weight:600;margin-left:6px;transition:all .2s;">
       Entrar
     </button>
+    <!-- Logado: sininho de notificações -->
+    <button id="navSininho" onclick="toggleListaNotificacoes()" title="Notificações"
+      style="display:none;position:relative;width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,0.12);border:1.5px solid rgba(255,255,255,0.25);color:#fff;font-size:1.05rem;cursor:pointer;margin-left:8px;transition:all .2s;flex-shrink:0;">
+      🔔
+      <span id="navSininhoContador" style="display:none;position:absolute;top:-4px;right:-4px;background:var(--verm);color:#fff;font-size:0.65rem;font-weight:800;border-radius:99px;min-width:18px;height:18px;display:flex;align-items:center;justify-content:center;padding:0 4px;border:2px solid var(--azul-esc);">0</span>
+    </button>
+    <div id="listaNotificacoesDropdown" style="display:none;position:absolute;top:64px;right:20px;width:320px;max-height:420px;overflow-y:auto;background:#fff;border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,0.18);z-index:500;">
+      <div style="padding:14px 16px;border-bottom:1px solid var(--cinza-b);display:flex;align-items:center;justify-content:space-between;">
+        <strong style="font-family:'Montserrat',sans-serif;color:var(--azul);font-size:0.92rem;">Notificações</strong>
+        <button onclick="marcarTodasNotificacoesLidas()" style="background:none;border:none;color:var(--cinza-t);font-size:0.74rem;cursor:pointer;text-decoration:underline;">Marcar todas como lidas</button>
+      </div>
+      <div id="listaNotificacoesConteudo" style="padding:8px;">
+        <div style="text-align:center;padding:24px;color:var(--cinza-t);font-size:0.85rem;">Carregando...</div>
+      </div>
+    </div>
     <!-- Logado: só avatar -->
     <button id="navAvatarBtn" onclick="abrirPainelVoluntario()" title="Meu painel"
       style="display:none;width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#D92B2B,#b91c1c);border:2px solid rgba(255,255,255,0.3);color:#fff;font-weight:900;font-size:0.95rem;cursor:pointer;margin-left:8px;transition:all .2s;flex-shrink:0;">
@@ -2715,7 +2730,7 @@ async function confirmarPresenca(solId, btn) {
     }
 
     // 3. Verifica limite de voluntários
-    const atual = await sbFetch(`solicitacoes?id=eq.${solId}&select=voluntarios_confirmados,limite_voluntarios,criado_em`);
+    const atual = await sbFetch(`solicitacoes?id=eq.${solId}&select=voluntarios_confirmados,limite_voluntarios,criado_em,email_dono,nome`);
     if (!atual.length) throw new Error('Solicitação não encontrada');
     const s = atual[0];
     if (s.voluntarios_confirmados >= s.limite_voluntarios) {
@@ -2739,6 +2754,25 @@ async function confirmarPresenca(solId, btn) {
       method: 'PATCH',
       body: JSON.stringify({ voluntarios_confirmados: s.voluntarios_confirmados + 1 })
     });
+
+    // 4.1 Cria notificação para o dono da solicitação, se houver e-mail cadastrado
+    if (s.email_dono) {
+      try {
+        const nomeVoluntario = usuarioAtual.user?.user_metadata?.full_name || usuarioAtual.user?.email || 'Um voluntário';
+        await sbFetch('notificacoes', {
+          method: 'POST',
+          body: JSON.stringify({
+            destinatario_email: s.email_dono,
+            solicitacao_id: solId,
+            tipo: 'confirmacao_presenca',
+            titulo: 'Novo voluntário confirmou presença!',
+            mensagem: `${nomeVoluntario} confirmou presença para te ajudar.`
+          })
+        });
+      } catch(e) {
+        console.warn('Não foi possível criar notificação (não bloqueia a confirmação):', e);
+      }
+    }
 
     // 5. Atualiza pontos do voluntário: 10 base + 5 se confirmou na primeira hora
     try {
@@ -3204,18 +3238,153 @@ async function sair() {
 }
 
 function atualizarUIAuth(session) {
-  const btnLogin  = document.getElementById('navBtnLogin');
-  const btnAvatar = document.getElementById('navAvatarBtn');
+  const btnLogin   = document.getElementById('navBtnLogin');
+  const btnAvatar  = document.getElementById('navAvatarBtn');
+  const btnSininho = document.getElementById('navSininho');
   if (session?.user) {
     const u = session.user;
     const inicial = (u.user_metadata?.full_name || u.email || 'U')[0].toUpperCase();
     if (btnLogin)  btnLogin.style.display  = 'none';
     if (btnAvatar) { btnAvatar.style.display = 'flex'; btnAvatar.style.alignItems = 'center'; btnAvatar.style.justifyContent = 'center'; }
+    if (btnSininho) btnSininho.style.display = 'flex';
     const av = document.getElementById('authAvatar');
     if (av) av.textContent = inicial;
+    iniciarMonitoramentoNotificacoes();
   } else {
     if (btnLogin)  btnLogin.style.display  = 'flex';
     if (btnAvatar) btnAvatar.style.display = 'none';
+    if (btnSininho) btnSininho.style.display = 'none';
+    pararMonitoramentoNotificacoes();
+  }
+}
+
+// ── SISTEMA DE NOTIFICAÇÕES ──
+let _notifPollingInterval = null;
+let _ultimaNotifVistaId = null;
+
+function iniciarMonitoramentoNotificacoes() {
+  carregarNotificacoes(true);
+  if (_notifPollingInterval) clearInterval(_notifPollingInterval);
+  // Verifica novas notificações a cada 30 segundos enquanto a pessoa estiver no site
+  _notifPollingInterval = setInterval(() => carregarNotificacoes(false), 30000);
+}
+
+function pararMonitoramentoNotificacoes() {
+  if (_notifPollingInterval) { clearInterval(_notifPollingInterval); _notifPollingInterval = null; }
+  _ultimaNotifVistaId = null;
+}
+
+async function carregarNotificacoes(primeiraVez) {
+  const email = usuarioAtual?.user?.email;
+  if (!email) return;
+
+  try {
+    const notifs = await sbFetch(`notificacoes?destinatario_email=eq.${encodeURIComponent(email)}&order=criado_em.desc&limit=30&select=*`);
+
+    // Se não é a primeira carga, detecta notificações novas desde a última verificação
+    // e mostra um toast imediato (a pessoa já está no site, vendo a tela)
+    if (!primeiraVez && notifs.length && _ultimaNotifVistaId) {
+      const indiceUltimaVista = notifs.findIndex(n => n.id === _ultimaNotifVistaId);
+      const novas = indiceUltimaVista === -1 ? [] : notifs.slice(0, indiceUltimaVista);
+      novas.forEach(n => toast(`🔔 ${n.mensagem || n.titulo}`, 'ok'));
+    }
+    if (notifs.length) _ultimaNotifVistaId = notifs[0].id;
+
+    const naoLidas = notifs.filter(n => !n.lida).length;
+    const contadorEl = document.getElementById('navSininhoContador');
+    if (contadorEl) {
+      if (naoLidas > 0) {
+        contadorEl.textContent = naoLidas > 9 ? '9+' : naoLidas;
+        contadorEl.style.display = 'flex';
+      } else {
+        contadorEl.style.display = 'none';
+      }
+    }
+
+    renderizarListaNotificacoes(notifs);
+  } catch(e) {
+    console.warn('Erro ao carregar notificações:', e);
+  }
+}
+
+function renderizarListaNotificacoes(notifs) {
+  const el = document.getElementById('listaNotificacoesConteudo');
+  if (!el) return;
+
+  if (!notifs.length) {
+    el.innerHTML = '<div style="text-align:center;padding:24px;color:var(--cinza-t);font-size:0.85rem;">Nenhuma notificação ainda.</div>';
+    return;
+  }
+
+  el.innerHTML = notifs.map(n => {
+    const tempoAtras = formatarTempoRelativo(n.criado_em);
+    return `<div onclick="abrirNotificacao('${n.id}','${n.solicitacao_id||''}')"
+      style="display:flex;gap:10px;padding:11px 10px;border-radius:10px;cursor:pointer;background:${n.lida ? 'transparent' : '#EFF6FF'};margin-bottom:2px;transition:background .15s;"
+      onmouseover="this.style.background='${n.lida ? '#F8FAFC' : '#E0EAFD'}'" onmouseout="this.style.background='${n.lida ? 'transparent' : '#EFF6FF'}'">
+      <div style="font-size:1.3rem;flex-shrink:0;">${n.lida ? '✅' : '🔔'}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:0.84rem;font-weight:700;color:#1E293B;">${escapeHtml(n.titulo)}</div>
+        <div style="font-size:0.78rem;color:#64748b;margin-top:2px;">${escapeHtml(n.mensagem || '')}</div>
+        <div style="font-size:0.7rem;color:#94a3b8;margin-top:4px;">${tempoAtras}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function formatarTempoRelativo(dataISO) {
+  const minutosAtras = Math.round((Date.now() - new Date(dataISO).getTime()) / 60000);
+  if (minutosAtras < 1) return 'agora mesmo';
+  if (minutosAtras < 60) return `há ${minutosAtras} min`;
+  if (minutosAtras < 1440) return `há ${Math.round(minutosAtras / 60)}h`;
+  const dias = Math.round(minutosAtras / 1440);
+  return `há ${dias} dia${dias > 1 ? 's' : ''}`;
+}
+
+function toggleListaNotificacoes() {
+  const dropdown = document.getElementById('listaNotificacoesDropdown');
+  const abrindo = dropdown.style.display !== 'block';
+  dropdown.style.display = abrindo ? 'block' : 'none';
+  if (abrindo) carregarNotificacoes(true);
+}
+
+// Fecha o dropdown ao clicar fora dele
+document.addEventListener('click', (e) => {
+  const dropdown = document.getElementById('listaNotificacoesDropdown');
+  const sininho = document.getElementById('navSininho');
+  if (dropdown && dropdown.style.display === 'block' && !dropdown.contains(e.target) && !sininho?.contains(e.target)) {
+    dropdown.style.display = 'none';
+  }
+});
+
+async function marcarTodasNotificacoesLidas() {
+  const email = usuarioAtual?.user?.email;
+  if (!email) return;
+  try {
+    await sbFetch(`notificacoes?destinatario_email=eq.${encodeURIComponent(email)}&lida=eq.false`, {
+      method: 'PATCH',
+      body: JSON.stringify({ lida: true })
+    });
+    carregarNotificacoes(true);
+  } catch(e) {
+    console.warn('Erro ao marcar notificações como lidas:', e);
+  }
+}
+
+async function abrirNotificacao(notifId, solId) {
+  try {
+    await sbFetch(`notificacoes?id=eq.${notifId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ lida: true })
+    });
+  } catch(e) {}
+  document.getElementById('listaNotificacoesDropdown').style.display = 'none';
+  carregarNotificacoes(true);
+
+  if (solId) {
+    try {
+      const data = await sbFetch(`solicitacoes?id=eq.${solId}&select=*`);
+      if (data.length) abrirDetalheReal(data[0]);
+    } catch(e) {}
   }
 }
 
