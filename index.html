@@ -1080,8 +1080,19 @@ textarea.form-control { resize: vertical; min-height: 88px; }
     <h2 id="conviteDoacaoTitulo">Que bom que a ajuda aconteceu!</h2>
     <p class="modal-sub" id="conviteDoacaoTexto">Histórias como essa só são possíveis porque o site continua no ar. Topa ajudar a manter o SOS Ajuda Aí funcionando para a próxima família?</p>
 
+    <div style="display:flex;align-items:center;justify-content:center;gap:14px;margin:20px 0 6px;">
+      <button type="button" onclick="ajustarValorConvite(-10)"
+        style="width:40px;height:40px;border-radius:50%;border:1.5px solid var(--cinza-b);background:#fff;color:var(--azul);font-size:1.3rem;font-weight:700;cursor:pointer;line-height:1;">−</button>
+      <div style="font-family:'Montserrat',sans-serif;font-weight:800;font-size:1.8rem;color:var(--azul);min-width:110px;">
+        R$ <span id="conviteValorTexto">50</span>
+      </div>
+      <button type="button" onclick="ajustarValorConvite(10)"
+        style="width:40px;height:40px;border-radius:50%;border:1.5px solid var(--cinza-b);background:#fff;color:var(--azul);font-size:1.3rem;font-weight:700;cursor:pointer;line-height:1;">+</button>
+    </div>
+    <div style="font-size:0.76rem;color:var(--cinza-t);margin-bottom:6px;">Valor sugerido — ajuste como quiser</div>
+
     <button type="button" onclick="fecharModal('modal-convite-doacao');abrirModalPix();"
-      style="width:100%;background:var(--verm);color:#fff;border:none;border-radius:12px;padding:14px;font-family:'Montserrat',sans-serif;font-weight:700;font-size:0.95rem;cursor:pointer;margin-top:18px;">
+      style="width:100%;background:var(--verm);color:#fff;border:none;border-radius:12px;padding:14px;font-family:'Montserrat',sans-serif;font-weight:700;font-size:0.95rem;cursor:pointer;margin-top:14px;">
       💛 Quero contribuir
     </button>
     <button type="button" onclick="fecharModal('modal-convite-doacao')"
@@ -1664,7 +1675,7 @@ textarea.form-control { resize: vertical; min-height: 88px; }
     </div>
 
     <div class="modal-footer">
-      <button class="btn-cancel" onclick="fecharModal('modal-avaliacao')">Agora não</button>
+      <button class="btn-cancel" onclick="pularAvaliacaoEDoar()">Agora não</button>
       <button class="btn-submit" onclick="enviarAvaliacao()">⭐ Enviar avaliação</button>
     </div>
   </div>
@@ -2998,6 +3009,11 @@ async function reativarSolicitacao() {
   const solId = document.getElementById('bloco-reativar').dataset.solId;
   if (!solId) return;
   try {
+    // Remove as confirmações de voluntários do ciclo anterior — reativar é
+    // um novo pedido de ajuda, não deveria herdar voluntários já confirmados
+    // num momento que já passou.
+    await sbFetch(`confirmacoes?solicitacao_id=eq.${solId}`, { method: 'DELETE' });
+
     const novaExpiracao = new Date(Date.now() + 24*60*60*1000).toISOString();
     await sbFetch(`solicitacoes?id=eq.${solId}`, {
       method: 'PATCH',
@@ -3005,6 +3021,7 @@ async function reativarSolicitacao() {
         ativo: true,
         concluida: false,
         concluida_em: null,
+        voluntarios_confirmados: 0,
         expira_em: novaExpiracao
       })
     });
@@ -4437,9 +4454,33 @@ async function enviarAvaliacao() {
 
 // Exibe o convite de doação logo após uma avaliação ser enviada — momento em
 // que a ajuda já se concretizou e a pessoa está mais propensa a contribuir.
+// Fecha o modal de avaliação sem enviar nada, mas ainda mostra o convite de
+// doação — o momento emocional (ajuda concretizada) continua valendo mesmo
+// que a pessoa não queira avaliar agora.
+function pularAvaliacaoEDoar() {
+  const tipo = _avaliacaoData?.tipo;
+  fecharModal('modal-avaliacao');
+  setTimeout(() => abrirConviteDoacao(tipo), 400);
+}
+
+// Ajusta o valor sugerido no convite de doação pós-avaliação, em
+// incrementos de R$10, com piso de R$10 (nunca permite valor zero/negativo).
+let _valorConviteDoacao = 50;
+function ajustarValorConvite(delta) {
+  _valorConviteDoacao = Math.max(10, _valorConviteDoacao + delta);
+  document.getElementById('conviteValorTexto').textContent = _valorConviteDoacao;
+  _valorDoacaoAtual = _valorConviteDoacao;
+}
+
 function abrirConviteDoacao(tipo) {
   const titulo = document.getElementById('conviteDoacaoTitulo');
   const texto = document.getElementById('conviteDoacaoTexto');
+
+  // Reseta o valor sugerido para R$50 a cada nova abertura, evitando
+  // carregar um valor ajustado numa convite anterior na mesma sessão
+  _valorConviteDoacao = 50;
+  document.getElementById('conviteValorTexto').textContent = _valorConviteDoacao;
+  _valorDoacaoAtual = _valorConviteDoacao;
 
   if (tipo === 'atingido_avalia_voluntario') {
     // Quem foi ajudado, avaliando o voluntário
@@ -4744,12 +4785,18 @@ async function removerVoluntarioDaSolicitacao(confirmacaoId, solId) {
 
 async function reativarDoPainel(solId) {
   try {
+    // Remove confirmações do ciclo anterior antes de reativar — quem foi
+    // confirmado num momento passado não deveria contar automaticamente
+    // para o novo período de validade.
+    await sbFetch(`confirmacoes?solicitacao_id=eq.${solId}`, { method: 'DELETE' });
+
     await sbFetch(`solicitacoes?id=eq.${solId}`, {
       method: 'PATCH',
       body: JSON.stringify({
         ativo: true,
         concluida: false,
         concluida_em: null,
+        voluntarios_confirmados: 0,
         expira_em: new Date(Date.now() + 24*60*60*1000).toISOString()
       })
     });
