@@ -1648,7 +1648,7 @@ textarea.form-control { resize: vertical; min-height: 88px; }
 <!-- MODAL: AVALIAÇÃO -->
 <div class="modal-overlay" id="modal-avaliacao">
   <div class="modal">
-    <button class="modal-close" onclick="fecharModal('modal-avaliacao')">✕</button>
+    <button class="modal-close" onclick="pularAvaliacaoEDoar()">✕</button>
     <h2>⭐ Avaliar</h2>
     <p class="modal-sub" id="avaliacao-sub">Como foi a experiência?</p>
 
@@ -2681,8 +2681,9 @@ async function confirmarPresenca(solId, btn) {
     const googleId = usuarioAtual.user?.id;
     const volRegistro = await sbFetch(`voluntarios?google_id=eq.${googleId}&select=id`);
     if (!volRegistro.length) {
-      toast('⚠️ Finalize seu cadastro de voluntário primeiro!');
+      toast('⚠️ Falta completar seu cadastro de voluntário para confirmar presença.');
       if (btn) { btn.disabled = false; btn.textContent = 'Quero ajudar'; }
+      fecharModal('modal-detalhe');
       abrirModalVoluntario();
       return;
     }
