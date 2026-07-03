@@ -612,9 +612,21 @@ function escapeHtml(str) {
     .replace(/'/g, '&#39;');
 }
 
+// O painel de prefeitura usa autenticação própria (email/senha da prefeitura),
+// sem Google OAuth. Por isso não há access_token JWT — a anon key é o correto
+// aqui, e o acesso é controlado pela verificação de login da função RPC.
+function _sbHeaders(extra = {}) {
+  return {
+    'apikey': SB_KEY,
+    'Authorization': 'Bearer ' + SB_KEY,
+    'Content-Type': 'application/json',
+    ...extra
+  };
+}
+
 async function sbFetch(endpoint) {
   const res = await fetch(SB_URL + '/rest/v1/' + endpoint, {
-    headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY }
+    headers: _sbHeaders()
   });
   const text = await res.text();
   return text ? JSON.parse(text) : [];
@@ -623,7 +635,7 @@ async function sbFetch(endpoint) {
 async function sbPatch(endpoint, body) {
   await fetch(SB_URL + '/rest/v1/' + endpoint, {
     method: 'PATCH',
-    headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+    headers: _sbHeaders({ 'Prefer': 'return=minimal' }),
     body: JSON.stringify(body)
   });
 }
@@ -631,7 +643,7 @@ async function sbPatch(endpoint, body) {
 async function sbPost(endpoint, body) {
   const res = await fetch(SB_URL + '/rest/v1/' + endpoint, {
     method: 'POST',
-    headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+    headers: _sbHeaders({ 'Prefer': 'return=representation' }),
     body: JSON.stringify(body)
   });
   if (!res.ok) throw new Error(await res.text());
@@ -642,7 +654,7 @@ async function sbPost(endpoint, body) {
 async function sbDelete(endpoint) {
   const res = await fetch(SB_URL + '/rest/v1/' + endpoint, {
     method: 'DELETE',
-    headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' }
+    headers: _sbHeaders({ 'Prefer': 'return=minimal' })
   });
   if (!res.ok) throw new Error(await res.text());
 }
