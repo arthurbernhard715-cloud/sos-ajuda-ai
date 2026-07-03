@@ -736,7 +736,9 @@ textarea.form-control { resize: vertical; min-height: 88px; }
   .mapa-sidebar { display: none; }
 }
 </style>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+  crossorigin="anonymous"/>
 </head>
 <body>
 
@@ -2199,7 +2201,9 @@ window.addEventListener('scroll',()=>{
 });
 </script>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+  integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV/XN2GqaY="
+  crossorigin="anonymous"></script>
 <script>
 const SINIMBU = [-29.5317, -52.5167];
 const MAPA_ESTADOS_SIGLA = {'Rio Grande do Sul':'RS','Santa Catarina':'SC','Paraná':'PR','São Paulo':'SP','Rio de Janeiro':'RJ','Minas Gerais':'MG','Bahia':'BA','Pernambuco':'PE','Ceará':'CE','Goiás':'GO','Mato Grosso':'MT','Mato Grosso do Sul':'MS','Pará':'PA','Maranhão':'MA','Amazonas':'AM','Espírito Santo':'ES','Alagoas':'AL','Piauí':'PI','Rio Grande do Norte':'RN','Paraíba':'PB','Sergipe':'SE','Rondônia':'RO','Tocantins':'TO','Acre':'AC','Amapá':'AP','Roraima':'RR','Distrito Federal':'DF'};
@@ -2308,10 +2312,14 @@ const SB_URL = "https://wrpfgrwayzmiucyavphk.supabase.co";
 const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndycGZncndheXptaXVjeWF2cGhrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzMDQ3MzUsImV4cCI6MjA5Njg4MDczNX0.ZdgpjxlLRmIaIdGKXZsUthgqM15QQehyijCB4apDA6E";
 
 async function sbFetch(endpoint, options = {}) {
+  // Usa o JWT do usuário logado quando disponível — essencial para que as
+  // políticas de RLS consigam identificar o usuário via auth.jwt() e
+  // restringir acesso apenas aos seus próprios dados.
+  const token = usuarioAtual?.access_token || SB_KEY;
   const res = await fetch(SB_URL + '/rest/v1/' + endpoint, {
     headers: {
       'apikey': SB_KEY,
-      'Authorization': 'Bearer ' + SB_KEY,
+      'Authorization': 'Bearer ' + token,
       'Content-Type': 'application/json',
       'Prefer': 'return=representation',
       ...options.headers
@@ -2881,6 +2889,31 @@ async function verificarRegiaoBloqueada(pais, estado, cidade) {
   }
 }
 
+// ── RATE LIMITING DE CADASTRO ──
+// Impede spam de solicitações falsas: máx. 3/hora, 10/dia por usuário.
+function verificarRateLimitCadastro() {
+  const agora = Date.now();
+  const umaHora = 60 * 60 * 1000;
+  const umDia   = 24 * 60 * 60 * 1000;
+  let lista = [];
+  try { lista = JSON.parse(localStorage.getItem('sos_cadastros_ts') || '[]').filter(t => typeof t === 'number'); } catch(e) {}
+  lista = lista.filter(t => agora - t < umDia);
+  const naUltimaHora = lista.filter(t => agora - t < umaHora);
+  if (naUltimaHora.length >= 3) {
+    const minutos = Math.ceil((naUltimaHora[0] + umaHora - agora) / 60000);
+    return `Você atingiu o limite de 3 solicitações por hora. Tente novamente em ${minutos} minuto(s).`;
+  }
+  if (lista.length >= 10) return 'Você atingiu o limite de 10 solicitações por dia. Tente amanhã.';
+  return null;
+}
+function registrarCadastroRateLimit() {
+  let lista = [];
+  try { lista = JSON.parse(localStorage.getItem('sos_cadastros_ts') || '[]').filter(t => typeof t === 'number'); } catch(e) {}
+  lista = lista.filter(t => Date.now() - t < 24 * 60 * 60 * 1000);
+  lista.push(Date.now());
+  localStorage.setItem('sos_cadastros_ts', JSON.stringify(lista));
+}
+
 async function submeterCadastroReal() {
   if (!usuarioAtual) {
     fecharModal('modal-atingido');
@@ -2888,6 +2921,10 @@ async function submeterCadastroReal() {
     toast('⚠️ Entre com sua conta Google para cadastrar.');
     return;
   }
+
+  // Rate limiting: evita spam de solicitações falsas
+  const erroRate = verificarRateLimitCadastro();
+  if (erroRate) { toast('⚠️ ' + erroRate); return; }
 
   const nome     = document.getElementById('nomeInput')?.value?.trim();
   const pais     = document.getElementById('paisInput')?.value?.trim();
@@ -2967,6 +3004,7 @@ async function submeterCadastroReal() {
       })
     });
     fecharModal('modal-atingido');
+    registrarCadastroRateLimit();
     toast('📍 Solicitação publicada! Voluntários já podem te encontrar.', 'ok');
     carregarSolicitacoes();
 
@@ -5594,6 +5632,8 @@ async function aceitarTermos(tipo) {
   }
 }
 </script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"
+  integrity="sha512-CNgIRecGo7nphbeZ04Sc13ka07paqdeTu0WwNkznTT5Z0q+/jE51aN8PJQqzmyQf0fIEKq6Ao0G7I3jbkpJLpQ=="
+  crossorigin="anonymous"></script>
 </body>
 </html>
