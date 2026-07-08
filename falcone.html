@@ -384,6 +384,9 @@ tbody tr:last-child td{border-bottom:none;}
       <div class="nav-item nav-item-perigo" data-page="zonarisco" onclick="irPara('zonarisco')">
         <span class="ni-icon">☢️</span> Zona de Risco
       </div>
+      <div class="nav-item" data-page="empresas" onclick="irPara('empresas')">
+        <span class="ni-icon">🤝</span> Empresas Apoiadoras
+      </div>
       <div class="nav-item" onclick="window.open('https://sosajudaai.com.br','_blank')">
         <span class="ni-icon">🌐</span> Ver site
       </div>
@@ -978,13 +981,11 @@ tbody tr:last-child td{border-bottom:none;}
       </div>
     </div>
 
-
     <!-- EMPRESAS APOIADORAS -->
     <div class="page" id="page-empresas">
       <div class="page-title">🤝 Empresas Apoiadoras</div>
       <div class="page-sub">Gerencie as empresas que apoiam o SOS Ajuda Aí.</div>
 
-      <!-- Adicionar empresa -->
       <div class="table-wrap" style="margin-bottom:24px;">
         <div class="table-header">
           <div class="table-title">➕ Adicionar Empresa</div>
@@ -1003,15 +1004,11 @@ tbody tr:last-child td{border-bottom:none;}
           <div>
             <label style="display:block;font-size:0.78rem;color:#94a3b8;margin-bottom:6px;">URL da Logo</label>
             <input class="table-search" id="emp-logo" placeholder="https://exemplo.com/logo.png" style="width:100%;">
-            <div style="font-size:0.7rem;color:#64748b;margin-top:4px;">Cole o link direto da imagem (Cloudinary, GitHub, ou outro)</div>
           </div>
-          <button onclick="adicionarEmpresa()" style="align-self:flex-start;background:#1A3C8F;color:#fff;border:none;border-radius:8px;padding:10px 22px;font-family:'Montserrat',sans-serif;font-weight:700;font-size:0.85rem;cursor:pointer;">
-            ➕ Adicionar Empresa
-          </button>
+          <button onclick="adicionarEmpresa()" style="align-self:flex-start;background:#1A3C8F;color:#fff;border:none;border-radius:8px;padding:10px 22px;font-family:'Montserrat',sans-serif;font-weight:700;font-size:0.85rem;cursor:pointer;">➕ Adicionar</button>
         </div>
       </div>
 
-      <!-- Lista de empresas -->
       <div class="table-wrap">
         <div class="table-header">
           <div class="table-title">🤝 Empresas Cadastradas</div>
@@ -3454,6 +3451,7 @@ function irPara(pagina) {
   if (pagina === 'logs') carregarLogs();
   if (pagina === 'zonarisco') resetarCamposRisco();
   if (pagina === 'simulacao') { resetarCamposSim(); atualizarResumoSimulacao(); }
+  if (pagina === 'empresas') carregarEmpresas();
 }
 
 // ── FILTROS ──
@@ -4089,36 +4087,30 @@ function toast(msg, tipo='') {
   tt = setTimeout(() => t.classList.remove('show'), 3500);
 }
 
-
-// ═══════════════════════════════════════════════════════════════
-// SISTEMA DE EMPRESAS APOIADORAS
-// ═══════════════════════════════════════════════════════════════
-
+// ── EMPRESAS APOIADORAS ──
 async function carregarEmpresas() {
   const el = document.getElementById('lista-empresas');
-  if (!el) return;
   try {
     const lista = await sbFetch('empresas_apoiadoras?order=ordem.asc&select=*');
     if (!lista.length) {
-      el.innerHTML = '<div style="text-align:center;color:#64748b;padding:32px;">Nenhuma empresa cadastrada ainda.</div>';
+      el.innerHTML = '<div style="text-align:center;color:#64748b;padding:32px;">Nenhuma empresa cadastrada.</div>';
       return;
     }
     el.innerHTML = lista.map(e => `
       <div style="background:#0d1117;border:1px solid #1e2535;border-radius:12px;padding:16px;margin-bottom:12px;display:flex;gap:16px;align-items:center;">
         <img src="${escapeHtml(e.url_logo)}" alt="${escapeHtml(e.nome)}" style="width:100px;height:60px;object-fit:contain;border-radius:6px;background:#161b27;padding:4px;">
         <div style="flex:1;">
-          <div style="font-weight:700;color:#e2e8f0;font-size:0.95rem;">${escapeHtml(e.nome)}</div>
+          <div style="font-weight:700;color:#e2e8f0;">${escapeHtml(e.nome)}</div>
           ${e.site ? `<div style="font-size:0.8rem;color:#64748b;"><a href="${escapeHtml(e.site)}" target="_blank" style="color:#1A3C8F;">Ver site →</a></div>` : ''}
         </div>
         <div style="display:flex;gap:8px;">
-          <button onclick="editarEmpresa('${e.id}')" style="background:#1e2535;color:#94a3b8;border:none;border-radius:7px;padding:6px 12px;font-size:0.78rem;cursor:pointer;">✏️ Editar</button>
-          <button onclick="excluirEmpresa('${e.id}','${escapeHtml(e.nome)}')" style="background:#2d1515;color:#FCA5A5;border:1px solid #7f1d1d;border-radius:7px;padding:6px 12px;font-size:0.78rem;cursor:pointer;">🗑️ Remover</button>
+          <button onclick="editarEmpresa('${e.id}')" style="background:#1e2535;color:#94a3b8;border:none;border-radius:7px;padding:6px 12px;font-size:0.78rem;cursor:pointer;">✏️</button>
+          <button onclick="excluirEmpresa('${e.id}','${escapeHtml(e.nome)}')" style="background:#2d1515;color:#FCA5A5;border:1px solid #7f1d1d;border-radius:7px;padding:6px 12px;font-size:0.78rem;cursor:pointer;">🗑️</button>
         </div>
       </div>
     `).join('');
   } catch(e) {
-    el.innerHTML = '<div style="color:#FCA5A5;padding:16px;">⚠️ Erro ao carregar empresas.</div>';
-    console.warn(e);
+    el.innerHTML = '<div style="color:#FCA5A5;">⚠️ Erro ao carregar.</div>';
   }
 }
 
@@ -4126,83 +4118,43 @@ async function adicionarEmpresa() {
   const nome = document.getElementById('emp-nome')?.value?.trim();
   const site = document.getElementById('emp-site')?.value?.trim();
   const logo = document.getElementById('emp-logo')?.value?.trim();
-
-  if (!nome) { toastAdmin('⚠️ Informe o nome da empresa.'); return; }
-  if (!logo) { toastAdmin('⚠️ Informe a URL da logo.'); return; }
-
+  if (!nome || !logo) { toastAdmin('⚠️ Nome e logo são obrigatórios.'); return; }
   try {
     const maxOrdem = await sbFetch('empresas_apoiadoras?select=ordem&order=ordem.desc&limit=1');
     const novaOrdem = (maxOrdem.length > 0 ? maxOrdem[0].ordem : 0) + 1;
-
     await sbFetch('empresas_apoiadoras', {
       method: 'POST',
       body: JSON.stringify({ nome, url_logo: logo, site: site || null, ordem: novaOrdem, ativo: true })
     });
-
     document.getElementById('emp-nome').value = '';
     document.getElementById('emp-site').value = '';
     document.getElementById('emp-logo').value = '';
     carregarEmpresas();
-    registrarLog('criar', 'empresas_apoiadoras', null, `Adicionou empresa: ${nome}`);
     toastAdmin('✅ Empresa adicionada!', 'ok');
   } catch(e) {
-    toastAdmin('⚠️ Erro ao adicionar empresa.');
-    console.warn(e);
+    toastAdmin('⚠️ Erro ao adicionar.');
   }
 }
 
 async function editarEmpresa(id) {
-  try {
-    const dados = await sbFetch(`empresas_apoiadoras?id=eq.${id}&select=*`);
-    if (!dados.length) return;
-    const e = dados[0];
-
-    const modalId = 'modal-editar-empresa';
-    let modal = document.getElementById(modalId);
-    if (modal) modal.remove();
-
-    modal = document.createElement('div');
-    modal.id = modalId;
-    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
-    modal.innerHTML = `
-      <div style="background:#161b27;border:1px solid #1e2535;border-radius:16px;padding:28px;max-width:500px;width:100%;">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
-          <div style="font-family:'Montserrat',sans-serif;font-weight:900;font-size:1rem;color:#fff;">✏️ Editar Empresa</div>
-          <button onclick="document.getElementById('${modalId}').remove()" style="background:#1e2535;border:none;color:#94a3b8;border-radius:8px;padding:6px 12px;cursor:pointer;">✕</button>
-        </div>
-
-        <div style="margin-bottom:12px;">
-          <label style="font-size:0.8rem;color:#94a3b8;margin-bottom:6px;display:block;">Nome</label>
-          <input id="edit-nome" value="${escapeHtml(e.nome)}" style="width:100%;background:#0d1117;color:#e2e8f0;border:1px solid #1e2535;border-radius:6px;padding:8px;font-family:monospace;">
-        </div>
-
-        <div style="margin-bottom:12px;">
-          <label style="font-size:0.8rem;color:#94a3b8;margin-bottom:6px;display:block;">Site</label>
-          <input id="edit-site" value="${e.site ? escapeHtml(e.site) : ''}" style="width:100%;background:#0d1117;color:#e2e8f0;border:1px solid #1e2535;border-radius:6px;padding:8px;font-family:monospace;">
-        </div>
-
-        <div style="margin-bottom:20px;">
-          <label style="font-size:0.8rem;color:#94a3b8;margin-bottom:6px;display:block;">URL Logo</label>
-          <input id="edit-logo" value="${escapeHtml(e.url_logo)}" style="width:100%;background:#0d1117;color:#e2e8f0;border:1px solid #1e2535;border-radius:6px;padding:8px;font-family:monospace;">
-        </div>
-
-        <button onclick="salvarEmpresa('${id}')" style="width:100%;background:#1A3C8F;color:#fff;border:none;border-radius:8px;padding:12px;font-family:'Montserrat',sans-serif;font-weight:700;cursor:pointer;">💾 Salvar</button>
-      </div>`;
-    document.body.appendChild(modal);
-    modal.addEventListener('click', (ev) => { if (ev.target === modal) modal.remove(); });
-  } catch(e) {
-    toastAdmin('⚠️ Erro ao abrir editor.');
-    console.warn(e);
-  }
+  const dados = await sbFetch(`empresas_apoiadoras?id=eq.${id}&select=*`);
+  if (!dados.length) return;
+  const e = dados[0];
+  const modalId = 'modal-editar-empresa';
+  let modal = document.getElementById(modalId);
+  if (modal) modal.remove();
+  modal = document.createElement('div');
+  modal.id = modalId;
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
+  modal.innerHTML = `<div style="background:#161b27;border:1px solid #1e2535;border-radius:16px;padding:28px;max-width:500px;width:100%;"><div style="margin-bottom:20px;"><b style="color:#fff;font-size:1rem;">✏️ Editar Empresa</b></div><div style="margin-bottom:12px;"><label style="font-size:0.8rem;color:#94a3b8;display:block;margin-bottom:6px;">Nome</label><input id="edit-nome" value="${escapeHtml(e.nome)}" style="width:100%;background:#0d1117;color:#e2e8f0;border:1px solid #1e2535;border-radius:6px;padding:8px;"></div><div style="margin-bottom:12px;"><label style="font-size:0.8rem;color:#94a3b8;display:block;margin-bottom:6px;">Site</label><input id="edit-site" value="${e.site ? escapeHtml(e.site) : ''}" style="width:100%;background:#0d1117;color:#e2e8f0;border:1px solid #1e2535;border-radius:6px;padding:8px;"></div><div style="margin-bottom:20px;"><label style="font-size:0.8rem;color:#94a3b8;display:block;margin-bottom:6px;">URL Logo</label><input id="edit-logo" value="${escapeHtml(e.url_logo)}" style="width:100%;background:#0d1117;color:#e2e8f0;border:1px solid #1e2535;border-radius:6px;padding:8px;"></div><button onclick="salvarEmpresa('${id}')" style="width:100%;background:#1A3C8F;color:#fff;border:none;border-radius:8px;padding:12px;cursor:pointer;font-weight:700;">💾 Salvar</button></div>`;
+  document.body.appendChild(modal);
 }
 
 async function salvarEmpresa(id) {
   const nome = document.getElementById('edit-nome')?.value?.trim();
   const site = document.getElementById('edit-site')?.value?.trim();
   const logo = document.getElementById('edit-logo')?.value?.trim();
-
-  if (!nome || !logo) { toastAdmin('⚠️ Preencha nome e logo.'); return; }
-
+  if (!nome || !logo) { toastAdmin('⚠️ Preencha obrigatórios.'); return; }
   try {
     await sbFetch(`empresas_apoiadoras?id=eq.${id}`, {
       method: 'PATCH',
@@ -4210,28 +4162,21 @@ async function salvarEmpresa(id) {
     });
     document.getElementById('modal-editar-empresa')?.remove();
     carregarEmpresas();
-    registrarLog('editar', 'empresas_apoiadoras', id, 'Atualizou empresa');
-    toastAdmin('✅ Empresa atualizada!', 'ok');
+    toastAdmin('✅ Atualizada!', 'ok');
   } catch(e) {
     toastAdmin('⚠️ Erro ao salvar.');
-    console.warn(e);
   }
 }
 
 async function excluirEmpresa(id, nome) {
-  if (!confirm(`Remover "${nome}" da lista de apoiadores?`)) return;
+  if (!confirm(`Remover "${nome}"?`)) return;
   try {
     await sbFetch(`empresas_apoiadoras?id=eq.${id}`, { method: 'DELETE' });
     carregarEmpresas();
-    registrarLog('excluir', 'empresas_apoiadoras', id, `Removeu empresa: ${nome}`);
-    toastAdmin('✅ Empresa removida.', 'ok');
+    toastAdmin('✅ Removida.', 'ok');
   } catch(e) {
     toastAdmin('⚠️ Erro ao remover.');
   }
-}
-
-function initEmpresasPage() {
-  carregarEmpresas();
 }
 
 // ── INIT ──
