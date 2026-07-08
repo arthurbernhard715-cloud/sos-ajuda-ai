@@ -929,13 +929,84 @@ textarea.form-control { resize: vertical; min-height: 88px; }
 
   <div class="parceiros">
     <p>Empresas que apoiam a missão</p>
-    <div class="parceiros-row">
-      <div class="parceiro">🏗️ Empresa Parceira 1</div>
-      <div class="parceiro">🏪 Supermercado Parceiro</div>
-      <div class="parceiro">🏦 Banco Parceiro</div>
-      <div class="parceiro" onclick="toast('Entre em contato: contatososajudaai@gmail.com')">+ Seja parceiro</div>
+    <div class="parceiros-row" id="parceiros-container">
+      <div style="text-align:center;color:#94a3b8;padding:20px;">⏳ Carregando empresas...</div>
     </div>
   </div>
+
+  <!-- CSS E JS PARA CARREGAR LOGOS DO BANCO -->
+  <style>
+    .parceiro-link {
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:8px;
+      text-decoration:none;
+      color:#1A3C8F;
+      transition:transform 0.2s;
+    }
+    .parceiro-link:hover {
+      transform:scale(1.05);
+    }
+    .parceiro-logo {
+      max-width:150px;
+      max-height:60px;
+      object-fit:contain;
+      border-radius:8px;
+    }
+    .parceiro-link span {
+      font-size:0.8rem;
+      font-weight:600;
+      text-align:center;
+      max-width:150px;
+    }
+  </style>
+
+  <script>
+    // Carregar empresas apoiadoras do Supabase
+    async function carregarEmpresesApoiadoras() {
+      try {
+        const res = await fetch(SB_URL + '/rest/v1/empresas_apoiadoras?ativo=eq.true&order=ordem.asc', {
+          headers: {
+            'apikey': SB_KEY,
+            'Authorization': 'Bearer ' + SB_KEY,
+          }
+        });
+        const empresas = await res.json();
+        const container = document.getElementById('parceiros-container');
+        
+        if (!empresas.length) {
+          container.innerHTML = '<div style="color:#94a3b8;padding:20px;">Nenhuma empresa apoiadora cadastrada.</div>';
+          return;
+        }
+
+        let html = empresas.map(e => `
+          <a href="${e.site || '#'}" target="_blank" class="parceiro-link" ${!e.site ? 'onclick="return false;"' : ''}>
+            <img src="${e.url_logo}" alt="${e.nome}" class="parceiro-logo" onerror="this.src='https://via.placeholder.com/150x60?text=Logo'">
+            <span>${e.nome}</span>
+          </a>
+        `).join('');
+
+        // Adicionar botão "Seja Parceiro"
+        html += `
+          <a href="#" class="parceiro-link" onclick="toast('Entre em contato: contatososajudaai@gmail.com'); return false;">
+            <div style="width:150px;height:60px;display:flex;align-items:center;justify-content:center;background:#F4F6FA;border-radius:8px;font-size:0.85rem;color:#64748B;text-align:center;padding:8px;">
+              + Seja<br>Parceiro
+            </div>
+            <span>Sua Empresa</span>
+          </a>
+        `;
+
+        container.innerHTML = html;
+      } catch(e) {
+        console.warn('Erro ao carregar empresas:', e);
+        document.getElementById('parceiros-container').innerHTML = '<div style="color:#94a3b8;padding:20px;">Erro ao carregar empresas.</div>';
+      }
+    }
+
+    // Carregar quando o Supabase estiver pronto
+    setTimeout(carregarEmpresesApoiadoras, 1000);
+  </script>
 </section>
 
 <!-- FOOTER STRIP -->
