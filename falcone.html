@@ -384,9 +384,6 @@ tbody tr:last-child td{border-bottom:none;}
       <div class="nav-item nav-item-perigo" data-page="zonarisco" onclick="irPara('zonarisco')">
         <span class="ni-icon">☢️</span> Zona de Risco
       </div>
-      <div class="nav-item" data-page="colaboradores" onclick="irPara('colaboradores')" id="navColaboradores">
-        <span class="ni-icon">👥</span> Colaboradores
-      </div>
       <div class="nav-item" onclick="window.open('https://sosajudaai.com.br','_blank')">
         <span class="ni-icon">🌐</span> Ver site
       </div>
@@ -982,47 +979,44 @@ tbody tr:last-child td{border-bottom:none;}
     </div>
 
 
-    <!-- COLABORADORES -->
-    <div class="page" id="page-colaboradores">
-      <div class="page-title">👥 Colaboradores</div>
-      <div class="page-sub">Gerencie quem pode acessar este painel e o que cada um pode fazer.</div>
+    <!-- EMPRESAS APOIADORAS -->
+    <div class="page" id="page-empresas">
+      <div class="page-title">🤝 Empresas Apoiadoras</div>
+      <div class="page-sub">Gerencie as empresas que apoiam o SOS Ajuda Aí.</div>
 
-      <!-- Adicionar colaborador -->
+      <!-- Adicionar empresa -->
       <div class="table-wrap" style="margin-bottom:24px;">
         <div class="table-header">
-          <div class="table-title">➕ Adicionar colaborador</div>
+          <div class="table-title">➕ Adicionar Empresa</div>
         </div>
-        <div style="padding:20px;display:flex;flex-direction:column;gap:14px;">
+        <div style="padding:20px;display:flex;flex-direction:column;gap:12px;">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
             <div>
-              <label style="display:block;font-size:0.78rem;color:#94a3b8;margin-bottom:6px;">Nome</label>
-              <input class="table-search" id="colab-nome" placeholder="Nome do colaborador" style="width:100%;">
+              <label style="display:block;font-size:0.78rem;color:#94a3b8;margin-bottom:6px;">Nome da Empresa</label>
+              <input class="table-search" id="emp-nome" placeholder="Ex: Empresa XYZ" style="width:100%;">
             </div>
             <div>
-              <label style="display:block;font-size:0.78rem;color:#94a3b8;margin-bottom:6px;">E-mail Google</label>
-              <input class="table-search" id="colab-email" placeholder="email@gmail.com" type="email" style="width:100%;">
+              <label style="display:block;font-size:0.78rem;color:#94a3b8;margin-bottom:6px;">Site</label>
+              <input class="table-search" id="emp-site" placeholder="https://empresa.com.br" style="width:100%;">
             </div>
           </div>
-
-          <!-- Grid de permissões -->
           <div>
-            <div style="font-size:0.78rem;color:#94a3b8;margin-bottom:10px;">Permissões por seção:</div>
-            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px;" id="colab-perms-grid">
-            </div>
+            <label style="display:block;font-size:0.78rem;color:#94a3b8;margin-bottom:6px;">URL da Logo</label>
+            <input class="table-search" id="emp-logo" placeholder="https://exemplo.com/logo.png" style="width:100%;">
+            <div style="font-size:0.7rem;color:#64748b;margin-top:4px;">Cole o link direto da imagem (Cloudinary, GitHub, ou outro)</div>
           </div>
-
-          <button onclick="adicionarColaborador()" style="align-self:flex-start;background:#1A3C8F;color:#fff;border:none;border-radius:8px;padding:10px 22px;font-family:'Montserrat',sans-serif;font-weight:700;font-size:0.85rem;cursor:pointer;">
-            ➕ Adicionar colaborador
+          <button onclick="adicionarEmpresa()" style="align-self:flex-start;background:#1A3C8F;color:#fff;border:none;border-radius:8px;padding:10px 22px;font-family:'Montserrat',sans-serif;font-weight:700;font-size:0.85rem;cursor:pointer;">
+            ➕ Adicionar Empresa
           </button>
         </div>
       </div>
 
-      <!-- Lista de colaboradores -->
+      <!-- Lista de empresas -->
       <div class="table-wrap">
         <div class="table-header">
-          <div class="table-title">👥 Colaboradores cadastrados</div>
+          <div class="table-title">🤝 Empresas Cadastradas</div>
         </div>
-        <div id="lista-colaboradores" style="padding:16px;">
+        <div id="lista-empresas" style="padding:16px;">
           <div style="text-align:center;color:#64748b;padding:32px;">⏳ Carregando...</div>
         </div>
       </div>
@@ -1130,36 +1124,18 @@ async function verificarSessao() {
   }
 
   if (usuarioAtual?.user) {
-    const email = usuarioAtual.user.email;
+    if (usuarioAtual.user.email !== ADMIN_EMAIL) {
+      document.getElementById('accessDenied').style.display = 'block';
+      return;
+    }
+    // Admin autorizado!
     const u = usuarioAtual.user;
-
-    if (email === ADMIN_EMAIL) {
-      // Admin master — acesso total
-      document.getElementById('adminAvatar').textContent = (u.user_metadata?.full_name || email || 'A')[0].toUpperCase();
-      document.getElementById('adminNome').textContent = u.user_metadata?.full_name?.split(' ')[0] || 'Admin';
-      document.getElementById('adminEmailTxt').textContent = email;
-      document.getElementById('loginScreen').style.display = 'none';
-      document.getElementById('adminWrap').classList.add('visible');
-      carregarDados();
-      return;
-    }
-
-    // Verifica se é colaborador autorizado
-    const perms = await verificarAcessoColaborador(email);
-    if (perms !== null) {
-      // Colaborador autorizado
-      document.getElementById('adminAvatar').textContent = (u.user_metadata?.full_name || email || 'C')[0].toUpperCase();
-      document.getElementById('adminNome').textContent = u.user_metadata?.full_name?.split(' ')[0] || 'Colaborador';
-      document.getElementById('adminEmailTxt').textContent = email;
-      document.getElementById('loginScreen').style.display = 'none';
-      document.getElementById('adminWrap').classList.add('visible');
-      aplicarPermissoesColaborador(perms);
-      carregarDados();
-      return;
-    }
-
-    // Nem admin, nem colaborador
-    document.getElementById('accessDenied').style.display = 'block';
+    document.getElementById('adminAvatar').textContent = (u.user_metadata?.full_name || u.email || 'A')[0].toUpperCase();
+    document.getElementById('adminNome').textContent = u.user_metadata?.full_name?.split(' ')[0] || 'Admin';
+    document.getElementById('adminEmailTxt').textContent = u.email;
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('adminWrap').classList.add('visible');
+    carregarDados();
   }
 }
 
@@ -3478,7 +3454,6 @@ function irPara(pagina) {
   if (pagina === 'logs') carregarLogs();
   if (pagina === 'zonarisco') resetarCamposRisco();
   if (pagina === 'simulacao') { resetarCamposSim(); atualizarResumoSimulacao(); }
-  if (pagina === 'colaboradores') initColaboradoresPage();
 }
 
 // ── FILTROS ──
@@ -4116,142 +4091,73 @@ function toast(msg, tipo='') {
 
 
 // ═══════════════════════════════════════════════════════════════
-// SISTEMA DE COLABORADORES
+// SISTEMA DE EMPRESAS APOIADORAS
 // ═══════════════════════════════════════════════════════════════
 
-// Mapa de todas as páginas do Falcone com label legível
-const PAGINAS_FALCONE = {
-  dashboard:    { label: '📊 Dashboard',           bloqueavel: false },
-  solicitacoes: { label: '🏠 Solicitações',         bloqueavel: true  },
-  voluntarios:  { label: '🙋 Voluntários',          bloqueavel: true  },
-  confirmacoes: { label: '✅ Confirmações',          bloqueavel: true  },
-  mapa:         { label: '🗺️ Mapa geral',           bloqueavel: true  },
-  prefeituras:  { label: '🏛️ Prefeituras',          bloqueavel: true  },
-  pontosapoio:  { label: '📍 Pontos de Apoio',      bloqueavel: true  },
-  dados:        { label: '📊 Dados',                bloqueavel: true  },
-  bloqueios:    { label: '🚫 Regiões Bloqueadas',   bloqueavel: true  },
-  permitidas:   { label: '🎯 Modo Priorização',     bloqueavel: true  },
-  logs:         { label: '📜 Histórico de Ações',   bloqueavel: true  },
-  simulacao:    { label: '🎭 Simulação Demo',        bloqueavel: true  },
-  zonarisco:    { label: '☢️ Zona de Risco',        bloqueavel: true  },
-};
-
-// Níveis de permissão por página
-const NIVEIS_PERM = ['bloqueado', 'ver', 'ver_editar', 'ver_editar_excluir'];
-const NIVEIS_LABEL = {
-  bloqueado:           '🔒 Bloqueado',
-  ver:                 '👁️ Ver',
-  ver_editar:          '✏️ Ver + Editar',
-  ver_editar_excluir:  '🗑️ Ver + Editar + Excluir',
-};
-
-let _permColabAtual = {};
-
-// Monta o grid de permissões no formulário de adicionar colaborador
-function montarGridPermissoes(containerId, permAtual = {}) {
-  const container = document.getElementById(containerId);
-  if (!container) return;
-
-  container.innerHTML = Object.entries(PAGINAS_FALCONE)
-    .filter(([, cfg]) => cfg.bloqueavel)
-    .map(([page, cfg]) => {
-      const nivelAtual = permAtual[page] || 'bloqueado';
-      return `
-        <div style="background:#0d1117;border:1px solid #1e2535;border-radius:10px;padding:12px;">
-          <div style="font-size:0.8rem;font-weight:700;color:#e2e8f0;margin-bottom:8px;">${cfg.label}</div>
-          <select onchange="_permColabAtual['${page}']=this.value"
-            style="width:100%;background:#161b27;color:#e2e8f0;border:1px solid #1e2535;border-radius:6px;padding:6px 8px;font-size:0.78rem;cursor:pointer;">
-            ${NIVEIS_PERM.map(n => `<option value="${n}" ${nivelAtual === n ? 'selected' : ''}>${NIVEIS_LABEL[n]}</option>`).join('')}
-          </select>
-        </div>`;
-    }).join('');
-}
-
-// Carrega colaboradores do banco e renderiza a lista
-async function carregarColaboradores() {
-  const el = document.getElementById('lista-colaboradores');
+async function carregarEmpresas() {
+  const el = document.getElementById('lista-empresas');
   if (!el) return;
   try {
-    const lista = await sbFetch('colaboradores?order=criado_em.desc&select=*');
+    const lista = await sbFetch('empresas_apoiadoras?order=ordem.asc&select=*');
     if (!lista.length) {
-      el.innerHTML = '<div style="text-align:center;color:#64748b;padding:32px;">Nenhum colaborador cadastrado ainda.</div>';
+      el.innerHTML = '<div style="text-align:center;color:#64748b;padding:32px;">Nenhuma empresa cadastrada ainda.</div>';
       return;
     }
-    el.innerHTML = lista.map(c => {
-      const perms = c.permissoes || {};
-      const paginasVisiveis = Object.entries(PAGINAS_FALCONE)
-        .filter(([page, cfg]) => cfg.bloqueavel && perms[page] && perms[page] !== 'bloqueado')
-        .map(([page, cfg]) => `<span style="background:#1e2535;color:#94a3b8;font-size:0.7rem;padding:2px 8px;border-radius:4px;">${cfg.label} — ${NIVEIS_LABEL[perms[page]]}</span>`)
-        .join('');
-
-      return `
-        <div style="background:#0d1117;border:1px solid #1e2535;border-radius:12px;padding:16px;margin-bottom:12px;">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-            <div>
-              <div style="font-weight:700;color:#e2e8f0;font-size:0.92rem;">${escapeHtml(c.nome)}</div>
-              <div style="font-size:0.78rem;color:#64748b;margin-top:2px;">${escapeHtml(c.email)}</div>
-            </div>
-            <div style="display:flex;gap:8px;">
-              <button onclick="editarColaborador('${c.id}')"
-                style="background:#1e2535;color:#94a3b8;border:none;border-radius:7px;padding:6px 12px;font-size:0.78rem;cursor:pointer;">
-                ✏️ Editar
-              </button>
-              <button onclick="excluirColaborador('${c.id}','${escapeHtml(c.nome)}')"
-                style="background:#2d1515;color:#FCA5A5;border:1px solid #7f1d1d;border-radius:7px;padding:6px 12px;font-size:0.78rem;cursor:pointer;">
-                🗑️ Remover
-              </button>
-            </div>
-          </div>
-          <div style="display:flex;gap:6px;flex-wrap:wrap;">
-            ${paginasVisiveis || '<span style="color:#475569;font-size:0.75rem;">Nenhuma permissão concedida</span>'}
-          </div>
-        </div>`;
-    }).join('');
+    el.innerHTML = lista.map(e => `
+      <div style="background:#0d1117;border:1px solid #1e2535;border-radius:12px;padding:16px;margin-bottom:12px;display:flex;gap:16px;align-items:center;">
+        <img src="${escapeHtml(e.url_logo)}" alt="${escapeHtml(e.nome)}" style="width:100px;height:60px;object-fit:contain;border-radius:6px;background:#161b27;padding:4px;">
+        <div style="flex:1;">
+          <div style="font-weight:700;color:#e2e8f0;font-size:0.95rem;">${escapeHtml(e.nome)}</div>
+          ${e.site ? `<div style="font-size:0.8rem;color:#64748b;"><a href="${escapeHtml(e.site)}" target="_blank" style="color:#1A3C8F;">Ver site →</a></div>` : ''}
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button onclick="editarEmpresa('${e.id}')" style="background:#1e2535;color:#94a3b8;border:none;border-radius:7px;padding:6px 12px;font-size:0.78rem;cursor:pointer;">✏️ Editar</button>
+          <button onclick="excluirEmpresa('${e.id}','${escapeHtml(e.nome)}')" style="background:#2d1515;color:#FCA5A5;border:1px solid #7f1d1d;border-radius:7px;padding:6px 12px;font-size:0.78rem;cursor:pointer;">🗑️ Remover</button>
+        </div>
+      </div>
+    `).join('');
   } catch(e) {
-    el.innerHTML = '<div style="color:#FCA5A5;padding:16px;">⚠️ Erro ao carregar colaboradores.</div>';
+    el.innerHTML = '<div style="color:#FCA5A5;padding:16px;">⚠️ Erro ao carregar empresas.</div>';
     console.warn(e);
   }
 }
 
-// Adiciona novo colaborador
-async function adicionarColaborador() {
-  const nome  = document.getElementById('colab-nome')?.value?.trim();
-  const email = document.getElementById('colab-email')?.value?.trim()?.toLowerCase();
-  if (!nome)  { toastAdmin('⚠️ Informe o nome do colaborador.'); return; }
-  if (!email || !email.includes('@')) { toastAdmin('⚠️ Informe um e-mail válido.'); return; }
-  if (email === ADMIN_EMAIL) { toastAdmin('⚠️ Esse é o seu próprio e-mail de admin!'); return; }
+async function adicionarEmpresa() {
+  const nome = document.getElementById('emp-nome')?.value?.trim();
+  const site = document.getElementById('emp-site')?.value?.trim();
+  const logo = document.getElementById('emp-logo')?.value?.trim();
+
+  if (!nome) { toastAdmin('⚠️ Informe o nome da empresa.'); return; }
+  if (!logo) { toastAdmin('⚠️ Informe a URL da logo.'); return; }
 
   try {
-    const jaExiste = await sbFetch(`colaboradores?email=eq.${encodeURIComponent(email)}&select=id`);
-    if (jaExiste.length) { toastAdmin('⚠️ Este e-mail já está cadastrado como colaborador.'); return; }
+    const maxOrdem = await sbFetch('empresas_apoiadoras?select=ordem&order=ordem.desc&limit=1');
+    const novaOrdem = (maxOrdem.length > 0 ? maxOrdem[0].ordem : 0) + 1;
 
-    await sbFetch('colaboradores', {
+    await sbFetch('empresas_apoiadoras', {
       method: 'POST',
-      body: JSON.stringify({ nome, email, permissoes: _permColabAtual, ativo: true })
+      body: JSON.stringify({ nome, url_logo: logo, site: site || null, ordem: novaOrdem, ativo: true })
     });
 
-    document.getElementById('colab-nome').value = '';
-    document.getElementById('colab-email').value = '';
-    _permColabAtual = {};
-    montarGridPermissoes('colab-perms-grid');
-    carregarColaboradores();
-    registrarLog('criar', 'colaboradores', null, `Adicionou colaborador: ${nome} (${email})`);
-    toastAdmin('✅ Colaborador adicionado!', 'ok');
+    document.getElementById('emp-nome').value = '';
+    document.getElementById('emp-site').value = '';
+    document.getElementById('emp-logo').value = '';
+    carregarEmpresas();
+    registrarLog('criar', 'empresas_apoiadoras', null, `Adicionou empresa: ${nome}`);
+    toastAdmin('✅ Empresa adicionada!', 'ok');
   } catch(e) {
-    toastAdmin('⚠️ Erro ao adicionar. Tente novamente.');
+    toastAdmin('⚠️ Erro ao adicionar empresa.');
     console.warn(e);
   }
 }
 
-// Modal inline de edição de permissões
-async function editarColaborador(id) {
+async function editarEmpresa(id) {
   try {
-    const dados = await sbFetch(`colaboradores?id=eq.${id}&select=*`);
+    const dados = await sbFetch(`empresas_apoiadoras?id=eq.${id}&select=*`);
     if (!dados.length) return;
-    const c = dados[0];
+    const e = dados[0];
 
-    // Cria modal de edição inline
-    const modalId = 'modal-editar-colab';
+    const modalId = 'modal-editar-empresa';
     let modal = document.getElementById(modalId);
     if (modal) modal.remove();
 
@@ -4259,144 +4165,73 @@ async function editarColaborador(id) {
     modal.id = modalId;
     modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
     modal.innerHTML = `
-      <div style="background:#161b27;border:1px solid #1e2535;border-radius:16px;padding:28px;max-width:680px;width:100%;max-height:90vh;overflow-y:auto;">
+      <div style="background:#161b27;border:1px solid #1e2535;border-radius:16px;padding:28px;max-width:500px;width:100%;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
-          <div>
-            <div style="font-family:'Montserrat',sans-serif;font-weight:900;font-size:1rem;color:#fff;">✏️ Editar colaborador</div>
-            <div style="font-size:0.8rem;color:#64748b;margin-top:2px;">${escapeHtml(c.nome)} — ${escapeHtml(c.email)}</div>
-          </div>
-          <button onclick="document.getElementById('${modalId}').remove()"
-            style="background:#1e2535;border:none;color:#94a3b8;border-radius:8px;padding:6px 12px;cursor:pointer;">✕</button>
+          <div style="font-family:'Montserrat',sans-serif;font-weight:900;font-size:1rem;color:#fff;">✏️ Editar Empresa</div>
+          <button onclick="document.getElementById('${modalId}').remove()" style="background:#1e2535;border:none;color:#94a3b8;border-radius:8px;padding:6px 12px;cursor:pointer;">✕</button>
         </div>
-        <div id="edit-perms-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px;margin-bottom:20px;"></div>
-        <button onclick="salvarPermissoesColaborador('${id}')"
-          style="width:100%;background:#1A3C8F;color:#fff;border:none;border-radius:8px;padding:12px;font-family:'Montserrat',sans-serif;font-weight:700;cursor:pointer;">
-          💾 Salvar permissões
-        </button>
+
+        <div style="margin-bottom:12px;">
+          <label style="font-size:0.8rem;color:#94a3b8;margin-bottom:6px;display:block;">Nome</label>
+          <input id="edit-nome" value="${escapeHtml(e.nome)}" style="width:100%;background:#0d1117;color:#e2e8f0;border:1px solid #1e2535;border-radius:6px;padding:8px;font-family:monospace;">
+        </div>
+
+        <div style="margin-bottom:12px;">
+          <label style="font-size:0.8rem;color:#94a3b8;margin-bottom:6px;display:block;">Site</label>
+          <input id="edit-site" value="${e.site ? escapeHtml(e.site) : ''}" style="width:100%;background:#0d1117;color:#e2e8f0;border:1px solid #1e2535;border-radius:6px;padding:8px;font-family:monospace;">
+        </div>
+
+        <div style="margin-bottom:20px;">
+          <label style="font-size:0.8rem;color:#94a3b8;margin-bottom:6px;display:block;">URL Logo</label>
+          <input id="edit-logo" value="${escapeHtml(e.url_logo)}" style="width:100%;background:#0d1117;color:#e2e8f0;border:1px solid #1e2535;border-radius:6px;padding:8px;font-family:monospace;">
+        </div>
+
+        <button onclick="salvarEmpresa('${id}')" style="width:100%;background:#1A3C8F;color:#fff;border:none;border-radius:8px;padding:12px;font-family:'Montserrat',sans-serif;font-weight:700;cursor:pointer;">💾 Salvar</button>
       </div>`;
     document.body.appendChild(modal);
-
-    // Preenche o grid com as permissões atuais
-    _permColabAtual = { ...(c.permissoes || {}) };
-    
-    const grid = document.getElementById('edit-perms-grid');
-    grid.innerHTML = Object.entries(PAGINAS_FALCONE)
-      .filter(([, cfg]) => cfg.bloqueavel)
-      .map(([page, cfg]) => {
-        const nivelAtual = _permColabAtual[page] || 'bloqueado';
-        return `
-          <div style="background:#0d1117;border:1px solid #1e2535;border-radius:10px;padding:12px;">
-            <div style="font-size:0.8rem;font-weight:700;color:#e2e8f0;margin-bottom:8px;">${cfg.label}</div>
-            <select onchange="_permColabAtual['${page}']=this.value"
-              style="width:100%;background:#161b27;color:#e2e8f0;border:1px solid #1e2535;border-radius:6px;padding:6px 8px;font-size:0.78rem;cursor:pointer;">
-              ${NIVEIS_PERM.map(n => `<option value="${n}" ${nivelAtual === n ? 'selected' : ''}>${NIVEIS_LABEL[n]}</option>`).join('')}
-            </select>
-          </div>`;
-      }).join('');
-
-    modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+    modal.addEventListener('click', (ev) => { if (ev.target === modal) modal.remove(); });
   } catch(e) {
     toastAdmin('⚠️ Erro ao abrir editor.');
     console.warn(e);
   }
 }
 
-async function salvarPermissoesColaborador(id) {
+async function salvarEmpresa(id) {
+  const nome = document.getElementById('edit-nome')?.value?.trim();
+  const site = document.getElementById('edit-site')?.value?.trim();
+  const logo = document.getElementById('edit-logo')?.value?.trim();
+
+  if (!nome || !logo) { toastAdmin('⚠️ Preencha nome e logo.'); return; }
+
   try {
-    await sbFetch(`colaboradores?id=eq.${id}`, {
+    await sbFetch(`empresas_apoiadoras?id=eq.${id}`, {
       method: 'PATCH',
-      body: JSON.stringify({ permissoes: _permColabAtual })
+      body: JSON.stringify({ nome, url_logo: logo, site: site || null })
     });
-    document.getElementById('modal-editar-colab')?.remove();
-    carregarColaboradores();
-    registrarLog('editar', 'colaboradores', id, 'Atualizou permissões de colaborador');
-    toastAdmin('✅ Permissões salvas!', 'ok');
+    document.getElementById('modal-editar-empresa')?.remove();
+    carregarEmpresas();
+    registrarLog('editar', 'empresas_apoiadoras', id, 'Atualizou empresa');
+    toastAdmin('✅ Empresa atualizada!', 'ok');
   } catch(e) {
-    toastAdmin('⚠️ Erro ao salvar. Tente novamente.');
+    toastAdmin('⚠️ Erro ao salvar.');
     console.warn(e);
   }
 }
 
-async function excluirColaborador(id, nome) {
-  if (!confirm(`Remover ${nome} como colaborador? Ele perderá acesso imediatamente.`)) return;
+async function excluirEmpresa(id, nome) {
+  if (!confirm(`Remover "${nome}" da lista de apoiadores?`)) return;
   try {
-    await sbFetch(`colaboradores?id=eq.${id}`, { method: 'DELETE' });
-    carregarColaboradores();
-    registrarLog('excluir', 'colaboradores', id, `Removeu colaborador: ${nome}`);
-    toastAdmin('✅ Colaborador removido.', 'ok');
+    await sbFetch(`empresas_apoiadoras?id=eq.${id}`, { method: 'DELETE' });
+    carregarEmpresas();
+    registrarLog('excluir', 'empresas_apoiadoras', id, `Removeu empresa: ${nome}`);
+    toastAdmin('✅ Empresa removida.', 'ok');
   } catch(e) {
     toastAdmin('⚠️ Erro ao remover.');
   }
 }
 
-// ── CONTROLE DE ACESSO PARA COLABORADORES ──
-// Verifica se o usuário logado é colaborador e aplica as permissões dele
-
-let _permissoesColaborador = null; // null = admin (sem restrição), objeto = colaborador
-
-async function verificarAcessoColaborador(email) {
-  try {
-    const dados = await sbFetch(`colaboradores?email=eq.${encodeURIComponent(email)}&ativo=eq.true&select=*`);
-    if (dados.length) return dados[0].permissoes || {};
-    return null; // não é colaborador
-  } catch(e) {
-    console.warn('Erro ao verificar colaborador:', e);
-    return null;
-  }
-}
-
-function aplicarPermissoesColaborador(perms) {
-  _permissoesColaborador = perms;
-
-  // Esconde a aba de colaboradores (só admin gerencia)
-  document.getElementById('navColaboradores').style.display = 'none';
-
-  // Aplica visibilidade das abas na sidebar
-  Object.entries(PAGINAS_FALCONE).forEach(([page, cfg]) => {
-    if (!cfg.bloqueavel) return;
-    const navEl = document.querySelector(`.nav-item[data-page="${page}"]`);
-    if (!navEl) return;
-    const nivel = perms[page] || 'bloqueado';
-    if (nivel === 'bloqueado') navEl.style.display = 'none';
-  });
-
-  // Vai para dashboard como página inicial
-  irPara('dashboard');
-}
-
-// Verifica se o colaborador pode executar uma ação numa página
-function temPermissao(page, acao) {
-  if (!_permissoesColaborador) return true; // admin: tudo liberado
-  const nivel = _permissoesColaborador[page] || 'bloqueado';
-  if (nivel === 'bloqueado') return false;
-  if (acao === 'ver') return true;
-  if (acao === 'editar') return nivel === 'ver_editar' || nivel === 'ver_editar_excluir';
-  if (acao === 'excluir') return nivel === 'ver_editar_excluir';
-  return false;
-}
-
-// Inicializa grid de permissões ao entrar na aba
-function initColaboradoresPage() {
-  _permColabAtual = {};
-  montarGridPermissoes('colab-perms-grid');
-  carregarColaboradores();
-}
-
-
-
-// ── GUARDS DE PERMISSÃO ──
-// Envolve funções destrutivas para checar permissão do colaborador antes de executar
-
-const _excluirSolicitacaoOriginal = window.excluirSolicitacao;
-function excluirSolicitacaoGuarded(...args) {
-  if (!temPermissao('solicitacoes', 'excluir')) { toastAdmin('⛔ Você não tem permissão para excluir solicitações.'); return; }
-  return _excluirSolicitacaoOriginal?.(...args);
-}
-
-const _excluirVoluntarioOriginal = window.excluirVoluntario;
-function excluirVoluntarioGuarded(...args) {
-  if (!temPermissao('voluntarios', 'excluir')) { toastAdmin('⛔ Você não tem permissão para excluir voluntários.'); return; }
-  return _excluirVoluntarioOriginal?.(...args);
+function initEmpresasPage() {
+  carregarEmpresas();
 }
 
 // ── INIT ──
