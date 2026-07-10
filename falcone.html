@@ -550,6 +550,11 @@ tbody tr:last-child td{border-bottom:none;}
             <input class="table-search" id="pref-estado" placeholder="Preenchido automaticamente" style="width:100%;background:#161b27;cursor:not-allowed;" readonly>
           </div>
           <div>
+            <label style="font-size:0.75rem;color:#475569;font-weight:600;display:block;margin-bottom:6px;">USERNAME DE LOGIN *</label>
+            <input class="table-search" id="pref-username" placeholder="Ex: prefeitura_cacapava ou admin_rs" style="width:100%;">
+            <div style="font-size:0.7rem;color:#64748b;margin-top:4px;">Nome de usuário customizado (alfanuméricos e underscore)</div>
+          </div>
+          <div>
             <label style="font-size:0.75rem;color:#475569;font-weight:600;display:block;margin-bottom:6px;">SENHA DE ACESSO *</label>
             <input class="table-search" id="pref-senha" placeholder="Senha para o dashboard" style="width:100%;">
           </div>
@@ -587,6 +592,7 @@ tbody tr:last-child td{border-bottom:none;}
           <thead>
             <tr>
               <th>Cidade/Estado</th>
+              <th>Username</th>
               <th>Contato</th>
               <th>Senha</th>
               <th>Validade</th>
@@ -3482,11 +3488,12 @@ function renderPrefeituras(filtro='') {
   const lista = filtro ? dadosPref.filter(p =>
     p.cidade?.toLowerCase().includes(filtro) ||
     p.estado?.toLowerCase().includes(filtro) ||
+    p.username?.toLowerCase().includes(filtro) ||
     p.contato_nome?.toLowerCase().includes(filtro)
   ) : dadosPref;
 
   if (!lista.length) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:32px;color:#475569;">Nenhuma prefeitura cadastrada</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:#475569;">Nenhuma prefeitura cadastrada</td></tr>';
     return;
   }
 
@@ -3504,6 +3511,9 @@ function renderPrefeituras(filtro='') {
       <td>
         <strong style="color:#fff">${escapeHtml(p.cidade)}</strong>
         <span style="color:#475569"> — ${escapeHtml(p.estado)}</span>
+      </td>
+      <td>
+        <span style="font-family:monospace;background:#161b27;padding:4px 8px;border-radius:6px;font-size:0.82rem;color:#60A5FA;">${escapeHtml(p.username || '—')}</span>
       </td>
       <td>
         <div style="font-size:0.82rem">${p.contato_nome || '—'}</div>
@@ -3721,14 +3731,19 @@ function fecharListaCidadeAdmin() {
 async function adicionarPrefeitura() {
   const cidade   = document.getElementById('pref-cidade').value.trim();
   const estado   = document.getElementById('pref-estado').value.trim().toUpperCase();
+  const username = document.getElementById('pref-username').value.trim();
   const senha    = document.getElementById('pref-senha').value.trim();
   const datafim  = document.getElementById('pref-datafim').value;
   const contato  = document.getElementById('pref-contato').value.trim();
   const email    = document.getElementById('pref-email').value.trim();
   const whatsapp = document.getElementById('pref-whatsapp').value.trim();
 
-  if (!cidade || !senha || !datafim) {
+  if (!cidade || !username || !senha || !datafim) {
     toast('⚠️ Preencha todos os campos obrigatórios!', 'err');
+    return;
+  }
+  if (!username.match(/^[a-zA-Z0-9_]+$/)) {
+    toast('⚠️ Username: use apenas letras, números e underscore (_)', 'err');
     return;
   }
   if (!_adminCidadeValida) {
@@ -3743,7 +3758,7 @@ async function adicionarPrefeitura() {
     const criada = await sbFetch('prefeituras', {
       method: 'POST',
       body: JSON.stringify({
-        cidade, estado, senha: senhaHash,
+        cidade, estado, username, senha: senhaHash,
         data_fim: datafim,
         contato_nome: contato || null,
         contato_email: email || null,
@@ -3751,10 +3766,10 @@ async function adicionarPrefeitura() {
         ativo: true
       })
     });
-    registrarLog('criar', 'prefeituras', criada?.[0]?.id, `Adicionou prefeitura de ${cidade}, ${estado}`);
+    registrarLog('criar', 'prefeituras', criada?.[0]?.id, `Adicionou prefeitura de ${cidade}, ${estado} com username ${username}`);
     toast('✅ Prefeitura adicionada!', 'ok');
     // Limpa campos
-    ['pref-cidade','pref-estado','pref-senha','pref-datafim','pref-contato','pref-email','pref-whatsapp']
+    ['pref-cidade','pref-estado','pref-username','pref-senha','pref-datafim','pref-contato','pref-email','pref-whatsapp']
       .forEach(id => document.getElementById(id).value = '');
     _adminCidadeValida = false;
     document.getElementById('pref-cidade-ok').style.display = 'none';
