@@ -481,7 +481,23 @@ async function fazerLogin() {
   btn.disabled = true;
 
   try {
-    // Busca direto na tabela
+    // Valida a senha usando a função do Supabase (bcrypt)
+    const resValidacao = await fetch(`${SB_URL}/rest/v1/rpc/validar_senha_prefeitura`, {
+      method: 'POST',
+      headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_username: usernameDigitado, p_senha: senha })
+    });
+    const senhaValida = await resValidacao.json();
+
+    if (!senhaValida) {
+      erro.textContent = '⚠️ Username ou senha incorretos.';
+      erro.style.display = 'block';
+      btn.textContent = 'Acessar Dashboard';
+      btn.disabled = false;
+      return;
+    }
+
+    // Busca os dados da prefeitura se a senha está correta
     const res = await fetch(`${SB_URL}/rest/v1/prefeituras?username=eq.${encodeURIComponent(usernameDigitado)}&ativo=eq.true&select=id,cidade,estado,username,data_fim,ativo,senha`, {
       method: 'GET',
       headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY }
@@ -491,16 +507,7 @@ async function fazerLogin() {
     const pref = data && data.length ? data[0] : null;
 
     if (!pref) {
-      erro.textContent = '⚠️ Username não encontrado ou acesso inativo.';
-      erro.style.display = 'block';
-      btn.textContent = 'Acessar Dashboard';
-      btn.disabled = false;
-      return;
-    }
-
-    // Valida a senha (comparação plain text)
-    if (pref.senha !== senha) {
-      erro.textContent = '⚠️ Username ou senha incorretos.';
+      erro.textContent = '⚠️ Prefeitura não encontrada.';
       erro.style.display = 'block';
       btn.textContent = 'Acessar Dashboard';
       btn.disabled = false;
