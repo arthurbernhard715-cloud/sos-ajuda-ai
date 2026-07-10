@@ -498,8 +498,14 @@ async function fazerLogin() {
       return;
     }
 
-    // Se o username existe e está ativo, permite entrar
-    // (validação de senha simplificada por enquanto)
+    // Valida a senha (comparação plain text)
+    if (pref.senha !== senha) {
+      erro.textContent = '⚠️ Username ou senha incorretos.';
+      erro.style.display = 'block';
+      btn.textContent = 'Acessar Dashboard';
+      btn.disabled = false;
+      return;
+    }
 
     // Verifica validade
     if (pref.data_fim && new Date(pref.data_fim) < new Date()) {
