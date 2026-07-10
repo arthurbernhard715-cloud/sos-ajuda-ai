@@ -466,13 +466,13 @@ let modoMapa = 'calor';
 
 // ── AUTH — busca do Supabase ──
 async function fazerLogin() {
-  const cidadeDigitada = document.getElementById('loginCidade').value.trim();
+  const usernameDigitado = document.getElementById('loginCidade').value.trim();
   const senha  = document.getElementById('loginSenha').value.trim();
   const erro   = document.getElementById('loginError');
   const btn    = document.querySelector('.login-btn');
 
-  if (!cidadeDigitada || !senha) {
-    erro.textContent = '⚠️ Preencha cidade e senha.';
+  if (!usernameDigitado || !senha) {
+    erro.textContent = '⚠️ Preencha username e senha.';
     erro.style.display = 'block';
     return;
   }
@@ -485,14 +485,14 @@ async function fazerLogin() {
     const res = await fetch(`${SB_URL}/rest/v1/rpc/verificar_login_prefeitura`, {
       method: 'POST',
       headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ p_cidade: cidadeDigitada, p_senha: senha })
+      body: JSON.stringify({ p_username: usernameDigitado, p_senha: senha })
     });
     const data = await res.json();
 
     const pref = data && data.length ? data[0] : null;
 
     if (!pref) {
-      erro.textContent = '⚠️ Cidade ou senha incorretos, ou acesso inativo.';
+      erro.textContent = '⚠️ Username ou senha incorretos, ou acesso inativo.';
       erro.style.display = 'block';
       btn.textContent = 'Acessar Dashboard';
       btn.disabled = false;
