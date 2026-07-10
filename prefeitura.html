@@ -604,10 +604,15 @@ function exibirAvisoValidade() {
   const aviso = document.getElementById('avisoValidade');
   if (!aviso || !_cidadeAtual?.data_fim) return;
 
-  const dataFim = new Date(_cidadeAtual.data_fim);
+  // Converte ISO date string para Date corretamente (sem timezone issues)
+  const [ano, mes, dia] = _cidadeAtual.data_fim.split('T')[0].split('-');
+  const dataFim = new Date(ano, mes - 1, dia, 23, 59, 59); // 23:59 do dia pra garantir
   const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0); // início do dia
   const diasRestantes = Math.ceil((dataFim - hoje) / 86400000);
-  const dataFormatada = dataFim.toLocaleDateString('pt-BR');
+  
+  // Formata a data corretamente
+  const dataFormatada = `${dia}/${mes}/${ano}`;
 
   aviso.textContent = `📅 Acesso válido até ${dataFormatada}${diasRestantes <= 7 ? ` (${diasRestantes} dia${diasRestantes !== 1 ? 's' : ''} restante${diasRestantes !== 1 ? 's' : ''})` : ''}`;
   aviso.classList.toggle('aviso-critico', diasRestantes <= 7);
