@@ -741,6 +741,84 @@ textarea.form-control { resize: vertical; min-height: 88px; }
 </head>
 <body>
 
+<!-- INSERIR ISTO NO TOPO DO index.html, LOGO APÓS <body> -->
+
+<div id="bannerMensagens" style="display: none; width: 100%; padding: 16px 20px; border-bottom: 3px solid #1A3C8F; position: sticky; top: 0; z-index: 1000;">
+  <div class="container" style="max-width: 1200px; margin: 0 auto; display: flex; align-items: center; gap: 15px;">
+    <span id="iconeMensagem" style="font-size: 24px; flex-shrink: 0;">ℹ️</span>
+    <div style="flex: 1;">
+      <div id="tituloMensagem" style="font-weight: 700; font-size: 15px; margin-bottom: 4px;"></div>
+      <div id="conteudoMensagem" style="font-size: 14px; opacity: 0.95;"></div>
+    </div>
+    <button onclick="fecharBannerMensagens()" style="background: transparent; border: none; font-size: 20px; cursor: pointer; opacity: 0.7; padding: 0; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;">×</button>
+  </div>
+</div>
+
+<style>
+#bannerMensagens {
+  background: #e3f2fd;
+  color: #0066cc;
+}
+
+#bannerMensagens[data-tipo="info"] {
+  background: #e3f2fd;
+  color: #0066cc;
+  border-bottom-color: #0066cc;
+}
+
+#bannerMensagens[data-tipo="aviso"] {
+  background: #fff3cd;
+  color: #856404;
+  border-bottom-color: #ff9800;
+}
+
+#bannerMensagens[data-tipo="sucesso"] {
+  background: #d4edda;
+  color: #155724;
+  border-bottom-color: #28a745;
+}
+
+#bannerMensagens[data-tipo="erro"] {
+  background: #f8d7da;
+  color: #721c24;
+  border-bottom-color: #dc3545;
+}
+</style>
+
+<script>
+async function carregarMensagensDoSite() {
+  try {
+    // Buscar apenas mensagens ativas, ordenadas por prioridade
+    const { data, error } = await sbFetch('mensagens?ativa=eq.true&order=prioridade.desc', 'GET');
+    
+    if (error || !data || data.length === 0) {
+      document.getElementById('bannerMensagens').style.display = 'none';
+      return;
+    }
+
+    // Mostrar apenas a primeira (maior prioridade)
+    const msg = data[0];
+    const tipoIcons = { info: 'ℹ️', aviso: '⚠️', sucesso: '✓', erro: '✗' };
+    
+    document.getElementById('iconeMensagem').textContent = tipoIcons[msg.tipo] || 'ℹ️';
+    document.getElementById('tituloMensagem').textContent = msg.titulo;
+    document.getElementById('conteudoMensagem').textContent = msg.conteudo;
+    document.getElementById('bannerMensagens').setAttribute('data-tipo', msg.tipo);
+    document.getElementById('bannerMensagens').style.display = 'block';
+  } catch (err) {
+    console.error('Erro ao carregar mensagens:', err);
+  }
+}
+
+function fecharBannerMensagens() {
+  document.getElementById('bannerMensagens').style.display = 'none';
+}
+
+// Carregar ao iniciar a página
+document.addEventListener('DOMContentLoaded', carregarMensagensDoSite);
+</script>
+
+
 <!-- NAV -->
 <nav id="navbar">
   <div class="nav-logo"><img src="logo.png" alt="SOS Ajuda Aí"></div>
