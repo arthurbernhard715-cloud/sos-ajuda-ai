@@ -1085,137 +1085,6 @@ tbody tr:last-child td{border-bottom:none;}
   </div>
 </div>
 
-<script>
-// CARREGAR MENSAGENS
-async function carregarMensagens() {
-  try {
-    const res = await sbFetch('mensagens?order=prioridade.desc', { method: 'GET' }); const data = Array.isArray(res) ? res : [];
-    if (error) {
-      console.error('Erro ao carregar:', error);
-      document.getElementById('corpoMensagens').innerHTML = '<tr><td colspan="5" style="padding: 20px; text-align: center; color: red;">Erro ao carregar mensagens</td></tr>';
-      return;
-    }
-    
-    if (!data || data.length === 0) {
-      document.getElementById('corpoMensagens').innerHTML = '<tr><td colspan="5" style="padding: 20px; text-align: center; color: #999;">Nenhuma mensagem criada</td></tr>';
-      return;
-    }
-
-    // Ordenar por prioridade
-    data.sort((a, b) => b.prioridade - a.prioridade);
-
-    let html = '';
-    data.forEach(msg => {
-      const tipoIcons = { info: 'ℹ️', aviso: '⚠️', sucesso: '✓', erro: '✗' };
-      const tipoColors = { info: '#0066cc', aviso: '#ff9800', sucesso: '#28a745', erro: '#dc3545' };
-      const preview = msg.conteudo.substring(0, 40) + (msg.conteudo.length > 40 ? '...' : '');
-      
-      html += `
-        <tr style="border-bottom: 1px solid #eee;">
-          <td style="padding: 12px; color: ${tipoColors[msg.tipo]}; font-weight: 600;">${tipoIcons[msg.tipo]} ${msg.tipo}</td>
-          <td style="padding: 12px; font-weight: 500;">${escapeHtml(msg.titulo)}</td>
-          <td style="padding: 12px; color: #666; font-size: 13px;">${escapeHtml(preview)}</td>
-          <td style="padding: 12px; text-align: center;">
-            <input type="checkbox" ${msg.ativa ? 'checked' : ''} onchange="toggleMensagem('${msg.id}', this.checked)" style="cursor: pointer; width: 18px; height: 18px;">
-          </td>
-          <td style="padding: 12px; text-align: center;">
-            <button onclick="editarMensagem('${msg.id}')" style="background: #1A3C8F; color: white; padding: 5px 10px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; margin-right: 5px;">Editar</button>
-            <button onclick="deletarMensagem('${msg.id}')" style="background: #D92B2B; color: white; padding: 5px 10px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">Deletar</button>
-          </td>
-        </tr>
-      `;
-    });
-    
-    document.getElementById('corpoMensagens').innerHTML = html;
-  } catch (err) {
-    console.error('Erro:', err);
-  }
-}
-
-// ADICIONAR MENSAGEM
-async function adicionarMensagem() {
-  const titulo = document.getElementById('msgTitulo').value.trim();
-  const conteudo = document.getElementById('msgConteudo').value.trim();
-  const tipo = document.getElementById('msgTipo').value;
-  const prioridade = parseInt(document.getElementById('msgPrioridade').value) || 1;
-
-  if (!titulo || !conteudo) {
-    alert('Título e conteúdo são obrigatórios!');
-    return;
-  }
-
-  try {
-    const res = await sbFetch('mensagens', { method: 'POST', body: JSON.stringify({
-      titulo,
-      conteudo,
-      tipo,
-      prioridade,
-      ativa: true
-    }) }); const data = res;
-      alert('Erro ao adicionar: ' + error.message);
-      return;
-    }
-
-    alert('✓ Mensagem criada com sucesso!');
-    limparFormMensagens();
-    carregarMensagens();
-  } catch (err) {
-    alert('Erro: ' + err.message);
-  }
-}
-
-// TOGGLE ATIVA/INATIVA
-async function toggleMensagem(id, ativa) {
-  try {
-    const { error } = await sbFetch(`mensagens?id=eq.${id}`, 'PATCH', { ativa });
-    if (error) {
-      alert('Erro: ' + error.message);
-      carregarMensagens(); // Recarregar
-      return;
-    }
-    carregarMensagens();
-  } catch (err) {
-    alert('Erro: ' + err.message);
-  }
-}
-
-// DELETAR MENSAGEM
-async function deletarMensagem(id) {
-  if (!confirm('Tem certeza que quer deletar?')) return;
-  
-  try {
-    const { error } = await sbFetch(`mensagens?id=eq.${id}`, 'DELETE');
-    if (error) {
-      alert('Erro: ' + error.message);
-      return;
-    }
-    alert('✓ Deletado!');
-    carregarMensagens();
-  } catch (err) {
-    alert('Erro: ' + err.message);
-  }
-}
-
-// EDITAR (placeholder - implementar se quiser)
-function editarMensagem(id) {
-  alert('Funcionalidade de edição: selecione e delete, depois crie uma nova com as correções.');
-}
-
-// LIMPAR FORM
-function limparFormMensagens() {
-  document.getElementById('msgTitulo').value = '';
-  document.getElementById('msgConteudo').value = '';
-  document.getElementById('msgTipo').value = 'info';
-  document.getElementById('msgPrioridade').value = '1';
-}
-
-// Carregar ao iniciar
-document.addEventListener('DOMContentLoaded', () => {
-  // Se a aba foi carregada
-  const abaMensagens = document.getElementById('abaMensagens');
-  if (abaMensagens) carregarMensagens();
-});
-</script>
 v>
 
   </main>
@@ -4453,39 +4322,34 @@ verificarSessao();
 
 <script>
 // CARREGAR MENSAGENS
+// ===== GERENCIADOR DE MENSAGENS (versão limpa) =====
 async function carregarMensagens() {
   try {
-    const res = await sbFetch('mensagens?order=prioridade.desc', { method: 'GET' }); const data = Array.isArray(res) ? res : [];
-    if (error) {
-      console.error('Erro ao carregar:', error);
-      document.getElementById('corpoMensagens').innerHTML = '<tr><td colspan="5" style="padding: 20px; text-align: center; color: red;">Erro ao carregar mensagens</td></tr>';
-      return;
-    }
+    const res = await sbFetch('mensagens?order=prioridade.desc', { method: 'GET' });
+    const data = Array.isArray(res) ? res : [];
     
     if (!data || data.length === 0) {
       document.getElementById('corpoMensagens').innerHTML = '<tr><td colspan="5" style="padding: 20px; text-align: center; color: #999;">Nenhuma mensagem criada</td></tr>';
       return;
     }
 
-    // Ordenar por prioridade
-    data.sort((a, b) => b.prioridade - a.prioridade);
-
     let html = '';
     data.forEach(msg => {
       const tipoIcons = { info: 'ℹ️', aviso: '⚠️', sucesso: '✓', erro: '✗' };
-      const tipoColors = { info: '#0066cc', aviso: '#ff9800', sucesso: '#28a745', erro: '#dc3545' };
       const preview = msg.conteudo.substring(0, 40) + (msg.conteudo.length > 40 ? '...' : '');
+      const tituloEsc = msg.titulo.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+      const conteudoEsc = msg.conteudo.replace(/'/g, "\\'").replace(/"/g, '&quot;');
       
       html += `
         <tr style="border-bottom: 1px solid #eee;">
-          <td style="padding: 12px; color: ${tipoColors[msg.tipo]}; font-weight: 600;">${tipoIcons[msg.tipo]} ${msg.tipo}</td>
+          <td style="padding: 12px;">${tipoIcons[msg.tipo] || '?'} ${msg.tipo}</td>
           <td style="padding: 12px; font-weight: 500;">${escapeHtml(msg.titulo)}</td>
           <td style="padding: 12px; color: #666; font-size: 13px;">${escapeHtml(preview)}</td>
           <td style="padding: 12px; text-align: center;">
-            <input type="checkbox" ${msg.ativa ? 'checked' : ''} onchange="toggleMensagem('${msg.id}', this.checked)" style="cursor: pointer; width: 18px; height: 18px;">
+            <input type="checkbox" ${msg.ativa ? 'checked' : ''} onchange="toggleMensagem('${msg.id}', this.checked)" style="cursor: pointer;">
           </td>
           <td style="padding: 12px; text-align: center;">
-            <button onclick="editarMensagem('${msg.id}')" style="background: #1A3C8F; color: white; padding: 5px 10px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; margin-right: 5px;">Editar</button>
+            <button onclick="abrirModalEditar('${msg.id}', '${tituloEsc}', '${conteudoEsc}', '${msg.tipo}', ${msg.prioridade})" style="background: #1A3C8F; color: white; padding: 5px 10px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; margin-right: 5px;">Editar</button>
             <button onclick="deletarMensagem('${msg.id}')" style="background: #D92B2B; color: white; padding: 5px 10px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">Deletar</button>
           </td>
         </tr>
@@ -4494,11 +4358,11 @@ async function carregarMensagens() {
     
     document.getElementById('corpoMensagens').innerHTML = html;
   } catch (err) {
-    console.error('Erro:', err);
+    console.error('Erro ao carregar mensagens:', err);
+    document.getElementById('corpoMensagens').innerHTML = '<tr><td colspan="5" style="padding: 20px; text-align: center; color: red;">Erro ao carregar</td></tr>';
   }
 }
 
-// ADICIONAR MENSAGEM
 async function adicionarMensagem() {
   const titulo = document.getElementById('msgTitulo').value.trim();
   const conteudo = document.getElementById('msgConteudo').value.trim();
@@ -4511,50 +4375,35 @@ async function adicionarMensagem() {
   }
 
   try {
-    const res = await sbFetch('mensagens', { method: 'POST', body: JSON.stringify({
-      titulo,
-      conteudo,
-      tipo,
-      prioridade,
-      ativa: true
-    }) }); const data = res;
-      alert('Erro ao adicionar: ' + error.message);
-      return;
-    }
-
+    await sbFetch('mensagens', {
+      method: 'POST',
+      body: JSON.stringify({ titulo, conteudo, tipo, prioridade, ativa: true })
+    });
     alert('✓ Mensagem criada com sucesso!');
     limparFormMensagens();
     carregarMensagens();
   } catch (err) {
     alert('Erro: ' + err.message);
+    console.error(err);
   }
 }
 
-// TOGGLE ATIVA/INATIVA
 async function toggleMensagem(id, ativa) {
   try {
-    const { error } = await sbFetch(`mensagens?id=eq.${id}`, 'PATCH', { ativa });
-    if (error) {
-      alert('Erro: ' + error.message);
-      carregarMensagens(); // Recarregar
-      return;
-    }
+    await sbFetch(`mensagens?id=eq.${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ ativa })
+    });
     carregarMensagens();
   } catch (err) {
     alert('Erro: ' + err.message);
   }
 }
 
-// DELETAR MENSAGEM
 async function deletarMensagem(id) {
   if (!confirm('Tem certeza que quer deletar?')) return;
-  
   try {
-    const { error } = await sbFetch(`mensagens?id=eq.${id}`, 'DELETE');
-    if (error) {
-      alert('Erro: ' + error.message);
-      return;
-    }
+    await sbFetch(`mensagens?id=eq.${id}`, { method: 'DELETE' });
     alert('✓ Deletado!');
     carregarMensagens();
   } catch (err) {
@@ -4562,12 +4411,44 @@ async function deletarMensagem(id) {
   }
 }
 
-// EDITAR (placeholder - implementar se quiser)
-function editarMensagem(id) {
-  alert('Funcionalidade de edição: selecione e delete, depois crie uma nova com as correções.');
+let msgEmEdicao = null;
+
+function abrirModalEditar(id, titulo, conteudo, tipo, prioridade) {
+  msgEmEdicao = id;
+  document.getElementById('editMsgTitulo').value = titulo;
+  document.getElementById('editMsgConteudo').value = conteudo;
+  document.getElementById('editMsgTipo').value = tipo;
+  document.getElementById('editMsgPrioridade').value = prioridade;
+  document.getElementById('modalEditarMensagem').style.display = 'flex';
 }
 
-// LIMPAR FORM
+function fecharModalEditar() {
+  document.getElementById('modalEditarMensagem').style.display = 'none';
+  msgEmEdicao = null;
+}
+
+async function salvarEdicaoMensagem() {
+  if (!msgEmEdicao) return;
+  const titulo = document.getElementById('editMsgTitulo').value.trim();
+  const conteudo = document.getElementById('editMsgConteudo').value.trim();
+  const tipo = document.getElementById('editMsgTipo').value;
+  const prioridade = parseInt(document.getElementById('editMsgPrioridade').value) || 1;
+
+  if (!titulo || !conteudo) { alert('Título e conteúdo são obrigatórios!'); return; }
+
+  try {
+    await sbFetch(`mensagens?id=eq.${msgEmEdicao}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ titulo, conteudo, tipo, prioridade })
+    });
+    alert('✓ Mensagem atualizada!');
+    fecharModalEditar();
+    carregarMensagens();
+  } catch (err) {
+    alert('Erro: ' + err.message);
+  }
+}
+
 function limparFormMensagens() {
   document.getElementById('msgTitulo').value = '';
   document.getElementById('msgConteudo').value = '';
@@ -4575,12 +4456,6 @@ function limparFormMensagens() {
   document.getElementById('msgPrioridade').value = '1';
 }
 
-// Carregar ao iniciar
-document.addEventListener('DOMContentLoaded', () => {
-  // Se a aba foi carregada
-  const abaMensagens = document.getElementById('abaMensagens');
-  if (abaMensagens) carregarMensagens();
-});
 </script>
 
 </body>
