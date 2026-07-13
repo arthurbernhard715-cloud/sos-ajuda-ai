@@ -398,7 +398,6 @@ tbody tr:last-child td{border-bottom:none;}
           <div class="admin-name" id="adminNome">Arthur</div>
           <div class="admin-email-txt" id="adminEmailTxt">—</div>
         
-<div class="nav-item" onclick="mostrarPagina(event, 'paginaMensagens')"><div class="ni-icon">📢</div>Mensagens</div>
 </div>
       </div>
       <button class="btn-sair-admin" onclick="sair()">Sair</button>
@@ -1027,63 +1026,7 @@ tbody tr:last-child td{border-bottom:none;}
       </div>
     </di
 
-<div id="abaMensagens" class="tab-content" style="display:none;">
-  <div style="padding: 20px;">
-    <h2>📢 Gerenciador de Mensagens</h2>
-    <p style="color: #666; margin-bottom: 20px;">Crie avisos e comunicados que aparecem no topo do site.</p>
 
-    <!-- FORM CRIAR/EDITAR -->
-    <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
-      <h3 style="margin-bottom: 15px;">Nova Mensagem</h3>
-      
-      <div style="margin-bottom: 15px;">
-        <label style="display: block; font-weight: 600; margin-bottom: 5px;">Título <span style="color: red;">*</span></label>
-        <input type="text" id="msgTitulo" placeholder="Ex: Modo Priorização Ativado" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
-      </div>
-
-      <div style="margin-bottom: 15px;">
-        <label style="display: block; font-weight: 600; margin-bottom: 5px;">Conteúdo <span style="color: red;">*</span></label>
-        <textarea id="msgConteudo" placeholder="Ex: No momento estamos disponíveis apenas nas cidades: Sinimbu, Caçapava, Novo Hamburgo..." style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; min-height: 100px; font-family: Inter, sans-serif;"></textarea>
-      </div>
-
-      <div style="margin-bottom: 15px;">
-        <label style="display: block; font-weight: 600; margin-bottom: 5px;">Tipo</label>
-        <select id="msgTipo" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
-          <option value="info">ℹ️ Info (azul)</option>
-          <option value="aviso">⚠️ Aviso (amarelo)</option>
-          <option value="sucesso">✓ Sucesso (verde)</option>
-          <option value="erro">✗ Erro (vermelho)</option>
-        </select>
-      </div>
-
-      <div style="margin-bottom: 20px;">
-        <label style="display: block; font-weight: 600; margin-bottom: 5px;">Prioridade (maior = mais acima)</label>
-        <input type="number" id="msgPrioridade" value="1" min="1" max="10" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
-      </div>
-
-      <button onclick="adicionarMensagem()" style="background: #1A3C8F; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">+ Adicionar Mensagem</button>
-      <button onclick="limparFormMensagens()" style="background: #999; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">Limpar</button>
-    </div>
-
-    <!-- TABELA DE MENSAGENS -->
-    <h3 style="margin-bottom: 15px;">Mensagens Ativas</h3>
-    <div id="tabelaMensagens" style="background: white; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
-      <table style="width: 100%; border-collapse: collapse;">
-        <thead>
-          <tr style="background: #f8f9fa; border-bottom: 2px solid #ddd;">
-            <th style="padding: 12px; text-align: left; font-weight: 600;">Tipo</th>
-            <th style="padding: 12px; text-align: left; font-weight: 600;">Título</th>
-            <th style="padding: 12px; text-align: left; font-weight: 600;">Conteúdo (preview)</th>
-            <th style="padding: 12px; text-align: center; font-weight: 600;">Ativa</th>
-            <th style="padding: 12px; text-align: center; font-weight: 600;">Ações</th>
-          </tr>
-        </thead>
-        <tbody id="corpoMensagens">
-          <tr><td colspan="5" style="padding: 20px; text-align: center; color: #999;">Carregando mensagens...</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
 </div>
 
 <script>
