@@ -3637,6 +3637,7 @@ function fecharSidebarMobile() {
 }
 
 function irPara(pagina) {
+  if (pagina === 'mensagens') carregarMensagens();
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('page-' + pagina).classList.add('active');
