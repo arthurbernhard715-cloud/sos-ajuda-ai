@@ -1121,6 +1121,7 @@ async function carregarMensagens() {
           </td>
           <td style="padding: 12px; text-align: center;">
             <button onclick="editarMensagem('${msg.id}')" style="background: #1A3C8F; color: white; padding: 5px 10px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; margin-right: 5px;">Editar</button>
+            <button onclick="abrirModalEditar('${msg.id}', '${msg.titulo.replace(/'/g, "\'")}', '${msg.conteudo.replace(/'/g, "\'")}', '${msg.tipo}', ${msg.prioridade})" style="background: #1A3C8F; color: white; padding: 5px 10px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; margin-right: 5px;">Editar</button>
             <button onclick="deletarMensagem('${msg.id}')" style="background: #D92B2B; color: white; padding: 5px 10px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">Deletar</button>
           </td>
         </tr>
@@ -1199,6 +1200,57 @@ function editarMensagem(id) {
 }
 
 // LIMPAR FORM
+
+// ===== FUNÇÕES DE EDIÇÃO =====
+let msgEmEdicao = null;
+
+function abrirModalEditar(id, titulo, conteudo, tipo, prioridade) {
+  msgEmEdicao = id;
+  document.getElementById('editMsgTitulo').value = titulo;
+  document.getElementById('editMsgConteudo').value = conteudo;
+  document.getElementById('editMsgTipo').value = tipo;
+  document.getElementById('editMsgPrioridade').value = prioridade;
+  document.getElementById('modalEditarMensagem').style.display = 'flex';
+}
+
+function fecharModalEditar() {
+  document.getElementById('modalEditarMensagem').style.display = 'none';
+  msgEmEdicao = null;
+}
+
+async function salvarEdicaoMensagem() {
+  if (!msgEmEdicao) return;
+
+  const titulo = document.getElementById('editMsgTitulo').value.trim();
+  const conteudo = document.getElementById('editMsgConteudo').value.trim();
+  const tipo = document.getElementById('editMsgTipo').value;
+  const prioridade = parseInt(document.getElementById('editMsgPrioridade').value) || 1;
+
+  if (!titulo || !conteudo) {
+    alert('Título e conteúdo são obrigatórios!');
+    return;
+  }
+
+  try {
+    const res = await sbFetch(`mensagens?id=eq.${msgEmEdicao}`, {
+      method: 'PATCH',
+      body: JSON.stringify({
+        titulo,
+        conteudo,
+        tipo,
+        prioridade
+      })
+    });
+
+    alert('✓ Mensagem atualizada com sucesso!');
+    fecharModalEditar();
+    carregarMensagens();
+  } catch (err) {
+    alert('Erro: ' + err.message);
+    console.error('Erro:', err);
+  }
+}
+
 function limparFormMensagens() {
   document.getElementById('msgTitulo').value = '';
   document.getElementById('msgConteudo').value = '';
@@ -1269,6 +1321,44 @@ v>
             <tr><td colspan="5" style="padding: 20px; text-align: center; color: #999;">Carregando...</td></tr>
           </tbody>
         </table>
+      </div>
+    </div>
+
+
+    <!-- MODAL EDITAR MENSAGEM -->
+    <div id="modalEditarMensagem" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; flex-align: center; justify-content: center;">
+      <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 30px; border-radius: 8px; width: 90%; max-width: 500px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
+        <h2 style="margin-bottom: 20px;">Editar Mensagem</h2>
+        
+        <div style="margin-bottom: 15px;">
+          <label style="display: block; font-weight: 600; margin-bottom: 5px;">Título</label>
+          <input type="text" id="editMsgTitulo" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+        </div>
+
+        <div style="margin-bottom: 15px;">
+          <label style="display: block; font-weight: 600; margin-bottom: 5px;">Conteúdo</label>
+          <textarea id="editMsgConteudo" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; min-height: 100px; font-family: Inter, sans-serif;"></textarea>
+        </div>
+
+        <div style="margin-bottom: 15px;">
+          <label style="display: block; font-weight: 600; margin-bottom: 5px;">Tipo</label>
+          <select id="editMsgTipo" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+            <option value="info">ℹ️ Info (azul)</option>
+            <option value="aviso">⚠️ Aviso (amarelo)</option>
+            <option value="sucesso">✓ Sucesso (verde)</option>
+            <option value="erro">✗ Erro (vermelho)</option>
+          </select>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+          <label style="display: block; font-weight: 600; margin-bottom: 5px;">Prioridade</label>
+          <input type="number" id="editMsgPrioridade" min="1" max="10" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+        </div>
+
+        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+          <button onclick="fecharModalEditar()" style="background: #999; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Cancelar</button>
+          <button onclick="salvarEdicaoMensagem()" style="background: #1A3C8F; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Salvar</button>
+        </div>
       </div>
     </div>
 
@@ -4540,6 +4630,7 @@ async function carregarMensagens() {
           </td>
           <td style="padding: 12px; text-align: center;">
             <button onclick="editarMensagem('${msg.id}')" style="background: #1A3C8F; color: white; padding: 5px 10px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; margin-right: 5px;">Editar</button>
+            <button onclick="abrirModalEditar('${msg.id}', '${msg.titulo.replace(/'/g, "\'")}', '${msg.conteudo.replace(/'/g, "\'")}', '${msg.tipo}', ${msg.prioridade})" style="background: #1A3C8F; color: white; padding: 5px 10px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; margin-right: 5px;">Editar</button>
             <button onclick="deletarMensagem('${msg.id}')" style="background: #D92B2B; color: white; padding: 5px 10px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">Deletar</button>
           </td>
         </tr>
@@ -4618,6 +4709,57 @@ function editarMensagem(id) {
 }
 
 // LIMPAR FORM
+
+// ===== FUNÇÕES DE EDIÇÃO =====
+let msgEmEdicao = null;
+
+function abrirModalEditar(id, titulo, conteudo, tipo, prioridade) {
+  msgEmEdicao = id;
+  document.getElementById('editMsgTitulo').value = titulo;
+  document.getElementById('editMsgConteudo').value = conteudo;
+  document.getElementById('editMsgTipo').value = tipo;
+  document.getElementById('editMsgPrioridade').value = prioridade;
+  document.getElementById('modalEditarMensagem').style.display = 'flex';
+}
+
+function fecharModalEditar() {
+  document.getElementById('modalEditarMensagem').style.display = 'none';
+  msgEmEdicao = null;
+}
+
+async function salvarEdicaoMensagem() {
+  if (!msgEmEdicao) return;
+
+  const titulo = document.getElementById('editMsgTitulo').value.trim();
+  const conteudo = document.getElementById('editMsgConteudo').value.trim();
+  const tipo = document.getElementById('editMsgTipo').value;
+  const prioridade = parseInt(document.getElementById('editMsgPrioridade').value) || 1;
+
+  if (!titulo || !conteudo) {
+    alert('Título e conteúdo são obrigatórios!');
+    return;
+  }
+
+  try {
+    const res = await sbFetch(`mensagens?id=eq.${msgEmEdicao}`, {
+      method: 'PATCH',
+      body: JSON.stringify({
+        titulo,
+        conteudo,
+        tipo,
+        prioridade
+      })
+    });
+
+    alert('✓ Mensagem atualizada com sucesso!');
+    fecharModalEditar();
+    carregarMensagens();
+  } catch (err) {
+    alert('Erro: ' + err.message);
+    console.error('Erro:', err);
+  }
+}
+
 function limparFormMensagens() {
   document.getElementById('msgTitulo').value = '';
   document.getElementById('msgConteudo').value = '';
@@ -4663,6 +4805,7 @@ async function carregarMensagens() {
             <input type="checkbox" ${msg.ativa ? 'checked' : ''} onchange="toggleMensagem('${msg.id}', this.checked)" style="cursor: pointer;">
           </td>
           <td style="padding: 12px; text-align: center;">
+            <button onclick="abrirModalEditar('${msg.id}', '${msg.titulo.replace(/'/g, "\'")}', '${msg.conteudo.replace(/'/g, "\'")}', '${msg.tipo}', ${msg.prioridade})" style="background: #1A3C8F; color: white; padding: 5px 10px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; margin-right: 5px;">Editar</button>
             <button onclick="deletarMensagem('${msg.id}')" style="background: #D92B2B; color: white; padding: 5px 10px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">Deletar</button>
           </td>
         </tr>
@@ -4731,6 +4874,57 @@ async function deletarMensagem(id) {
     carregarMensagens();
   } catch (err) {
     alert('Erro: ' + err.message);
+  }
+}
+
+
+// ===== FUNÇÕES DE EDIÇÃO =====
+let msgEmEdicao = null;
+
+function abrirModalEditar(id, titulo, conteudo, tipo, prioridade) {
+  msgEmEdicao = id;
+  document.getElementById('editMsgTitulo').value = titulo;
+  document.getElementById('editMsgConteudo').value = conteudo;
+  document.getElementById('editMsgTipo').value = tipo;
+  document.getElementById('editMsgPrioridade').value = prioridade;
+  document.getElementById('modalEditarMensagem').style.display = 'flex';
+}
+
+function fecharModalEditar() {
+  document.getElementById('modalEditarMensagem').style.display = 'none';
+  msgEmEdicao = null;
+}
+
+async function salvarEdicaoMensagem() {
+  if (!msgEmEdicao) return;
+
+  const titulo = document.getElementById('editMsgTitulo').value.trim();
+  const conteudo = document.getElementById('editMsgConteudo').value.trim();
+  const tipo = document.getElementById('editMsgTipo').value;
+  const prioridade = parseInt(document.getElementById('editMsgPrioridade').value) || 1;
+
+  if (!titulo || !conteudo) {
+    alert('Título e conteúdo são obrigatórios!');
+    return;
+  }
+
+  try {
+    const res = await sbFetch(`mensagens?id=eq.${msgEmEdicao}`, {
+      method: 'PATCH',
+      body: JSON.stringify({
+        titulo,
+        conteudo,
+        tipo,
+        prioridade
+      })
+    });
+
+    alert('✓ Mensagem atualizada com sucesso!');
+    fecharModalEditar();
+    carregarMensagens();
+  } catch (err) {
+    alert('Erro: ' + err.message);
+    console.error('Erro:', err);
   }
 }
 
