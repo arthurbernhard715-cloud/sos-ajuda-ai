@@ -4457,52 +4457,6 @@ verificarSessao();
 
 <script>
 // CARREGAR MENSAGENS
-async function carregarMensagens() {
-  try {
-    const { data, error } = await sbFetch('mensagens', 'GET');
-    if (error) {
-      console.error('Erro ao carregar:', error);
-      document.getElementById('corpoMensagens').innerHTML = '<tr><td colspan="5" style="padding: 20px; text-align: center; color: red;">Erro ao carregar mensagens</td></tr>';
-      return;
-    }
-    
-    if (!data || data.length === 0) {
-      document.getElementById('corpoMensagens').innerHTML = '<tr><td colspan="5" style="padding: 20px; text-align: center; color: #999;">Nenhuma mensagem criada</td></tr>';
-      return;
-    }
-
-    // Ordenar por prioridade
-    data.sort((a, b) => b.prioridade - a.prioridade);
-
-    let html = '';
-    data.forEach(msg => {
-      const tipoIcons = { info: 'ℹ️', aviso: '⚠️', sucesso: '✓', erro: '✗' };
-      const tipoColors = { info: '#0066cc', aviso: '#ff9800', sucesso: '#28a745', erro: '#dc3545' };
-      const preview = msg.conteudo.substring(0, 40) + (msg.conteudo.length > 40 ? '...' : '');
-      
-      html += `
-        <tr style="border-bottom: 1px solid #eee;">
-          <td style="padding: 12px; color: ${tipoColors[msg.tipo]}; font-weight: 600;">${tipoIcons[msg.tipo]} ${msg.tipo}</td>
-          <td style="padding: 12px; font-weight: 500;">${escapeHtml(msg.titulo)}</td>
-          <td style="padding: 12px; color: #666; font-size: 13px;">${escapeHtml(preview)}</td>
-          <td style="padding: 12px; text-align: center;">
-            <input type="checkbox" ${msg.ativa ? 'checked' : ''} onchange="toggleMensagem('${msg.id}', this.checked)" style="cursor: pointer; width: 18px; height: 18px;">
-          </td>
-          <td style="padding: 12px; text-align: center;">
-            <button onclick="editarMensagem('${msg.id}')" style="background: #1A3C8F; color: white; padding: 5px 10px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; margin-right: 5px;">Editar</button>
-            <button onclick="deletarMensagem('${msg.id}')" style="background: #D92B2B; color: white; padding: 5px 10px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">Deletar</button>
-          </td>
-        </tr>
-      `;
-    });
-    
-    document.getElementById('corpoMensagens').innerHTML = html;
-  } catch (err) {
-    console.error('Erro:', err);
-  }
-}
-
-// ADICIONAR MENSAGEM
 async function adicionarMensagem() {
   const titulo = document.getElementById('msgTitulo').value.trim();
   const conteudo = document.getElementById('msgConteudo').value.trim();
