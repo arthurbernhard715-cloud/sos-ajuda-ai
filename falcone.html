@@ -1215,7 +1215,64 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 v>
 
-  </main>
+  
+    <!-- MENSAGENS -->
+    <div class="page" id="page-mensagens">
+      <div class="page-title">📢 Mensagens e Avisos</div>
+      <div class="page-sub">Crie e gerencie mensagens que aparecem no topo do site.</div>
+
+      <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
+        <h3 style="margin-bottom: 15px;">Nova Mensagem</h3>
+        
+        <div style="margin-bottom: 15px;">
+          <label style="display: block; font-weight: 600; margin-bottom: 5px;">Título <span style="color: red;">*</span></label>
+          <input type="text" id="msgTitulo" placeholder="Ex: Modo Priorização Ativado" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+        </div>
+
+        <div style="margin-bottom: 15px;">
+          <label style="display: block; font-weight: 600; margin-bottom: 5px;">Conteúdo <span style="color: red;">*</span></label>
+          <textarea id="msgConteudo" placeholder="Ex: No momento estamos disponíveis apenas nas cidades..." style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; min-height: 100px; font-family: Inter, sans-serif;"></textarea>
+        </div>
+
+        <div style="margin-bottom: 15px;">
+          <label style="display: block; font-weight: 600; margin-bottom: 5px;">Tipo</label>
+          <select id="msgTipo" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+            <option value="info">ℹ️ Info (azul)</option>
+            <option value="aviso">⚠️ Aviso (amarelo)</option>
+            <option value="sucesso">✓ Sucesso (verde)</option>
+            <option value="erro">✗ Erro (vermelho)</option>
+          </select>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+          <label style="display: block; font-weight: 600; margin-bottom: 5px;">Prioridade</label>
+          <input type="number" id="msgPrioridade" value="1" min="1" max="10" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+        </div>
+
+        <button onclick="adicionarMensagem()" style="background: #1A3C8F; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">+ Adicionar Mensagem</button>
+        <button onclick="limparFormMensagens()" style="background: #999; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">Limpar</button>
+      </div>
+
+      <h3 style="margin-bottom: 15px;">Mensagens Ativas</h3>
+      <div id="tabelaMensagens" style="background: white; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
+        <table style="width: 100%; border-collapse: collapse;">
+          <thead>
+            <tr style="background: #f8f9fa; border-bottom: 2px solid #ddd;">
+              <th style="padding: 12px; text-align: left; font-weight: 600;">Tipo</th>
+              <th style="padding: 12px; text-align: left; font-weight: 600;">Título</th>
+              <th style="padding: 12px; text-align: left; font-weight: 600;">Conteúdo</th>
+              <th style="padding: 12px; text-align: center; font-weight: 600;">Ativa</th>
+              <th style="padding: 12px; text-align: center; font-weight: 600;">Ações</th>
+            </tr>
+          </thead>
+          <tbody id="corpoMensagens">
+            <tr><td colspan="5" style="padding: 20px; text-align: center; color: #999;">Carregando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+</main>
 </div>
 
 <!-- MODAL CONFIRMAR DELETE -->
@@ -4573,6 +4630,124 @@ document.addEventListener('DOMContentLoaded', () => {
   // Se a aba foi carregada
   const abaMensagens = document.getElementById('abaMensagens');
   if (abaMensagens) carregarMensagens();
+});
+</script>
+
+
+<script>
+// ===== GERENCIADOR DE MENSAGENS =====
+async function carregarMensagens() {
+  try {
+    const res = await sbFetch('mensagens?order=prioridade.desc', {
+      method: 'GET'
+    });
+    
+    const data = Array.isArray(res) ? res : [];
+    
+    if (!data || data.length === 0) {
+      document.getElementById('corpoMensagens').innerHTML = '<tr><td colspan="5" style="padding: 20px; text-align: center; color: #999;">Nenhuma mensagem criada</td></tr>';
+      return;
+    }
+
+    let html = '';
+    data.forEach(msg => {
+      const tipoIcons = { info: 'ℹ️', aviso: '⚠️', sucesso: '✓', erro: '✗' };
+      const preview = msg.conteudo.substring(0, 40) + (msg.conteudo.length > 40 ? '...' : '');
+      
+      html += `
+        <tr style="border-bottom: 1px solid #eee;">
+          <td style="padding: 12px;">${tipoIcons[msg.tipo] || '?'} ${msg.tipo}</td>
+          <td style="padding: 12px; font-weight: 500;">${escapeHtml(msg.titulo)}</td>
+          <td style="padding: 12px; color: #666; font-size: 13px;">${escapeHtml(preview)}</td>
+          <td style="padding: 12px; text-align: center;">
+            <input type="checkbox" ${msg.ativa ? 'checked' : ''} onchange="toggleMensagem('${msg.id}', this.checked)" style="cursor: pointer;">
+          </td>
+          <td style="padding: 12px; text-align: center;">
+            <button onclick="deletarMensagem('${msg.id}')" style="background: #D92B2B; color: white; padding: 5px 10px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">Deletar</button>
+          </td>
+        </tr>
+      `;
+    });
+    
+    document.getElementById('corpoMensagens').innerHTML = html;
+  } catch (err) {
+    console.error('Erro ao carregar mensagens:', err);
+    document.getElementById('corpoMensagens').innerHTML = '<tr><td colspan="5" style="padding: 20px; text-align: center; color: red;">Erro ao carregar</td></tr>';
+  }
+}
+
+async function adicionarMensagem() {
+  const titulo = document.getElementById('msgTitulo').value.trim();
+  const conteudo = document.getElementById('msgConteudo').value.trim();
+  const tipo = document.getElementById('msgTipo').value;
+  const prioridade = parseInt(document.getElementById('msgPrioridade').value) || 1;
+
+  if (!titulo || !conteudo) {
+    alert('Título e conteúdo são obrigatórios!');
+    return;
+  }
+
+  try {
+    const res = await sbFetch('mensagens', {
+      method: 'POST',
+      body: JSON.stringify({
+        titulo,
+        conteudo,
+        tipo,
+        prioridade,
+        ativa: true
+      })
+    });
+
+    alert('✓ Mensagem criada com sucesso!');
+    limparFormMensagens();
+    carregarMensagens();
+  } catch (err) {
+    alert('Erro: ' + err.message);
+    console.error('Erro:', err);
+  }
+}
+
+async function toggleMensagem(id, ativa) {
+  try {
+    const res = await sbFetch(`mensagens?id=eq.${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ ativa })
+    });
+    carregarMensagens();
+  } catch (err) {
+    alert('Erro: ' + err.message);
+  }
+}
+
+async function deletarMensagem(id) {
+  if (!confirm('Tem certeza que quer deletar?')) return;
+  
+  try {
+    const res = await sbFetch(`mensagens?id=eq.${id}`, {
+      method: 'DELETE'
+    });
+    alert('✓ Deletado!');
+    carregarMensagens();
+  } catch (err) {
+    alert('Erro: ' + err.message);
+  }
+}
+
+function limparFormMensagens() {
+  document.getElementById('msgTitulo').value = '';
+  document.getElementById('msgConteudo').value = '';
+  document.getElementById('msgTipo').value = 'info';
+  document.getElementById('msgPrioridade').value = '1';
+}
+
+// Carregar mensagens quando entrar na aba
+document.addEventListener('DOMContentLoaded', () => {
+  // Tentar carregar mensagens se a página exista
+  const abaMensagens = document.getElementById('page-mensagens');
+  if (abaMensagens) {
+    carregarMensagens();
+  }
 });
 </script>
 
