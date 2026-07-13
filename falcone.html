@@ -387,6 +387,9 @@ tbody tr:last-child td{border-bottom:none;}
       <div class="nav-item" data-page="empresas" onclick="irPara('empresas')">
         <span class="ni-icon">🤝</span> Empresas Apoiadoras
       </div>
+      <div class="nav-item" data-page="mensagens" onclick="irPara('mensagens'); carregarMensagens();">
+        <span class="ni-icon">📢</span> Mensagens
+      </div>
       <div class="nav-item" onclick="window.open('https://sosajudaai.com.br','_blank')">
         <span class="ni-icon">🌐</span> Ver site
       </div>
@@ -1024,10 +1027,10 @@ tbody tr:last-child td{border-bottom:none;}
           <div style="text-align:center;color:#64748b;padding:32px;">⏳ Carregando...</div>
         </div>
       </div>
-    </di
+    </div>
 
-<div id="abaMensagens" class="tab-content" style="display:none;">
-  <div style="padding: 20px;">
+    <div class="page" id="page-mensagens">
+      <div style="padding: 20px;">
     <h2>📢 Gerenciador de Mensagens</h2>
     <p style="color: #666; margin-bottom: 20px;">Crie avisos e comunicados que aparecem no topo do site.</p>
 
@@ -1082,68 +1085,10 @@ tbody tr:last-child td{border-bottom:none;}
         </tbody>
       </table>
     </div>
-  </div>
-</div>
-
-v>
-
-  </main>
-</div>
-
-<!-- MODAL CONFIRMAR DELETE -->
-<!-- MODAL DETALHE DE CADASTRO -->
-<div class="modal-confirm" id="modalDetalhe">
-  <div class="modal-confirm-box" id="modalDetalheBox" style="max-width:560px;text-align:left;max-height:85vh;overflow-y:auto;">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-      <h3 id="modalDetalheTitulo" style="margin:0;">Detalhes do cadastro</h3>
-      <button onclick="fecharModalDetalhe()" style="background:none;border:none;color:#94a3b8;font-size:1.3rem;cursor:pointer;line-height:1;">✕</button>
-    </div>
-    <div id="modalDetalheConteudo"></div>
-  </div>
-</div>
-
-<div class="modal-confirm" id="modalConfirm">
-  <div class="modal-confirm-box">
-    <h3>⚠️ Confirmar exclusão</h3>
-    <p id="modalConfirmMsg">Tem certeza que deseja excluir este item? Esta ação não pode ser desfeita.</p>
-    <div class="modal-confirm-btns">
-      <button class="btn-confirm-cancel" onclick="fecharConfirm()">Cancelar</button>
-      <button class="btn-confirm-del" id="btnConfirmDel">Excluir</button>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL RENOVAR VALIDADE -->
-<div class="modal-confirm" id="modalRenovar">
-  <div class="modal-confirm-box" style="max-width:380px;">
-    <h3>🔄 Renovar validade</h3>
-    <p id="modalRenovarCidade" style="margin-bottom:16px;">—</p>
-
-    <div class="renovar-tabs">
-      <button type="button" class="renovar-tab active" id="tabDias" onclick="alternarModoRenovar('dias')">+ Dias</button>
-      <button type="button" class="renovar-tab" id="tabData" onclick="alternarModoRenovar('data')">📅 Data exata</button>
+      </div>
     </div>
 
-    <div id="renovarModoDias">
-      <label class="renovar-label" for="inputDiasRenovar">Quantos dias adicionar à validade atual</label>
-      <input type="number" id="inputDiasRenovar" class="renovar-input" min="1" step="1" value="30">
-    </div>
 
-    <div id="renovarModoData" style="display:none;">
-      <label class="renovar-label" for="inputDataRenovar">Nova data de validade</label>
-      <input type="date" id="inputDataRenovar" class="renovar-input">
-    </div>
-
-    <div class="modal-confirm-btns" style="margin-top:24px;">
-      <button class="btn-confirm-cancel" onclick="fecharModalRenovar()">Cancelar</button>
-      <button class="btn-confirm-del" style="background:#1A3C8F;" onclick="confirmarRenovacao()">Confirmar</button>
-    </div>
-  </div>
-</div>
-
-<div class="toast" id="toastEl"></div>
-
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 const SB_URL = "https://wrpfgrwayzmiucyavphk.supabase.co";
 const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndycGZncndheXptaXVjeWF2cGhrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzMDQ3MzUsImV4cCI6MjA5Njg4MDczNX0.ZdgpjxlLRmIaIdGKXZsUthgqM15QQehyijCB4apDA6E";
@@ -4259,66 +4204,6 @@ async function excluirEmpresa(id, nome) {
 // ── INIT ──
 verificarSessao();
 </script>
-<!-- INSERIR ISTO COMO UMA ABA NOVA NO FALCONE (após a aba "Empresas") -->
-
-<div id="abaMensagens" class="tab-content" style="display:none;">
-  <div style="padding: 20px;">
-    <h2>📢 Gerenciador de Mensagens</h2>
-    <p style="color: #666; margin-bottom: 20px;">Crie avisos e comunicados que aparecem no topo do site.</p>
-
-    <!-- FORM CRIAR/EDITAR -->
-    <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
-      <h3 style="margin-bottom: 15px;">Nova Mensagem</h3>
-      
-      <div style="margin-bottom: 15px;">
-        <label style="display: block; font-weight: 600; margin-bottom: 5px;">Título <span style="color: red;">*</span></label>
-        <input type="text" id="msgTitulo" placeholder="Ex: Modo Priorização Ativado" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
-      </div>
-
-      <div style="margin-bottom: 15px;">
-        <label style="display: block; font-weight: 600; margin-bottom: 5px;">Conteúdo <span style="color: red;">*</span></label>
-        <textarea id="msgConteudo" placeholder="Ex: No momento estamos disponíveis apenas nas cidades: Sinimbu, Caçapava, Novo Hamburgo..." style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; min-height: 100px; font-family: Inter, sans-serif;"></textarea>
-      </div>
-
-      <div style="margin-bottom: 15px;">
-        <label style="display: block; font-weight: 600; margin-bottom: 5px;">Tipo</label>
-        <select id="msgTipo" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
-          <option value="info">ℹ️ Info (azul)</option>
-          <option value="aviso">⚠️ Aviso (amarelo)</option>
-          <option value="sucesso">✓ Sucesso (verde)</option>
-          <option value="erro">✗ Erro (vermelho)</option>
-        </select>
-      </div>
-
-      <div style="margin-bottom: 20px;">
-        <label style="display: block; font-weight: 600; margin-bottom: 5px;">Prioridade (maior = mais acima)</label>
-        <input type="number" id="msgPrioridade" value="1" min="1" max="10" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
-      </div>
-
-      <button onclick="adicionarMensagem()" style="background: #1A3C8F; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">+ Adicionar Mensagem</button>
-      <button onclick="limparFormMensagens()" style="background: #999; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">Limpar</button>
-    </div>
-
-    <!-- TABELA DE MENSAGENS -->
-    <h3 style="margin-bottom: 15px;">Mensagens Ativas</h3>
-    <div id="tabelaMensagens" style="background: white; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
-      <table style="width: 100%; border-collapse: collapse;">
-        <thead>
-          <tr style="background: #f8f9fa; border-bottom: 2px solid #ddd;">
-            <th style="padding: 12px; text-align: left; font-weight: 600;">Tipo</th>
-            <th style="padding: 12px; text-align: left; font-weight: 600;">Título</th>
-            <th style="padding: 12px; text-align: left; font-weight: 600;">Conteúdo (preview)</th>
-            <th style="padding: 12px; text-align: center; font-weight: 600;">Ativa</th>
-            <th style="padding: 12px; text-align: center; font-weight: 600;">Ações</th>
-          </tr>
-        </thead>
-        <tbody id="corpoMensagens">
-          <tr><td colspan="5" style="padding: 20px; text-align: center; color: #999;">Carregando mensagens...</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-</div>
 
 <script>
 // CARREGAR MENSAGENS
@@ -4458,5 +4343,6 @@ function limparFormMensagens() {
 
 </script>
 
+  </main>
 </body>
 </html>
