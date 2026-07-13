@@ -2910,19 +2910,42 @@ async function executarZerarRanking(escopo, nivel, estado, cidade, localLabel) {
 
     const token = usuarioAtual?.access_token || SB_KEY;
     let totalZerado = 0;
+    let erros = [];
     for (const v of comPontos) {
       try {
-        await fetch(`${SB_URL}/rest/v1/voluntarios?id=eq.${v.id}`, {
+        const resp = await fetch(`${SB_URL}/rest/v1/voluntarios?id=eq.${v.id}`, {
           method: 'PATCH',
-          headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+          headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
           body: JSON.stringify({ pontos: 0 })
         });
+        if (!resp.ok) {
+          const errText = await resp.text();
+          erros.push(`${v.id}: HTTP ${resp.status} - ${errText}`);
+          console.error(`Erro ao zerar voluntário ${v.id}:`, resp.status, errText);
+          continue;
+        }
+        const dataResp = await resp.json();
+        // Verificar se realmente atualizou (RLS pode retornar 200 mas array vazio)
+        if (!dataResp || dataResp.length === 0) {
+          erros.push(`${v.id}: RLS bloqueou o UPDATE (retornou vazio)`);
+          console.error(`RLS bloqueou UPDATE do voluntário ${v.id}`);
+          continue;
+        }
         totalZerado++;
-      } catch(e) { /* segue tentando os demais */ }
+      } catch(e) {
+        erros.push(`${v.id}: ${e.message}`);
+        console.error(`Exceção ao zerar ${v.id}:`, e);
+      }
     }
 
     registrarLog('zerar_ranking', 'voluntarios', null, `Zerou pontuação de ${totalZerado} voluntário(s) — escopo: ${localLabel}`);
-    toast(`🏆 Pontuação zerada para ${totalZerado} voluntário(s). Backup salvo no seu computador.`, 'ok');
+    if (totalZerado === comPontos.length) {
+      toast(`🏆 Pontuação zerada para ${totalZerado} voluntário(s). Backup salvo no seu computador.`, 'ok');
+    } else if (totalZerado > 0) {
+      toast(`⚠️ Zerou ${totalZerado} de ${comPontos.length}. Veja o console (F12) para os erros.`, 'err');
+    } else {
+      toast(`❌ Nenhum voluntário foi zerado. RLS ou permissão bloqueando. Veja o console (F12).`, 'err');
+    }
   } catch(e) {
     toast('⚠️ Erro ao zerar pontuação: ' + e.message, 'err');
   } finally {
