@@ -4126,6 +4126,7 @@ function calcExp(expiraEm) {
 let tt;
 function toast(msg, tipo='') {
   const t = document.getElementById('toastEl');
+  if (!t) { console.log('[toast]', msg); return; }
   t.textContent = msg;
   t.className = 'toast show ' + tipo;
   clearTimeout(tt);
@@ -4404,5 +4405,7 @@ function limparFormMensagens() {
     </div>
 
   </main>
+
+  <div id="toastEl" class="toast"></div>
 </body>
 </html>
