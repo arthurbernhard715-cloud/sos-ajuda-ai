@@ -1090,10 +1090,11 @@ tbody tr:last-child td{border-bottom:none;}
 // CARREGAR MENSAGENS
 async function carregarMensagens() {
   try {
-    const { data, error } = await sbFetch('mensagens', 'GET');
-    if (error) {
-      console.error('Erro ao carregar:', error);
-      document.getElementById('corpoMensagens').innerHTML = '<tr><td colspan="5" style="padding: 20px; text-align: center; color: red;">Erro ao carregar mensagens</td></tr>';
+    const res = await sbFetch('mensagens?order=prioridade.desc', { method: 'GET' });
+    const data = Array.isArray(res) ? res : [];
+    
+    if (!data || data.length === 0) {
+      document.getElementById('corpoMensagens').innerHTML = '<tr><td colspan="5" style="padding: 20px; text-align: center; color: #999;">Nenhuma mensagem criada</td></tr>';
       return;
     }
     
