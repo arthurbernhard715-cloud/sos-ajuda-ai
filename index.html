@@ -789,9 +789,13 @@ textarea.form-control { resize: vertical; min-height: 88px; }
 async function carregarMensagensDoSite() {
   try {
     // Buscar apenas mensagens ativas, ordenadas por prioridade
-    const { data, error } = await sbFetch('mensagens?ativa=eq.true&order=prioridade.desc', 'GET');
+    const res = await sbFetch('mensagens?ativa=eq.true&order=prioridade.desc', {
+      method: 'GET'
+    });
     
-    if (error || !data || data.length === 0) {
+    const data = Array.isArray(res) ? res : [];
+    
+    if (!data || data.length === 0) {
       document.getElementById('bannerMensagens').style.display = 'none';
       return;
     }
