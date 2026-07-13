@@ -1089,7 +1089,7 @@ tbody tr:last-child td{border-bottom:none;}
 // CARREGAR MENSAGENS
 async function carregarMensagens() {
   try {
-    const { data, error } = await sbFetch('mensagens', 'GET');
+    const res = await sbFetch('mensagens?order=prioridade.desc', { method: 'GET' }); const data = Array.isArray(res) ? res : [];
     if (error) {
       console.error('Erro ao carregar:', error);
       document.getElementById('corpoMensagens').innerHTML = '<tr><td colspan="5" style="padding: 20px; text-align: center; color: red;">Erro ao carregar mensagens</td></tr>';
@@ -1145,15 +1145,13 @@ async function adicionarMensagem() {
   }
 
   try {
-    const { data, error } = await sbFetch('mensagens', 'POST', {
+    const res = await sbFetch('mensagens', { method: 'POST', body: JSON.stringify({
       titulo,
       conteudo,
       tipo,
       prioridade,
       ativa: true
-    });
-
-    if (error) {
+    }) }); const data = res;
       alert('Erro ao adicionar: ' + error.message);
       return;
     }
@@ -4457,7 +4455,7 @@ verificarSessao();
 // CARREGAR MENSAGENS
 async function carregarMensagens() {
   try {
-    const { data, error } = await sbFetch('mensagens', 'GET');
+    const res = await sbFetch('mensagens?order=prioridade.desc', { method: 'GET' }); const data = Array.isArray(res) ? res : [];
     if (error) {
       console.error('Erro ao carregar:', error);
       document.getElementById('corpoMensagens').innerHTML = '<tr><td colspan="5" style="padding: 20px; text-align: center; color: red;">Erro ao carregar mensagens</td></tr>';
@@ -4513,15 +4511,13 @@ async function adicionarMensagem() {
   }
 
   try {
-    const { data, error } = await sbFetch('mensagens', 'POST', {
+    const res = await sbFetch('mensagens', { method: 'POST', body: JSON.stringify({
       titulo,
       conteudo,
       tipo,
       prioridade,
       ativa: true
-    });
-
-    if (error) {
+    }) }); const data = res;
       alert('Erro ao adicionar: ' + error.message);
       return;
     }
