@@ -3249,7 +3249,7 @@ async function criarSimulacao() {
           descricao: DESCRICOES_DEMO[i % DESCRICOES_DEMO.length],
           tipos_ajuda: tiposEscolhidos.length ? tiposEscolhidos : ['Limpeza'],
           urgencia,
-          limite_voluntarios: 10 + Math.floor(Math.random()*10),
+          limite_voluntarios: 5 + Math.floor(Math.random()*11),  // 5 a 15 voluntários máximo por solicitação
           voluntarios_confirmados: 0,
           ativo: true,
           lat: ruaEscolhida.lat,
