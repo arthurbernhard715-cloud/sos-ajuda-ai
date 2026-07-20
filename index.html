@@ -3249,7 +3249,25 @@ async function submeterVoluntarioReal() {
     });
     fecharModal('modal-voluntario');
     toast('🙋 Perfil criado! Comece a ajudar agora.', 'ok');
-    carregarSolicitacoes();
+    
+    // Se veio via QR code (?sol=ID), abrir aquela solicitação
+    const params = new URLSearchParams(window.location.search);
+    const solId = params.get('sol');
+    if (solId) {
+      // Abrir a solicitação que veio no QR code
+      try {
+        const data = await sbFetch(`solicitacoes?id=eq.${solId}&select=*`);
+        if (data.length) {
+          abrirDetalheSolicitacao(data[0]);
+        } else {
+          carregarSolicitacoes();
+        }
+      } catch(e) {
+        carregarSolicitacoes();
+      }
+    } else {
+      carregarSolicitacoes();
+    }
   } catch(e) {
     if (e.message?.includes('unique') || e.message?.includes('duplicate')) {
       toast('⚠️ Você já tem um perfil cadastrado.');
