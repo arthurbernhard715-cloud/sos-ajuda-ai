@@ -3257,21 +3257,23 @@ async function submeterVoluntarioReal() {
     
     if (solId) {
       console.log('✅ Encontrado solId na URL:', solId);
-      // Abrir a solicitação que veio no QR code
-      try {
-        const data = await sbFetch(`solicitacoes?id=eq.${solId}&select=*`);
-        console.log('📊 Dados solicitação:', data);
-        if (data.length) {
-          console.log('🎯 Abrindo detalhe da solicitação:', data[0]);
-          abrirDetalheReal(data[0]);
-        } else {
-          console.log('⚠️ Solicitação não encontrada');
+      // AGUARDAR 1.5s pra garantir que o login foi processado e o token está válido
+      setTimeout(async () => {
+        try {
+          const data = await sbFetch(`solicitacoes?id=eq.${solId}&select=*`);
+          console.log('📊 Dados solicitação:', data);
+          if (data && data.length) {
+            console.log('🎯 Abrindo detalhe da solicitação:', data[0]);
+            abrirDetalheReal(data[0]);
+          } else {
+            console.log('⚠️ Solicitação não encontrada');
+            carregarSolicitacoes();
+          }
+        } catch(e) {
+          console.error('❌ Erro ao buscar solicitação:', e);
           carregarSolicitacoes();
         }
-      } catch(e) {
-        console.error('❌ Erro ao buscar solicitação:', e);
-        carregarSolicitacoes();
-      }
+      }, 1500);
     } else {
       console.log('❌ Nenhum solId na URL');
       carregarSolicitacoes();
