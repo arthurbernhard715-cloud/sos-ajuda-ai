@@ -3253,19 +3253,27 @@ async function submeterVoluntarioReal() {
     // Se veio via QR code (?sol=ID), abrir aquela solicitação
     const params = new URLSearchParams(window.location.search);
     const solId = params.get('sol');
+    console.log('🔍 Debug: solId =', solId);
+    
     if (solId) {
+      console.log('✅ Encontrado solId na URL:', solId);
       // Abrir a solicitação que veio no QR code
       try {
         const data = await sbFetch(`solicitacoes?id=eq.${solId}&select=*`);
+        console.log('📊 Dados solicitação:', data);
         if (data.length) {
+          console.log('🎯 Abrindo detalhe da solicitação:', data[0]);
           abrirDetalheReal(data[0]);
         } else {
+          console.log('⚠️ Solicitação não encontrada');
           carregarSolicitacoes();
         }
       } catch(e) {
+        console.error('❌ Erro ao buscar solicitação:', e);
         carregarSolicitacoes();
       }
     } else {
+      console.log('❌ Nenhum solId na URL');
       carregarSolicitacoes();
     }
   } catch(e) {
