@@ -3258,7 +3258,7 @@ async function submeterVoluntarioReal() {
       try {
         const data = await sbFetch(`solicitacoes?id=eq.${solId}&select=*`);
         if (data.length) {
-          abrirDetalheSolicitacao(data[0]);
+          abrirDetalheReal(data[0]);
         } else {
           carregarSolicitacoes();
         }
