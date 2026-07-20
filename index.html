@@ -3099,22 +3099,14 @@ async function submeterCadastroReal() {
   const erroRate = verificarRateLimitCadastro();
   if (erroRate) { toast('⚠️ ' + erroRate); return; }
 
-  // reCAPTCHA v3: proteção extra contra bots
-  // Roda em segundo plano, não exige interação do usuário.
-  // Se o Google achar suspeito (score baixo), bloqueia silenciosamente.
+  // reCAPTCHA v3: disponível mas não bloqueia no cadastro
+  // Rate limiting já protege contra spam (máx 3/hora, 10/dia por usuário)
   try {
     await grecaptcha.ready(() => {});
     const token = await obterTokenRecaptcha('cadastro_solicitacao');
-    if (!token) {
-      toast('⚠️ Verificação de segurança falhou. Recarregue a página e tente novamente.');
-      return;
-    }
-    // O token é enviado junto com o cadastro para validação futura no servidor.
-    // Por ora, apenas verificamos que foi gerado (score validado no painel Google).
-    console.log('✅ reCAPTCHA OK');
+    console.log('✅ reCAPTCHA token obtido (não validado no cadastro)');
   } catch(e) {
-    console.warn('reCAPTCHA erro (não bloqueia):', e);
-    // Não bloqueia o cadastro se o reCAPTCHA falhar por problema técnico
+    console.warn('reCAPTCHA indisponível (não bloqueia):', e);
   }
 
   const nome     = document.getElementById('nomeInput')?.value?.trim();
