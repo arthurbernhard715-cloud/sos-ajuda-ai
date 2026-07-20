@@ -2514,6 +2514,17 @@ async function carregarSolicitacoes() {
       window._dadosPendentes = data;
       window._dadosApoioPendentes = apoio;
     }
+    
+    // AUTO-ABRIR SOLICITAÇÃO SE VEIO VIA QR CODE
+    const solIdPendente = localStorage.getItem('_sol_a_abrir');
+    if (solIdPendente) {
+      localStorage.removeItem('_sol_a_abrir');
+      const solicitacao = data.find(s => s.id === solIdPendente);
+      if (solicitacao) {
+        console.log('🎯 Abrindo solicitação do QR code:', solicitacao.id);
+        setTimeout(() => abrirDetalheReal(solicitacao), 300);
+      }
+    }
   } catch(e) {
     console.error('Erro ao carregar solicitações:', e);
     toast('⚠️ Erro ao carregar solicitações. Tente novamente.','');
@@ -3250,34 +3261,15 @@ async function submeterVoluntarioReal() {
     fecharModal('modal-voluntario');
     toast('🙋 Perfil criado! Comece a ajudar agora.', 'ok');
     
-    // Se veio via QR code (?sol=ID), abrir aquela solicitação
+    // Se veio via QR code (?sol=ID), guardar e deixar o site abrir normalmente
     const params = new URLSearchParams(window.location.search);
     const solId = params.get('sol');
-    console.log('🔍 Debug: solId =', solId);
-    
     if (solId) {
-      console.log('✅ Encontrado solId na URL:', solId);
-      // AGUARDAR 1.5s pra garantir que o login foi processado e o token está válido
-      setTimeout(async () => {
-        try {
-          const data = await sbFetch(`solicitacoes?id=eq.${solId}&select=*`);
-          console.log('📊 Dados solicitação:', data);
-          if (data && data.length) {
-            console.log('🎯 Abrindo detalhe da solicitação:', data[0]);
-            abrirDetalheReal(data[0]);
-          } else {
-            console.log('⚠️ Solicitação não encontrada');
-            carregarSolicitacoes();
-          }
-        } catch(e) {
-          console.error('❌ Erro ao buscar solicitação:', e);
-          carregarSolicitacoes();
-        }
-      }, 1500);
-    } else {
-      console.log('❌ Nenhum solId na URL');
-      carregarSolicitacoes();
+      localStorage.setItem('_sol_a_abrir', solId);
+      console.log('💾 Guardado solId pra abrir:', solId);
     }
+    
+    carregarSolicitacoes();
   } catch(e) {
     if (e.message?.includes('unique') || e.message?.includes('duplicate')) {
       toast('⚠️ Você já tem um perfil cadastrado.');
