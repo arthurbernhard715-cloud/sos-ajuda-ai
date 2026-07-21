@@ -2473,9 +2473,7 @@ const SB_URL = "https://wrpfgrwayzmiucyavphk.supabase.co";
 const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndycGZncndheXptaXVjeWF2cGhrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzMDQ3MzUsImV4cCI6MjA5Njg4MDczNX0.ZdgpjxlLRmIaIdGKXZsUthgqM15QQehyijCB4apDA6E";
 
 async function sbFetch(endpoint, options = {}) {
-  // Usa o JWT do usuário logado quando disponível — essencial para que as
-  // políticas de RLS consigam identificar o usuário via auth.jwt() e
-  // restringir acesso apenas aos seus próprios dados.
+  // Usa o JWT do usuário logado quando disponível
   const token = usuarioAtual?.access_token || SB_KEY;
   const res = await fetch(SB_URL + '/rest/v1/' + endpoint, {
     headers: {
@@ -2487,6 +2485,65 @@ async function sbFetch(endpoint, options = {}) {
     },
     ...options
   });
+
+  // JWT expirado — tenta renovar a sessão e repetir a chamada
+  if (res.status === 401 && usuarioAtual?.refresh_token) {
+    try {
+      const refreshRes = await fetch(`${SB_URL}/auth/v1/token?grant_type=refresh_token`, {
+        method: 'POST',
+        headers: { 'apikey': SB_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: usuarioAtual.refresh_token })
+      });
+      if (refreshRes.ok) {
+        const newSession = await refreshRes.json();
+        // Atualizar sessão global
+        usuarioAtual = { ...usuarioAtual, ...newSession };
+        localStorage.setItem('sb_session', JSON.stringify(usuarioAtual));
+        // Repetir a chamada original com o novo token
+        const retry = await fetch(SB_URL + '/rest/v1/' + endpoint, {
+          headers: {
+            'apikey': SB_KEY,
+            'Authorization': 'Bearer ' + newSession.access_token,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=representation',
+            ...options.headers
+          },
+          ...options
+        });
+        if (!retry.ok) {
+          const err = await retry.text();
+          throw new Error(err);
+        }
+        return retry.json();
+      } else {
+        // Refresh falhou — deslogar silenciosamente e usar chave anônima
+        console.warn('Sessão expirada — usando acesso anônimo');
+        usuarioAtual = null;
+        localStorage.removeItem('sb_session');
+      }
+    } catch(e) {
+      console.warn('Erro ao renovar sessão:', e);
+      usuarioAtual = null;
+      localStorage.removeItem('sb_session');
+    }
+    // Tentar de novo sem token de usuário (acesso público)
+    const anonRes = await fetch(SB_URL + '/rest/v1/' + endpoint, {
+      headers: {
+        'apikey': SB_KEY,
+        'Authorization': 'Bearer ' + SB_KEY,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation',
+        ...options.headers
+      },
+      ...options
+    });
+    if (!anonRes.ok) {
+      const err = await anonRes.text();
+      throw new Error(err);
+    }
+    return anonRes.json();
+  }
+
   if (!res.ok) {
     const err = await res.text();
     throw new Error(err);
