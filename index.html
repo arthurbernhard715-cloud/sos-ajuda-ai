@@ -779,9 +779,15 @@ textarea.form-control { resize: vertical; min-height: 88px; }
 }
 
 #bannerMensagens[data-tipo="erro"] {
-  background: #f8d7da;
-  color: #721c24;
-  border-bottom-color: #dc3545;
+  background: #FF3333;
+  color: #ffffff;
+  border-bottom-color: #CC0000;
+  animation: piscar 0.8s infinite;
+}
+
+@keyframes piscar {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0.6; }
 }
 </style>
 
