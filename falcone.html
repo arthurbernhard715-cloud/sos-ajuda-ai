@@ -1484,6 +1484,10 @@ function renderVoluntarios(filtro='') {
 
 // ── MAPA ADMIN ──
 function initMapaAdmin() {
+  if (!window.L) {
+    toast('Carregando biblioteca de mapas...', 'info');
+    return;
+  }
   if (mapaAdmin) { mapaAdmin.invalidateSize(); return; }
   mapaAdmin = L.map('mapa-admin').setView([-29.5317, -52.5167], 12);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -4408,5 +4412,23 @@ function limparFormMensagens() {
 
   <div id="toastEl" class="toast"></div>
 </div> <!-- fechamento de admin-wrap -->
+  <!-- Modal de Confirmação de Exclusão -->
+  <div id="modalConfirm" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:9999;align-items:center;justify-content:center;">
+    <div style="background:#0d1117;border:1px solid #1e2535;border-radius:12px;padding:24px;max-width:400px;color:#e2e8f0;">
+      <div style="margin-bottom:20px;">
+        <strong id="modalConfirmMsg">Excluir este item?</strong>
+      </div>
+      <div style="display:flex;gap:12px;">
+        <button id="btnConfirmDel" style="flex:1;background:#dc2626;color:#fff;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;font-weight:600;">Excluir</button>
+        <button onclick="fecharConfirm()" style="flex:1;background:#374151;color:#fff;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal aberto -->
+  <style>
+    #modalConfirm.open { display: flex !important; }
+  </style>
+
 </body>
 </html>
