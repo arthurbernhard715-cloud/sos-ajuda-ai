@@ -2668,6 +2668,17 @@ function desenharCards() {
         </div>
       </div>`;
     grid.appendChild(card);
+    
+    // Desabilita botão se limite atingido
+    if (s.voluntarios_confirmados >= s.limite_voluntarios) {
+      const btnAjudar = card.querySelector('.btn-ajudar');
+      if (btnAjudar) {
+        btnAjudar.disabled = true;
+        btnAjudar.textContent = 'Limite atingido';
+        btnAjudar.style.opacity = '0.5';
+        btnAjudar.style.cursor = 'not-allowed';
+      }
+    }
   });
 
   if (cardAdd) grid.appendChild(cardAdd);
