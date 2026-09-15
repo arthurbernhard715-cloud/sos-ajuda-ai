@@ -1892,6 +1892,61 @@ document.addEventListener('DOMContentLoaded', carregarMensagensDoSite);
 </div>
 
 <!-- MODAL: DETALHE SOLICITAÇÃO -->
+<!-- Modal Editar Solicitação -->
+<div class="modal-overlay" id="modal-editar-sol">
+  <div class="modal-box" style="max-width:520px;max-height:90vh;overflow-y:auto;">
+    <button class="modal-close" onclick="fecharModal('modal-editar-sol')">✕</button>
+    <h2 style="font-family:'Montserrat',sans-serif;font-weight:800;color:var(--azul);font-size:1.1rem;">✏️ Editar Solicitação</h2>
+    <input type="hidden" id="edit-sol-id">
+
+    <div class="form-group" style="margin-top:14px;">
+      <label>Nome</label>
+      <input class="form-control" id="edit-nome">
+    </div>
+    <div class="form-group">
+      <label>Estado</label>
+      <input class="form-control" id="edit-estado">
+    </div>
+    <div class="form-group">
+      <label>Cidade</label>
+      <input class="form-control" id="edit-cidade">
+    </div>
+    <div class="form-group">
+      <label>Endereço</label>
+      <input class="form-control" id="edit-endereco">
+    </div>
+    <div class="form-group">
+      <label>Descrição</label>
+      <textarea class="form-control" id="edit-descricao" rows="3"></textarea>
+    </div>
+    <div class="form-group">
+      <label>Tipos de ajuda <small style="color:#94a3b8;">(separados por vírgula)</small></label>
+      <input class="form-control" id="edit-tipos" placeholder="Limpeza, Mantimentos, Roupas...">
+    </div>
+    <div class="form-group">
+      <label>Urgência</label>
+      <select class="form-control" id="edit-urgencia">
+        <option value="verde">🟢 Pode esperar</option>
+        <option value="amarelo">🟡 Preciso logo</option>
+        <option value="vermelho">🔴 Urgente</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Limite de voluntários (máx. 15)</label>
+      <input class="form-control" id="edit-limite" type="number" min="1" max="15" oninput="validarLimiteVoluntarios(this)">
+    </div>
+    <div class="form-group">
+      <label>URL da foto <small style="color:#94a3b8;">(opcional)</small></label>
+      <input class="form-control" id="edit-foto" placeholder="https://...">
+    </div>
+
+    <div style="display:flex;gap:10px;margin-top:16px;">
+      <button onclick="salvarEdicaoSolicitacao()" style="flex:1;padding:12px;border-radius:10px;border:none;background:var(--azul);color:#fff;font-size:0.9rem;font-weight:700;cursor:pointer;">💾 Salvar</button>
+      <button onclick="fecharModal('modal-editar-sol')" style="flex:1;padding:12px;border-radius:10px;border:1.5px solid #E2E8F0;background:#fff;color:#475569;font-size:0.9rem;font-weight:600;cursor:pointer;">Cancelar</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="modal-detalhe">
   <div class="modal">
     <button class="modal-close" onclick="fecharModal('modal-detalhe')">✕</button>
@@ -5222,13 +5277,17 @@ async function carregarMinhasSolicitacoes() {
         </div>
         ${listaVoluntarios}
         <div style="display:flex;gap:8px;margin-top:10px;">
+          <button onclick="abrirEdicaoSolicitacao('${s.id}')"
+            style="flex:1;padding:9px;border-radius:9px;border:1.5px solid #FDE68A;background:#FFFBEB;color:#92400E;font-size:0.8rem;font-weight:700;cursor:pointer;transition:all .2s;">
+            ✏️ Editar
+          </button>
           <button onclick="gerarQRCode('${s.id}','${escapeJsString(s.nome)}','${escapeJsString(s.endereco||'')}');fecharPainelVoluntario();"
             style="flex:1;padding:9px;border-radius:9px;border:1.5px solid #c7d2fe;background:#EEF2FF;color:var(--azul);font-size:0.8rem;font-weight:700;cursor:pointer;transition:all .2s;">
-            📱 Ver QR Code
+            📱 QR Code
           </button>
           ${ativa ? `<button onclick="marcarSolicitacaoConcluida('${s.id}')"
             style="flex:1;padding:9px;border-radius:9px;border:1.5px solid #A7F3D0;background:#ECFDF5;color:#15803D;font-size:0.8rem;font-weight:700;cursor:pointer;">
-            ✅ Já recebi ajuda
+            ✅ Concluída
           </button>` : `<button onclick="reativarDoPainel('${s.id}')"
             style="flex:1;padding:9px;border-radius:9px;border:1.5px solid #A7F3D0;background:#ECFDF5;color:#15803D;font-size:0.8rem;font-weight:700;cursor:pointer;">
             🔁 Reativar
@@ -5245,6 +5304,79 @@ async function carregarMinhasSolicitacoes() {
 
 // Marca a solicitação inteira como concluída, antes do prazo de expiração
 // natural. Ela some do mapa/listagem pública, mas fica salva no histórico.
+// ── EDITAR SOLICITAÇÃO ──
+async function abrirEdicaoSolicitacao(solId) {
+  try {
+    const sols = await sbFetch(`solicitacoes?id=eq.${solId}&select=*`);
+    if (!sols.length) { toast('⚠️ Solicitação não encontrada.'); return; }
+    const s = sols[0];
+
+    document.getElementById('edit-sol-id').value = s.id;
+    document.getElementById('edit-nome').value = s.nome || '';
+    document.getElementById('edit-estado').value = s.estado || '';
+    document.getElementById('edit-cidade').value = s.cidade || '';
+    document.getElementById('edit-endereco').value = s.endereco || '';
+    document.getElementById('edit-descricao').value = s.descricao || '';
+    document.getElementById('edit-tipos').value = (s.tipos_ajuda || []).join(', ');
+    document.getElementById('edit-urgencia').value = s.urgencia || 'amarelo';
+    document.getElementById('edit-limite').value = s.limite_voluntarios || 15;
+    document.getElementById('edit-foto').value = s.foto_url || '';
+
+    fecharPainelVoluntario();
+    abrirModal('modal-editar-sol');
+  } catch(e) {
+    toast('⚠️ Erro ao carregar dados da solicitação.');
+    console.error(e);
+  }
+}
+
+async function salvarEdicaoSolicitacao() {
+  const solId = document.getElementById('edit-sol-id').value;
+  const nome = document.getElementById('edit-nome').value.trim();
+  const estado = document.getElementById('edit-estado').value.trim();
+  const cidade = document.getElementById('edit-cidade').value.trim();
+  const endereco = document.getElementById('edit-endereco').value.trim();
+  const descricao = document.getElementById('edit-descricao').value.trim();
+  const tiposText = document.getElementById('edit-tipos').value.trim();
+  const urgencia = document.getElementById('edit-urgencia').value;
+  const limite = parseInt(document.getElementById('edit-limite').value) || 15;
+  const foto_url = document.getElementById('edit-foto').value.trim() || null;
+
+  if (!nome) { toast('⚠️ Preencha o nome!'); return; }
+  if (!estado) { toast('⚠️ Preencha o estado!'); return; }
+  if (!cidade) { toast('⚠️ Preencha a cidade!'); return; }
+  if (!endereco) { toast('⚠️ Preencha o endereço!'); return; }
+
+  const tipos_ajuda = tiposText ? tiposText.split(',').map(t => t.trim()).filter(Boolean) : [];
+
+  // Recalcular coordenadas se endereço mudou
+  let lat = null, lng = null;
+  try {
+    const q = encodeURIComponent(`${endereco}, ${cidade}, ${estado}, Brasil`);
+    const geo = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1`);
+    const gd = await geo.json();
+    if (gd.length) { lat = parseFloat(gd[0].lat); lng = parseFloat(gd[0].lon); }
+  } catch(e) { console.warn('Geocoding falhou:', e); }
+
+  try {
+    const payload = { nome, estado, cidade, endereco, descricao, tipos_ajuda, urgencia, limite_voluntarios: limite, foto_url };
+    if (lat && lng) { payload.lat = lat; payload.lng = lng; }
+
+    await sbFetch(`solicitacoes?id=eq.${solId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload)
+    });
+
+    fecharModal('modal-editar-sol');
+    toast('✅ Solicitação atualizada com sucesso!', 'ok');
+    carregarSolicitacoes();
+    setTimeout(() => { abrirPainelVoluntario(); }, 500);
+  } catch(e) {
+    toast('⚠️ Erro ao salvar. Tente novamente.');
+    console.error(e);
+  }
+}
+
 async function marcarSolicitacaoConcluida(solId) {
   if (!confirm('Confirma que já recebeu a ajuda necessária? A solicitação vai sair do mapa, mas o histórico fica salvo.')) return;
 
