@@ -899,7 +899,7 @@ document.addEventListener('DOMContentLoaded', carregarMensagensDoSite);
   </div>
   <div class="busca-wrap">
     <div class="busca-row">
-      <input class="busca-input" id="buscaMapaInput" placeholder="🔍  Buscar cidade, bairro ou endereço..." oninput="buscarNoMapa(this.value)">
+      <input class="busca-input" id="buscaMapaInput" placeholder="🔍  Buscar cidade, bairro ou endereço..." oninput="buscarNoMapa(this.value)" autocomplete="off" name="mapa-busca-xyz">
       <button class="busca-btn" onclick="buscarNoMapa(document.getElementById('buscaMapaInput').value)">Ver no mapa</button>
     </div>
     <div class="filtros">
