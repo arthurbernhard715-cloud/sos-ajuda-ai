@@ -2230,10 +2230,10 @@ async function buscarNoMapa(valor) {
     const res = await fetch(`https://photon.komoot.de/api/?q=${encodeURIComponent(termo)}&limit=1&lang=pt`);
     const data = await res.json();
     if (data.features && data.features.length) {
-      const { lat, lon } = data.features[0].geometry.coordinates;
+      const [lon, lat] = data.features[0].geometry.coordinates;
       document.getElementById('mapa').scrollIntoView({behavior:'smooth'});
       setTimeout(() => {
-        mapaObj.setView([lon, lat], 13, {animate:true});
+        mapaObj.setView([lat, lon], 13, {animate:true});
       }, 400);
       toast('📍 Localização encontrada no mapa!', 'ok');
     } else {
