@@ -1462,11 +1462,11 @@ document.addEventListener('DOMContentLoaded', carregarMensagensDoSite);
 
     <!-- PASSO 4: Endereço -->
     <div class="form-group" id="grupoEndereco" style="opacity:0.35;pointer-events:none;">
-      <label>4️⃣ Endereço <small style="color:#94a3b8;font-weight:400;">— selecione a cidade primeiro</small></label>
+      <label>4️⃣ Endereço <small style="color:#94a3b8;font-weight:400;">— digite exatamente o nome da rua</small></label>
 
       <div style="display:grid;grid-template-columns:1fr 80px;gap:8px;margin-bottom:8px;position:relative;">
         <div style="position:relative;">
-          <input class="form-control" id="enderecoInput" placeholder="Rua ou avenida..." autocomplete="off"
+          <input class="form-control" id="enderecoInput" placeholder="Ex: Rua Cel Avelino" autocomplete="off" name="endereço-xyz"
             oninput="limparLocalizacao();buscarEndereco(this.value)" onblur="setTimeout(()=>fecharAutocomplete(),250)">
           <div class="autocomplete-list" id="autocompleteList" style="display:none"></div>
         </div>
@@ -3344,8 +3344,14 @@ async function submeterCadastroReal() {
     });
     fecharModal('modal-atingido');
     registrarCadastroRateLimit();
-    toast('📍 Solicitação publicada! Voluntários já podem te encontrar.', 'ok');
+    toast('✅ Solicitação publicada! Verificando sua localização no mapa...', 'ok');
     carregarSolicitacoes();
+
+    // Mostra aviso pra confirmar localização no mapa
+    setTimeout(() => {
+      const msg = `📍 Sua solicitação foi criada em:\n${endRua}, ${cidade}, ${estado}\n\nVerifique se a localização está correta no mapa.\n\nSe errou, você pode editar em "Meu Perfil → Minhas Solicitações"`;
+      alert(msg);
+    }, 1000);
 
     // Gera QR Code da solicitação
     const novasSols = await sbFetch(`solicitacoes?nome=eq.${encodeURIComponent(nome)}&cidade=eq.${encodeURIComponent(cidade)}&order=criado_em.desc&limit=1&select=id`);
