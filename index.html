@@ -2220,6 +2220,12 @@ async function buscarNoMapa(valor) {
   }
 
   // Se não achou nas solicitações, busca a cidade/endereço no OpenStreetMap
+  // Mas não busca se parecer um email
+  if (termo.includes('@')) {
+    toast('⚠️ Digite um endereço ou cidade, não um email.', 'warn');
+    return;
+  }
+  
   try {
     const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(termo)}&format=json&limit=1`);
     const data = await res.json();
