@@ -2219,7 +2219,7 @@ async function buscarNoMapa(valor) {
     return;
   }
 
-  // Se não achou nas solicitações, busca a cidade/endereço no OpenStreetMap
+  // Se não achou nas solicitações, busca a cidade/endereço no Photon (mais rápido que Nominatim)
   // Mas não busca se parecer um email
   if (termo.includes('@')) {
     toast('⚠️ Digite um endereço ou cidade, não um email.', 'warn');
@@ -2227,13 +2227,13 @@ async function buscarNoMapa(valor) {
   }
   
   try {
-    const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(termo)}&format=json&limit=1`);
+    const res = await fetch(`https://photon.komoot.de/api/?q=${encodeURIComponent(termo)}&limit=1&lang=pt`);
     const data = await res.json();
-    if (data.length) {
-      const { lat, lon } = data[0];
+    if (data.features && data.features.length) {
+      const { lat, lon } = data.features[0].geometry.coordinates;
       document.getElementById('mapa').scrollIntoView({behavior:'smooth'});
       setTimeout(() => {
-        mapaObj.setView([parseFloat(lat), parseFloat(lon)], 13, {animate:true});
+        mapaObj.setView([lon, lat], 13, {animate:true});
       }, 400);
       toast('📍 Localização encontrada no mapa!', 'ok');
     } else {
