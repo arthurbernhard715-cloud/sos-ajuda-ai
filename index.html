@@ -2155,7 +2155,7 @@ async function salvarPontoApoio() {
   if (!lat || !lng) {
     try {
       const q = encodeURIComponent(`${endereco}, ${cidade}, ${estado}, Brasil`);
-      const geo = await fetch(`https://photon.komoot.de/api?q=${q}&format=json&limit=1`);
+      const geo = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1`);
       const geoData = await geo.json();
       if (geoData[0]) { lat = parseFloat(geoData[0].lat); lng = parseFloat(geoData[0].lon); }
     } catch(e) { /* segue sem coordenadas, o ponto fica sem aparecer no mapa até ser corrigido */ }
@@ -2227,10 +2227,10 @@ async function buscarNoMapa(valor) {
   }
   
   try {
-    const res = await fetch(`https://photon.komoot.de/api/?q=${encodeURIComponent(termo)}&limit=1&lang=pt`);
+    const res = await fetch(`https://nominatim.openstreetmap.org/search/?q=${encodeURIComponent(termo)}&limit=1&lang=pt`);
     const data = await res.json();
     if (data.features && data.features.length) {
-      const [lon, lat] = data.features[0].geometry.coordinates;
+      const { lat, lon } = data.features[0].geometry.coordinates;
       document.getElementById('mapa').scrollIntoView({behavior:'smooth'});
       setTimeout(() => {
         mapaObj.setView([lat, lon], 13, {animate:true});
@@ -3259,12 +3259,12 @@ async function submeterCadastroReal() {
   if (!lat || !lng) {
     try {
       const q = encodeURIComponent(`${endRua}, ${cidade}, ${estado}, Brasil`);
-      const geo = await fetch(`https://photon.komoot.de/api?q=${q}&format=json&limit=1`);
+      const geo = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1`);
       const gd = await geo.json();
       if (gd.length) { lat = parseFloat(gd[0].lat); lng = parseFloat(gd[0].lon); }
       else {
         const q2 = encodeURIComponent(`${cidade}, ${estado}, Brasil`);
-        const geo2 = await fetch(`https://photon.komoot.de/api?q=${q2}&format=json&limit=1`);
+        const geo2 = await fetch(`https://nominatim.openstreetmap.org/search?q=${q2}&format=json&limit=1`);
         const gd2 = await geo2.json();
         if (gd2.length) { lat = parseFloat(gd2[0].lat); lng = parseFloat(gd2[0].lon); }
       }
@@ -3886,7 +3886,7 @@ async function buscarPaisVol(valor) {
   if (!valor || valor.length < 2) { lista.style.display='none'; return; }
   _vPaisTimer = setTimeout(async () => {
     try {
-      const res = await fetch(`https://photon.komoot.de/api?q=${encodeURIComponent(valor)}&format=json&limit=5&addressdetails=1`);
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(valor)}&format=json&limit=5&addressdetails=1`);
       const data = await res.json();
       const vistos = new Set();
       const paises = data.filter(r => {
@@ -4007,7 +4007,7 @@ async function buscarEstadoVol(valor) {
   _vEstadoTimer = setTimeout(async () => {
     try {
       const q = encodeURIComponent(`${valor}, ${_volPaisSel}`);
-      const res = await fetch(`https://photon.komoot.de/api?q=${q}&format=json&limit=5&addressdetails=1`);
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=5&addressdetails=1`);
       const data = await res.json();
       const vistos = new Set();
       const estados = data.filter(r => {
@@ -4046,7 +4046,7 @@ async function buscarCidadeVol(valor) {
   _vCidadeTimer = setTimeout(async () => {
     try {
       const q = encodeURIComponent(`${valor}, ${_volEstadoSel}, ${_volPaisSel}`);
-      const res = await fetch(`https://photon.komoot.de/api?q=${q}&format=json&limit=5&addressdetails=1`);
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=5&addressdetails=1`);
       const data = await res.json();
       const vistos = new Set();
       const cidades = data.filter(r => {
@@ -4284,7 +4284,7 @@ async function buscarEndereco(valor) {
       const cidade = document.getElementById('cidadeInput')?.value || '';
       const estado = document.getElementById('estadoInput')?.value || 'RS';
       const q = encodeURIComponent(`${valor}, ${cidade}, ${estado}, Brasil`);
-      const res = await fetch(`https://photon.komoot.de/api?q=${q}&format=json&limit=5&addressdetails=1`);
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=5&addressdetails=1`);
       const data = await res.json();
 
       if (!data.length) { lista.style.display = 'none'; return; }
@@ -4396,7 +4396,7 @@ async function buscarPais(valor) {
   _paisTimer = setTimeout(async () => {
     try {
       const q = encodeURIComponent(valor);
-      const res = await fetch(`https://photon.komoot.de/api?q=${q}&format=json&limit=6&addressdetails=1&featureType=country`);
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=6&addressdetails=1&featureType=country`);
       const data = await res.json();
       // Filtra só países
       const paises = data.filter(r => r.type === 'administrative' || r.addresstype === 'country' || r.address?.country);
@@ -4460,7 +4460,7 @@ async function buscarEstado(valor) {
   _estadoTimer = setTimeout(async () => {
     try {
       const q = encodeURIComponent(`${valor}, ${_paisSelecionado}`);
-      const res = await fetch(`https://photon.komoot.de/api?q=${q}&format=json&limit=6&addressdetails=1`);
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=6&addressdetails=1`);
       const data = await res.json();
       const vistos = new Set();
       const estados = data.filter(r => {
@@ -4513,7 +4513,7 @@ async function buscarCidade(valor) {
   _cidadeTimer = setTimeout(async () => {
     try {
       const q = encodeURIComponent(`${valor}, ${_estadoSelecionado}, ${_paisSelecionado}`);
-      const res = await fetch(`https://photon.komoot.de/api?q=${q}&format=json&limit=6&addressdetails=1`);
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=6&addressdetails=1`);
       const data = await res.json();
       const vistos = new Set();
       const cidades = data.filter(r => {
@@ -4566,7 +4566,7 @@ async function buscarEstadoPonto(valor) {
   _estadoPontoTimer = setTimeout(async () => {
     try {
       const q = encodeURIComponent(`${valor}, Brasil`);
-      const res = await fetch(`https://photon.komoot.de/api?q=${q}&format=json&limit=6&addressdetails=1`);
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=6&addressdetails=1`);
       const data = await res.json();
       const vistos = new Set();
       const estados = data.filter(r => {
@@ -4610,7 +4610,7 @@ async function buscarCidadePonto(valor) {
     try {
       const estadoAtual = document.getElementById('pontoEstadoInput').value.trim() || _estadoPontoSelecionado;
       const q = encodeURIComponent(`${valor}, ${estadoAtual}, Brasil`);
-      const res = await fetch(`https://photon.komoot.de/api?q=${q}&format=json&limit=6&addressdetails=1`);
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=6&addressdetails=1`);
       const data = await res.json();
       const vistos = new Set();
       const cidades = data.filter(r => {
