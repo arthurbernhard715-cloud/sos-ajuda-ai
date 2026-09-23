@@ -738,6 +738,21 @@ textarea.form-control { resize: vertical; min-height: 88px; }
 </style>
 <script src="https://www.google.com/recaptcha/api.js?render=6Ld4WkMtAAAAAG2mg9TR4rB2Emhj785a50LoDOm2" async defer></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="anonymous"/>
+<!-- Google Analytics 4 -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-YEGZ008NP4"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){window.dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-YEGZ008NP4', {
+    'page_path': window.location.pathname,
+    'send_page_view': true
+  });
+  
+  // Fallback pra verificar
+  console.log('Google Analytics iniciado:', 'G-YEGZ008NP4');
+</script>
+
 </head>
 <body>
 
