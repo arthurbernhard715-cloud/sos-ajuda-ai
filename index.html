@@ -5706,6 +5706,20 @@ function renderListaConfirmadas(confs) {
         <span class="vol-status vs-confirmado">✅ Confirmado</span>
         <span style="font-size:0.75rem;color:#64748b;">⏰ ${exp}</span>
       </div>
+      
+      <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
+        <a href="https://www.google.com/maps/search/${encodeURIComponent(s.endereco + ', ' + s.cidade + ', ' + s.estado)}" target="_blank"
+          style="flex:1;min-width:120px;padding:8px 12px;border-radius:8px;border:1.5px solid #3B82F6;background:#EFF6FF;color:#1E40AF;text-align:center;font-size:0.75rem;font-weight:700;cursor:pointer;text-decoration:none;transition:all .2s;"
+          onmouseover="this.style.background='#DBEAFE'" onmouseout="this.style.background='#EFF6FF'">
+          🗺️ Google Maps
+        </a>
+        <a href="https://waze.com/ul?q=${encodeURIComponent(s.endereco + ', ' + s.cidade + ', ' + s.estado)}" target="_blank"
+          style="flex:1;min-width:120px;padding:8px 12px;border-radius:8px;border:1.5px solid #16A34A;background:#F0FDF4;color:#15803D;text-align:center;font-size:0.75rem;font-weight:700;cursor:pointer;text-decoration:none;transition:all .2s;"
+          onmouseover="this.style.background='#DCFCE7'" onmouseout="this.style.background='#F0FDF4'">
+          🗺️ Waze
+        </a>
+      </div>
+      
       <button onclick="cancelarPresencaPainel('${c.id}','${s.id || ''}')"
         style="width:100%;margin-top:10px;padding:9px;border-radius:9px;
         border:1.5px solid #FECACA;background:transparent;color:#D92B2B;
