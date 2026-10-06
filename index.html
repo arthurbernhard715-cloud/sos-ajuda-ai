@@ -900,7 +900,7 @@ document.addEventListener('DOMContentLoaded', carregarMensagensDoSite);
     <img class="panel-logo" src="logo.png" alt="SOS Ajuda Aí">
     <p class="panel-slogan">"Conectando quem precisa,<br>com quem quer <strong>ajudar!</strong>"</p>
     <button class="btn-verm" onclick="if(!usuarioAtual){abrirModal('modal-auth')}else{verificarTermos('atingido',()=>{ limparLocalizacao(); abrirModal('modal-atingido'); })}">🏠 Fui atingido — preciso de ajuda</button>
-    <button class="btn-azul" onclick="if(!usuarioAtual){abrirModal('modal-auth')}else{verificarTermos('voluntario',()=>abrirModalVoluntario())}">🤝 Quero ser voluntário</button>
+    <button class="btn-azul" onclick="if(!usuarioAtual){localStorage.setItem('_reabrir_vol','1');abrirModal('modal-auth')}else{verificarTermos('voluntario',()=>abrirModalVoluntario())}">🤝 Quero ser voluntário</button>
     <button class="btn-apoiar" onclick="document.getElementById('apoie').scrollIntoView({behavior:'smooth'})">💛 Apoiar financeiramente</button>
     <div class="panel-divider"></div>
     <div class="stats">
@@ -3836,11 +3836,11 @@ async function verificarSessao() {
           ? '✅ E-mail confirmado! Bem-vindo, '
           : '👋 Bem-vindo, ';
         toast(msgBoasVindas + (user.user_metadata?.full_name || user.email) + '!', 'ok');
-        garantirVoluntarioCadastrado(user);
+        await garantirVoluntarioCadastrado(user);
         setTimeout(() => verificarAvaliacoesPendentes(), 3000);
         if (localStorage.getItem('_reabrir_vol')) {
           localStorage.removeItem('_reabrir_vol');
-          setTimeout(() => abrirModalVoluntario(), 800);
+          setTimeout(() => abrirModalVoluntario(), 1500);
         }
       }
       return;
