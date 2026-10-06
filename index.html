@@ -1437,6 +1437,22 @@ document.addEventListener('DOMContentLoaded', carregarMensagensDoSite);
       <input class="form-control" id="nomeInput" placeholder="Ex: Arthur Bernhard">
     </div>
 
+    <!-- GPS no topo -->
+    <div class="form-group">
+      <label>📍 Localização</label>
+      <button type="button" class="btn-localizacao" id="btnLocalizacao" onclick="usarLocalizacaoAtual()" style="margin-bottom:0;">
+        📍 Usar minha localização atual (GPS)
+      </button>
+      <div id="localizacaoConfirmada" style="display:none;background:#ECFDF5;border:1.5px solid #A7F3D0;border-radius:10px;padding:10px 14px;margin-top:8px;font-size:0.83rem;color:#15803D;">
+        ✅ <span id="localizacaoTexto">Localização confirmada!</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;margin:14px 0 4px;">
+        <div style="flex:1;height:1px;background:#e2e8f0;"></div>
+        <span style="font-size:0.75rem;color:#94a3b8;white-space:nowrap;">ou preencha manualmente</span>
+        <div style="flex:1;height:1px;background:#e2e8f0;"></div>
+      </div>
+    </div>
+
     <!-- PASSO 1: País -->
     <div class="form-group">
       <label>1️⃣ País</label>
@@ -1634,6 +1650,22 @@ document.addEventListener('DOMContentLoaded', carregarMensagensDoSite);
         <div style="font-size:0.72rem;color:#94a3b8;margin-top:4px;">O código do país é selecionado automaticamente</div>
       </div>
 
+      <!-- GPS no topo -->
+      <div class="form-group">
+        <label>📍 Localização</label>
+        <button type="button" class="btn-localizacao" onclick="usarLocalizacaoAtualVol()">
+          📍 Usar minha localização atual (GPS)
+        </button>
+        <div id="vol-localizacaoConfirmada" style="display:none;background:#ECFDF5;border:1.5px solid #A7F3D0;border-radius:10px;padding:10px 14px;margin-top:8px;font-size:0.83rem;color:#15803D;">
+          ✅ <span id="vol-localizacaoTexto">Localização confirmada!</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;margin:14px 0 4px;">
+          <div style="flex:1;height:1px;background:#e2e8f0;"></div>
+          <span style="font-size:0.75rem;color:#94a3b8;white-space:nowrap;">ou preencha manualmente</span>
+          <div style="flex:1;height:1px;background:#e2e8f0;"></div>
+        </div>
+      </div>
+
       <!-- PASSO 1: País -->
       <div class="form-group">
         <label>1️⃣ País</label>
@@ -1686,26 +1718,6 @@ document.addEventListener('DOMContentLoaded', carregarMensagensDoSite);
           <input class="form-control" id="vol-endereco-bairro" placeholder="Bairro">
         </div>
         <input class="form-control" id="vol-endereco-complemento" placeholder="Complemento (apto, sala, etc)" style="margin-top:8px;">
-      </div>
-
-      <!-- Telefone (Opcional) -->
-      <div class="form-group">
-        <label>☎️ Telefone Fixo (opcional)</label>
-        <input class="form-control" id="vol-telefone" placeholder="(xx) xxxx-xxxx" type="tel">
-      </div>
-
-      <div>
-            <label style="font-size:0.75rem;color:#64748b;display:block;margin-bottom:4px;">Horário</label>
-            <select class="form-control" id="vol-horario" style="font-size:0.9rem;">
-              <option value="">— Selecione —</option>
-              <option value="manha">Manhã (6h-12h)</option>
-              <option value="tarde">Tarde (12h-18h)</option>
-              <option value="noite">Noite (18h-23h)</option>
-              <option value="madrugada">Madrugada (23h-6h)</option>
-              <option value="qualquer-hora">Qualquer hora</option>
-            </select>
-          </div>
-        </div>
       </div>
 <!-- Habilidades -->
       <div class="form-group">
@@ -2231,7 +2243,9 @@ async function salvarPontoApoio() {
   const nome = document.getElementById('pontoNomeInput').value.trim();
   const endereco = document.getElementById('pontoEnderecoInput').value.trim();
   const cidade = document.getElementById('pontoCidadeInput').value.trim();
-  const estado = siglaDoEstado(document.getElementById('pontoEstadoInput').value.trim()) || 'RS';  const descricao = document.getElementById('pontoDescricaoInput').value.trim();
+  const estado = siglaDoEstado(document.getElementById('pontoEstadoInput').value.trim()) || 'RS';
+  const telefone = document.getElementById('pontoTelefoneInput').value.trim();
+  const descricao = document.getElementById('pontoDescricaoInput').value.trim();
 
   if (!nome) { toast('⚠️ Informe o nome do local ou responsável.'); return; }
   if (!endereco || !cidade) { toast('⚠️ Informe endereço e cidade (ou use o GPS).'); return; }
@@ -3424,7 +3438,9 @@ async function submeterVoluntarioReal() {
   const endereco_rua = document.getElementById('vol-endereco-rua')?.value?.trim() || '';
   const endereco_numero = document.getElementById('vol-endereco-numero')?.value?.trim() || '';
   const endereco_bairro = document.getElementById('vol-endereco-bairro')?.value?.trim() || '';
-  const endereco_complemento = document.getElementById('vol-endereco-complemento')?.value?.trim() || '';  const wNum = document.getElementById('vol-whatsapp')?.value?.trim() || '';
+  const endereco_complemento = document.getElementById('vol-endereco-complemento')?.value?.trim() || '';
+  const ddi = document.getElementById('vol-ddi')?.value || '+55';
+  const wNum = document.getElementById('vol-whatsapp')?.value?.trim() || '';
   const whatsapp = wNum ? ddi + ' ' + wNum : '';
   const pais     = document.getElementById('vol-pais')?.value?.trim();
   const estado   = document.getElementById('vol-estado')?.value?.trim();
