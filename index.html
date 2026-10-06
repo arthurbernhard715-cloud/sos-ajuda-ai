@@ -1696,7 +1696,91 @@ document.addEventListener('DOMContentLoaded', carregarMensagensDoSite);
         </div>
       </div>
 
-      <!-- Habilidades -->
+      
+      <!-- CPF (Opcional) -->
+      <div class="form-group">
+        <label>🆔 CPF (opcional)</label>
+        <input class="form-control" id="vol-cpf" placeholder="000.000.000-00" maxlength="14">
+      </div>
+
+      <!-- RG/Documento (Opcional) -->
+      <div class="form-group">
+        <label>📄 RG / Documento de Identidade (opcional)</label>
+        <input class="form-control" id="vol-rg" placeholder="Número do documento" maxlength="20">
+      </div>
+
+      <!-- Endereço (Opcional) -->
+      <div class="form-group">
+        <label>🏠 Endereço (opcional)</label>
+        <input class="form-control" id="vol-endereco-rua" placeholder="Rua/Avenida" style="margin-bottom:8px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <input class="form-control" id="vol-endereco-numero" placeholder="Número" type="number">
+          <input class="form-control" id="vol-endereco-bairro" placeholder="Bairro">
+        </div>
+        <input class="form-control" id="vol-endereco-complemento" placeholder="Complemento (apto, sala, etc)" style="margin-top:8px;">
+      </div>
+
+      <!-- Telefone (Opcional) -->
+      <div class="form-group">
+        <label>☎️ Telefone Fixo (opcional)</label>
+        <input class="form-control" id="vol-telefone" placeholder="(xx) xxxx-xxxx" type="tel">
+      </div>
+
+      <!-- Data de Nascimento (Opcional) -->
+      <div class="form-group">
+        <label>🎂 Data de Nascimento (opcional)</label>
+        <input class="form-control" id="vol-data-nascimento" type="date">
+      </div>
+
+      <!-- Gênero (Opcional) -->
+      <div class="form-group">
+        <label>👤 Gênero (opcional)</label>
+        <select class="form-control" id="vol-genero">
+          <option value="">— Selecione —</option>
+          <option value="masculino">Masculino</option>
+          <option value="feminino">Feminino</option>
+          <option value="outro">Outro</option>
+          <option value="prefiro-nao-informar">Prefiro não informar</option>
+        </select>
+      </div>
+
+      <!-- Bio/Descrição (Opcional) -->
+      <div class="form-group">
+        <label>✍️ Sobre você (opcional)</label>
+        <textarea class="form-control" id="vol-bio" placeholder="Conte um pouco sobre você, suas experiências e por que quer ser voluntário..." style="resize:vertical;min-height:80px;" maxlength="500"></textarea>
+        <small style="color:#94a3b8;display:block;margin-top:4px;">Máximo 500 caracteres</small>
+      </div>
+
+      <!-- Disponibilidade (Opcional) -->
+      <div class="form-group">
+        <label>⏰ Disponibilidade (opcional)</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+          <div>
+            <label style="font-size:0.75rem;color:#64748b;display:block;margin-bottom:4px;">Dias da semana</label>
+            <select class="form-control" id="vol-dias" style="font-size:0.9rem;">
+              <option value="">— Selecione —</option>
+              <option value="seg-sex">Segunda a Sexta</option>
+              <option value="sabado">Sábados</option>
+              <option value="domingo">Domingos</option>
+              <option value="fins-de-semana">Fins de semana</option>
+              <option value="todo-dia">Todos os dias</option>
+              <option value="flexivel">Flexível</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:0.75rem;color:#64748b;display:block;margin-bottom:4px;">Horário</label>
+            <select class="form-control" id="vol-horario" style="font-size:0.9rem;">
+              <option value="">— Selecione —</option>
+              <option value="manha">Manhã (6h-12h)</option>
+              <option value="tarde">Tarde (12h-18h)</option>
+              <option value="noite">Noite (18h-23h)</option>
+              <option value="madrugada">Madrugada (23h-6h)</option>
+              <option value="qualquer-hora">Qualquer hora</option>
+            </select>
+          </div>
+        </div>
+      </div>
+<!-- Habilidades -->
       <div class="form-group">
         <label>O que posso oferecer</label>
         <div class="checkbox-group" id="vol-habilidades">
@@ -3410,6 +3494,18 @@ async function submeterVoluntarioReal() {
     }
   } catch(e) {}
   const nome     = document.getElementById('vol-nome')?.value?.trim();
+  const cpf      = document.getElementById('vol-cpf')?.value?.trim() || '';
+  const rg       = document.getElementById('vol-rg')?.value?.trim() || '';
+  const endereco_rua = document.getElementById('vol-endereco-rua')?.value?.trim() || '';
+  const endereco_numero = document.getElementById('vol-endereco-numero')?.value?.trim() || '';
+  const endereco_bairro = document.getElementById('vol-endereco-bairro')?.value?.trim() || '';
+  const endereco_complemento = document.getElementById('vol-endereco-complemento')?.value?.trim() || '';
+  const telefone = document.getElementById('vol-telefone')?.value?.trim() || '';
+  const data_nascimento = document.getElementById('vol-data-nascimento')?.value || '';
+  const genero = document.getElementById('vol-genero')?.value || '';
+  const bio = document.getElementById('vol-bio')?.value?.trim() || '';
+  const dias_disponibilidade = document.getElementById('vol-dias')?.value || '';
+  const horario_disponibilidade = document.getElementById('vol-horario')?.value || '';
   const ddi = document.getElementById('vol-ddi')?.value || '+55';
   const wNum = document.getElementById('vol-whatsapp')?.value?.trim() || '';
   const whatsapp = wNum ? ddi + ' ' + wNum : '';
