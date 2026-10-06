@@ -3838,9 +3838,16 @@ async function verificarSessao() {
         toast(msgBoasVindas + (user.user_metadata?.full_name || user.email) + '!', 'ok');
         await garantirVoluntarioCadastrado(user);
         setTimeout(() => verificarAvaliacoesPendentes(), 3000);
+        console.log('🔍 DEBUG: _reabrir_vol =', localStorage.getItem('_reabrir_vol'));
         if (localStorage.getItem('_reabrir_vol')) {
           localStorage.removeItem('_reabrir_vol');
-          setTimeout(() => abrirModalVoluntario(), 1500);
+          console.log('🔍 DEBUG: Abrindo formulário voluntário em 1.5s...');
+          setTimeout(() => {
+            console.log('🔍 DEBUG: Chamando abrirModalVoluntario() agora');
+            abrirModalVoluntario();
+          }, 1500);
+        } else {
+          console.log('🔍 DEBUG: Flag _reabrir_vol NÃO encontrada');
         }
       }
       return;
@@ -3922,10 +3929,12 @@ setInterval(async () => {
 // MODAL VOLUNTÁRIO — FLUXO
 // ═══════════════════════════════════════
 async function abrirModalVoluntario() {
+  console.log('🔍 DEBUG abrirModalVoluntario: INÍCIO');
   const semLogin = document.getElementById('vol-sem-login');
   const volForm  = document.getElementById('vol-form');
 
   if (!usuarioAtual) {
+    console.log('🔍 DEBUG abrirModalVoluntario: sem login');
     semLogin.style.display = 'block';
     volForm.style.display  = 'none';
     abrirModal('modal-voluntario');
@@ -3934,20 +3943,24 @@ async function abrirModalVoluntario() {
 
   const u = usuarioAtual.user;
   const nome = u.user_metadata?.full_name || '';
+  console.log('🔍 DEBUG abrirModalVoluntario: logado como', u.email, 'id=', u.id);
 
   // Verifica se já tem cadastro COMPLETO (com whatsapp preenchido)
   try {
     const existe = await sbFetch(`voluntarios?google_id=eq.${u.id}&select=id,whatsapp`);
+    console.log('🔍 DEBUG abrirModalVoluntario: existe=', JSON.stringify(existe));
     if (existe.length > 0 && existe[0].whatsapp) {
       // Já cadastrado com dados completos — abre painel direto
+      console.log('🔍 DEBUG abrirModalVoluntario: JÁ CADASTRADO, abrindo painel');
       fecharModal('modal-voluntario');
       abrirPainelVoluntario();
       toast('✅ Você já é voluntário! Veja seu perfil.', 'ok');
       return;
     }
-  } catch(e) { console.warn('Erro ao verificar:', e); }
+  } catch(e) { console.warn('🔍 DEBUG abrirModalVoluntario: Erro ao verificar:', e); }
 
   // Não cadastrado — mostra formulário
+  console.log('🔍 DEBUG abrirModalVoluntario: MOSTRANDO FORMULÁRIO');
   semLogin.style.display = 'none';
   volForm.style.display  = 'block';
   document.getElementById('vol-google-nome').textContent = nome || u.email;
