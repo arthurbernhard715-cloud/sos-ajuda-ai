@@ -900,7 +900,7 @@ document.addEventListener('DOMContentLoaded', carregarMensagensDoSite);
     <img class="panel-logo" src="logo.png" alt="SOS Ajuda Aí">
     <p class="panel-slogan">"Conectando quem precisa,<br>com quem quer <strong>ajudar!</strong>"</p>
     <button class="btn-verm" onclick="if(!usuarioAtual){abrirModal('modal-auth')}else{verificarTermos('atingido',()=>{ limparLocalizacao(); abrirModal('modal-atingido'); })}">🏠 Fui atingido — preciso de ajuda</button>
-    <button class="btn-azul" onclick="if(!usuarioAtual){abrirModal('modal-auth')}else{abrirModalVoluntario()}">🤝 Quero ser voluntário</button>
+    <button class="btn-azul" onclick="if(!usuarioAtual){abrirModal('modal-auth')}else{verificarTermos('voluntario',()=>abrirModalVoluntario())}">🤝 Quero ser voluntário</button>
     <button class="btn-apoiar" onclick="document.getElementById('apoie').scrollIntoView({behavior:'smooth'})">💛 Apoiar financeiramente</button>
     <div class="panel-divider"></div>
     <div class="stats">
@@ -1665,38 +1665,26 @@ document.addEventListener('DOMContentLoaded', carregarMensagensDoSite);
       <!-- Endereço (opcional) -->
       <div style="background:#F8FAFC;border-radius:10px;padding:14px;margin-bottom:18px;border:1.5px solid #E2E8F0;">
         <label style="display:block;font-weight:700;font-size:0.9rem;margin-bottom:12px;color:#1e293b;">📍 Endereço <small style="color:#94a3b8;font-weight:400;">(opcional)</small></label>
-
-        <!-- Rua -->
         <div class="form-group" style="margin-bottom:10px;">
           <label style="font-size:0.83rem;">Rua / Avenida</label>
           <input class="form-control" id="vol-endereco-rua" placeholder="Rua, Avenida, Pça...">
         </div>
-
-        <!-- Número -->
         <div class="form-group" style="margin-bottom:10px;">
           <label style="font-size:0.83rem;">Número</label>
-          <input class="form-control" id="vol-endereco-numero" placeholder="123" type="number">
+          <input class="form-control" id="vol-endereco-numero" placeholder="123">
         </div>
-
-        <!-- Bairro -->
         <div class="form-group" style="margin-bottom:10px;">
           <label style="font-size:0.83rem;">Bairro</label>
           <input class="form-control" id="vol-endereco-bairro" placeholder="Nome do bairro">
         </div>
-
-        <!-- Complemento -->
         <div class="form-group" style="margin-bottom:10px;">
           <label style="font-size:0.83rem;">Complemento</label>
           <input class="form-control" id="vol-endereco-complemento" placeholder="Apto 101, Bloco A, etc...">
         </div>
-
-        <!-- Cidade -->
         <div class="form-group" style="margin-bottom:10px;">
           <label style="font-size:0.83rem;">Cidade</label>
           <input class="form-control" id="vol-endereco-cidade" placeholder="Sua cidade">
         </div>
-
-        <!-- Estado -->
         <div class="form-group" style="margin-bottom:0;">
           <label style="font-size:0.83rem;">Estado / Província</label>
           <input class="form-control" id="vol-endereco-estado" placeholder="Seu estado">
@@ -3416,14 +3404,10 @@ async function submeterVoluntarioReal() {
       return;
     }
   } catch(e) {}
-
-  // Coleta campos obrigatórios
   const nome     = document.getElementById('vol-nome')?.value?.trim();
-  const ddi      = document.getElementById('vol-ddi')?.value || '+55';
-  const wNum     = document.getElementById('vol-whatsapp')?.value?.trim() || '';
+  const ddi = document.getElementById('vol-ddi')?.value || '+55';
+  const wNum = document.getElementById('vol-whatsapp')?.value?.trim() || '';
   const whatsapp = wNum ? ddi + ' ' + wNum : '';
-
-  // Coleta campos opcionais
   const cpf      = document.getElementById('vol-cpf')?.value?.trim() || '';
   const rg       = document.getElementById('vol-rg')?.value?.trim() || '';
   const endereco_rua = document.getElementById('vol-endereco-rua')?.value?.trim() || '';
@@ -3432,19 +3416,16 @@ async function submeterVoluntarioReal() {
   const endereco_complemento = document.getElementById('vol-endereco-complemento')?.value?.trim() || '';
   const endereco_cidade = document.getElementById('vol-endereco-cidade')?.value?.trim() || '';
   const endereco_estado = document.getElementById('vol-endereco-estado')?.value?.trim() || '';
+  const habs     = [...document.querySelectorAll('#vol-habilidades .chk.ativo')].map(e => e.textContent.replace(/^[^a-zA-ZÀ-ú]+/,'').trim());
 
-  const habs = [...document.querySelectorAll('#vol-habilidades .chk.ativo')].map(e => e.textContent.replace(/^[^a-zA-ZÀ-ú]+/,'').trim());
-
-  // Validações: apenas nome e WhatsApp são obrigatórios
-  if (!nome)  { toast('⚠️ Preencha seu nome!'); return; }
-  if (!wNum)  { toast('⚠️ Preencha seu WhatsApp!'); return; }
+  if (!nome)     { toast('⚠️ Preencha seu nome!'); return; }
+  if (!wNum) { toast('⚠️ Preencha seu WhatsApp!'); return; }
 
   try {
     await sbFetch('voluntarios', {
       method: 'POST',
       body: JSON.stringify({
-        nome,
-        whatsapp,
+        nome, whatsapp,
         cpf: cpf || null,
         rg: rg || null,
         endereco_rua: endereco_rua || null,
@@ -3459,7 +3440,7 @@ async function submeterVoluntarioReal() {
     });
     fecharModal('modal-voluntario');
     toast('🙋 Perfil criado! Comece a ajudar agora.', 'ok');
-
+    
     // Se veio via QR code (?sol=ID), guardar e deixar o site abrir normalmente
     const params = new URLSearchParams(window.location.search);
     const solId = params.get('sol');
@@ -3467,7 +3448,7 @@ async function submeterVoluntarioReal() {
       localStorage.setItem('_sol_a_abrir', solId);
       console.log('💾 Guardado solId pra abrir:', solId);
     }
-
+    
     carregarSolicitacoes();
   } catch(e) {
     if (e.message?.includes('unique') || e.message?.includes('duplicate')) {
@@ -3942,16 +3923,10 @@ setInterval(async () => {
 // MODAL VOLUNTÁRIO — FLUXO
 // ═══════════════════════════════════════
 async function abrirModalVoluntario() {
-  console.log('🔍 abrirModalVoluntario() chamada');
   const semLogin = document.getElementById('vol-sem-login');
   const volForm  = document.getElementById('vol-form');
 
-  console.log('vol-sem-login:', semLogin);
-  console.log('vol-form:', volForm);
-  console.log('usuarioAtual:', usuarioAtual);
-
   if (!usuarioAtual) {
-    console.log('❌ Não logado — mostrando botão Google');
     semLogin.style.display = 'block';
     volForm.style.display  = 'none';
     abrirModal('modal-voluntario');
@@ -3960,15 +3935,12 @@ async function abrirModalVoluntario() {
 
   const u = usuarioAtual.user;
   const nome = u.user_metadata?.full_name || '';
-  console.log('✅ Logado como:', nome || u.email);
 
   // Verifica se já tem cadastro
   try {
     const existe = await sbFetch(`voluntarios?google_id=eq.${u.id}&select=id,nome,whatsapp,cidade`);
-    console.log('Verificação de voluntário:', existe);
     if (existe.length > 0) {
       // Já cadastrado — abre painel direto
-      console.log('✅ Já é voluntário');
       fecharModal('modal-voluntario');
       abrirPainelVoluntario();
       toast('✅ Você já é voluntário! Veja seu perfil.', 'ok');
@@ -3977,7 +3949,6 @@ async function abrirModalVoluntario() {
   } catch(e) { console.warn('Erro ao verificar:', e); }
 
   // Não cadastrado — mostra formulário
-  console.log('📝 Mostrando formulário');
   semLogin.style.display = 'none';
   volForm.style.display  = 'block';
   document.getElementById('vol-google-nome').textContent = nome || u.email;
@@ -3986,7 +3957,6 @@ async function abrirModalVoluntario() {
   if (nome && !document.getElementById('vol-nome').value) {
     document.getElementById('vol-nome').value = nome;
   }
-  console.log('🎯 Abrindo modal');
   abrirModal('modal-voluntario');
 }
 
@@ -3996,12 +3966,9 @@ function entrarComGoogleVoluntario() {
   entrarComGoogle();
 }
 
-// DDI é selecionado manualmente pelo voluntário
 function atualizarDDI(val) {
   // Chamado quando usuário muda manualmente o DDI
 }
-
-// Funções de autocomplete e GPS removidas — endereço do voluntário é preenchido manualmente
 
 
 
@@ -5906,18 +5873,8 @@ function toggleTermos(checkId, btnId) {
 async function verificarTermos(tipo, callback) {
   if (!usuarioAtual) { abrirModal('modal-auth'); return; }
   const googleId = usuarioAtual.user?.id;
-
   try {
-    // Tenta verificar termos com timeout de 3 segundos
-    const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('Timeout')), 3000)
-    );
-
-    const aceito = await Promise.race([
-      sbFetch(`termos_aceitos?google_id=eq.${googleId}&tipo=eq.${tipo}&select=id`),
-      timeoutPromise
-    ]);
-
+    const aceito = await sbFetch(`termos_aceitos?google_id=eq.${googleId}&tipo=eq.${tipo}&select=id`);
     if (aceito.length > 0) {
       callback(); // Já aceitou — continua
     } else {
@@ -5932,8 +5889,8 @@ async function verificarTermos(tipo, callback) {
       abrirModal(`modal-termos-${tipo}`);
     }
   } catch(e) {
-    console.warn('Erro ao verificar termos (continuando mesmo assim):', e);
-    callback(); // Em caso de erro ou timeout, deixa passar
+    console.warn('Erro ao verificar termos:', e);
+    callback(); // Em caso de erro, deixa passar
   }
 }
 
