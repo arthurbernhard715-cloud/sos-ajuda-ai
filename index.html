@@ -900,7 +900,7 @@ document.addEventListener('DOMContentLoaded', carregarMensagensDoSite);
     <img class="panel-logo" src="logo.png" alt="SOS Ajuda Aí">
     <p class="panel-slogan">"Conectando quem precisa,<br>com quem quer <strong>ajudar!</strong>"</p>
     <button class="btn-verm" onclick="if(!usuarioAtual){abrirModal('modal-auth')}else{verificarTermos('atingido',()=>{ limparLocalizacao(); abrirModal('modal-atingido'); })}">🏠 Fui atingido — preciso de ajuda</button>
-    <button class="btn-azul" onclick="if(!usuarioAtual){abrirModal('modal-auth')}else{verificarTermos('voluntario',()=>abrirModalVoluntario())}">🤝 Quero ser voluntário</button>
+    <button class="btn-azul" onclick="if(!usuarioAtual){abrirModal('modal-auth')}else{abrirModalVoluntario()}">🤝 Quero ser voluntário</button>
     <button class="btn-apoiar" onclick="document.getElementById('apoie').scrollIntoView({behavior:'smooth'})">💛 Apoiar financeiramente</button>
     <div class="panel-divider"></div>
     <div class="stats">
