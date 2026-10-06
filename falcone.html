@@ -292,6 +292,35 @@ tbody tr:last-child td{border-bottom:none;}
 .nome-clicavel{cursor:pointer;text-decoration:underline;text-decoration-color:transparent;transition:text-decoration-color .15s;}
 .nome-clicavel:hover{text-decoration-color:#60a5fa;}
 
+/* MODAL VOLUNTÁRIO COMPLETO */
+.modal-voluntario-completo{
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);
+  z-index:999;align-items:center;justify-content:center;overflow-y:auto;padding:20px;
+}
+.modal-voluntario-completo.open{display:flex;}
+.modal-voluntario-completo-box{
+  background:#0d1117;border:1px solid #1e2535;border-radius:16px;
+  padding:28px;max-width:800px;width:100%;max-height:90vh;overflow-y:auto;
+}
+.modal-voluntario-completo-header{
+  display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;
+  border-bottom:1px solid #1e2535;padding-bottom:14px;
+}
+.modal-voluntario-completo-titulo{
+  font-family:'Montserrat',sans-serif;font-weight:700;font-size:1.3rem;color:#fff;
+}
+.modal-voluntario-completo-close{
+  background:transparent;border:none;color:#94a3b8;font-size:1.8rem;cursor:pointer;
+  transition:color .15s;padding:0;width:40px;height:40px;display:flex;align-items:center;justify-content:center;
+}
+.modal-voluntario-completo-close:hover{color:#e2e8f0;}
+
+.vol-tab-btn{transition:all .15s;}
+.vol-tab-btn.active{color:#fff !important;border-bottom-color:#2255C4 !important;}
+
+.vol-tab-content{display:none;}
+.vol-tab-content.active{display:block;}
+
 /* MODAL RENOVAR */
 .renovar-tabs{display:flex;gap:8px;margin-bottom:18px;}
 .renovar-tab{flex:1;padding:9px 0;border-radius:9px;border:1px solid #1e2535;background:transparent;color:#94a3b8;cursor:pointer;font-weight:600;font-size:0.85rem;}
@@ -1469,7 +1498,7 @@ function renderVoluntarios(filtro='') {
   tbody.innerHTML = lista.map(v => `
     <tr>
       <td><input type="checkbox" class="chk-linha" data-tipo="vol" data-id="${v.id}" ${_selecionados.vol.has(v.id)?'checked':''} onchange="toggleSelecaoLinha('vol','${v.id}',this)"></td>
-      <td><strong class="nome-clicavel" style="color:#fff" onclick="abrirModalDetalheVol('${v.id}')">${escapeHtml(v.nome)}</strong></td>
+      <td><strong class="nome-clicavel" style="color:#fff" onclick="abrirModalDetalheVoluntarioCompleto('${v.id}')">${escapeHtml(v.nome)}</strong></td>
       <td>${escapeHtml(v.cidade)}, ${escapeHtml(v.estado)}</td>
       <td style="font-size:0.82rem">${escapeHtml(v.whatsapp || '—')}</td>
       <td style="font-size:0.78rem">${(v.habilidades||[]).map(escapeHtml).join(', ') || '—'}</td>
@@ -4080,6 +4109,183 @@ function fecharModalDetalhe() {
   document.getElementById('modalDetalhe').classList.remove('open');
 }
 
+// ── MODAL COMPLETO VOLUNTÁRIO COM HISTÓRICO ──
+async function abrirModalDetalheVoluntarioCompleto(id) {
+  const v = dadosVol.find(x => x.id === id);
+  if (!v) {
+    toast('Voluntário não encontrado', 'err');
+    return;
+  }
+
+  const modalEl = document.getElementById('modalVoluntarioCompleto');
+  if (!modalEl) {
+    toast('Modal não inicializado', 'err');
+    return;
+  }
+
+  // Limpa o conteúdo e começa a carregar dados
+  document.getElementById('volCompletoTitulo').textContent = '⏳ Carregando...';
+  document.getElementById('volCompletoConteudo').innerHTML = '<div style="padding:32px;text-align:center;color:#64748b;">⏳ Buscando dados...</div>';
+  modalEl.classList.add('open');
+
+  try {
+    // 1. Busca histórico de ajudas (confirmações onde o voluntário confirmou)
+    const confirmacoes = await sbFetch(`confirmacoes?voluntario_id=eq.${id}&select=*,solicitacoes(id,nome,cidade,estado,tipos_ajuda,urgencia,criado_em)`);
+
+    // 2. Busca avaliações recebidas pelo voluntário
+    const avaliacoes = await sbFetch(`avaliacoes?avaliado_id=eq.${id}&select=*`);
+
+    // 3. Busca solicitações criadas pelo voluntário (via email)
+    const solicitacoesCriadas = await sbFetch(`solicitacoes?email_dono=eq.${v.email || ''}&select=*`);
+
+    // Renderiza o modal completo
+    renderModalVoluntarioCompleto(v, confirmacoes, avaliacoes, solicitacoesCriadas);
+  } catch(e) {
+    console.error('Erro ao carregar dados completo do voluntário:', e);
+    toast('Erro ao carregar dados: ' + e.message, 'err');
+    fecharModalVoluntarioCompleto();
+  }
+}
+
+function renderModalVoluntarioCompleto(v, confirmacoes, avaliacoes, solicitacoesCriadas) {
+  document.getElementById('volCompletoTitulo').textContent = `🙋 ${escapeHtml(v.nome)}`;
+
+  // Cria HTML com tabs/seções
+  let html = `
+    <div style="margin-bottom:20px;">
+      <div style="display:flex;gap:8px;border-bottom:1px solid #1e2535;margin-bottom:16px;flex-wrap:wrap;">
+        <button class="vol-tab-btn active" onclick="trocarTabVoluntario('cadastro')" data-tab="cadastro" style="padding:10px 16px;border:none;background:transparent;color:#cbd5e1;cursor:pointer;border-bottom:2px solid transparent;font-weight:600;transition:all .15s;">📋 Cadastro</button>
+        <button class="vol-tab-btn" onclick="trocarTabVoluntario('ajudas')" data-tab="ajudas" style="padding:10px 16px;border:none;background:transparent;color:#94a3b8;cursor:pointer;border-bottom:2px solid transparent;font-weight:600;transition:all .15s;">✅ Histórico de Ajudas (${confirmacoes.length})</button>
+        <button class="vol-tab-btn" onclick="trocarTabVoluntario('avaliacoes')" data-tab="avaliacoes" style="padding:10px 16px;border:none;background:transparent;color:#94a3b8;cursor:pointer;border-bottom:2px solid transparent;font-weight:600;transition:all .15s;">⭐ Avaliações (${avaliacoes.length})</button>
+        <button class="vol-tab-btn" onclick="trocarTabVoluntario('solicitacoes')" data-tab="solicitacoes" style="padding:10px 16px;border:none;background:transparent;color:#94a3b8;cursor:pointer;border-bottom:2px solid transparent;font-weight:600;transition:all .15s;">🏠 Solicitações Criadas (${solicitacoesCriadas.length})</button>
+      </div>
+    </div>
+
+    <!-- TAB: CADASTRO -->
+    <div class="vol-tab-content active" data-tab="cadastro">
+      <div class="detalhe-secao">
+        <div class="detalhe-secao-titulo">Dados Pessoais</div>
+        ${linhaDetalhe('Nome', escapeHtml(v.nome))}
+        ${linhaDetalhe('WhatsApp', escapeHtml(v.whatsapp || '—'))}
+        ${linhaDetalhe('E-mail', v.email ? `<a href="mailto:${escapeHtml(v.email)}">${escapeHtml(v.email)}</a>` : '—')}
+        ${linhaDetalhe('CPF', escapeHtml(v.cpf || '—'))}
+      </div>
+
+      <div class="detalhe-secao">
+        <div class="detalhe-secao-titulo">Localização</div>
+        ${linhaDetalhe('Cidade / Estado', `${escapeHtml(v.cidade)}, ${escapeHtml(v.estado)}`)}
+        ${linhaDetalhe('País', escapeHtml(v.pais || 'Brasil'))}
+      </div>
+
+      <div class="detalhe-secao">
+        <div class="detalhe-secao-titulo">Atividade e Ranking</div>
+        ${linhaDetalhe('Habilidades', (v.habilidades || []).length > 0 ? (v.habilidades || []).map(escapeHtml).join(', ') : '—')}
+        ${linhaDetalhe('Pontos (Ranking)', `<strong style="color:#D92B2B;font-size:1.1rem;">${v.pontos || 0}</strong>`)}
+        ${linhaDetalhe('Cadastrado em', v.criado_em ? new Date(v.criado_em).toLocaleString('pt-BR') : '—')}
+        ${linhaDetalhe('ID do registro', `<code style="font-size:0.75rem;">${escapeHtml(v.id)}</code>`)}
+      </div>
+    </div>
+
+    <!-- TAB: HISTÓRICO DE AJUDAS -->
+    <div class="vol-tab-content" data-tab="ajudas">
+      ${confirmacoes.length === 0
+        ? '<div style="padding:24px;text-align:center;color:#64748b;">Nenhuma ajuda confirmada ainda.</div>'
+        : confirmacoes.map(c => `
+          <div style="background:#161b27;border:1px solid #1e2535;border-radius:10px;padding:14px;margin-bottom:12px;">
+            <div style="display:flex;justify-content:space-between;align-items:start;gap:12px;">
+              <div style="flex:1;">
+                <div style="font-weight:700;color:#e2e8f0;margin-bottom:6px;">${escapeHtml(c.solicitacoes?.nome || '—')}</div>
+                <div style="font-size:0.85rem;color:#cbd5e1;margin-bottom:4px;">📍 ${escapeHtml(c.solicitacoes?.cidade || '—')}, ${escapeHtml(c.solicitacoes?.estado || '')}</div>
+                <div style="font-size:0.8rem;color:#94a3b8;">🔖 ${(c.solicitacoes?.tipos_ajuda || []).map(escapeHtml).join(', ') || '—'}</div>
+              </div>
+              <div style="text-align:right;flex-shrink:0;">
+                ${c.solicitacoes?.urgencia === 'vermelho' ? '<span class="badge badge-verm">🔴 Urgente</span>' : c.solicitacoes?.urgencia === 'amarelo' ? '<span class="badge badge-amarelo">🟡 Preciso logo</span>' : '<span class="badge badge-verde">🟢 Pode esperar</span>'}
+                <div style="font-size:0.75rem;color:#64748b;margin-top:6px;">${c.criado_em ? new Date(c.criado_em).toLocaleString('pt-BR') : '—'}</div>
+              </div>
+            </div>
+          </div>
+        `).join('')
+      }
+    </div>
+
+    <!-- TAB: AVALIAÇÕES -->
+    <div class="vol-tab-content" data-tab="avaliacoes">
+      ${avaliacoes.length === 0
+        ? '<div style="padding:24px;text-align:center;color:#64748b;">Nenhuma avaliação recebida ainda.</div>'
+        : avaliacoes.map(a => `
+          <div style="background:#161b27;border:1px solid #1e2535;border-radius:10px;padding:14px;margin-bottom:12px;">
+            <div style="display:flex;justify-content:space-between;align-items:start;gap:12px;">
+              <div style="flex:1;">
+                <div style="display:flex;gap:2px;margin-bottom:8px;">
+                  ${[...Array(5)].map((_, i) => `
+                    <span style="font-size:1.2rem;color:${i < (a.nota || 0) ? '#FDE68A' : '#1e2535'};">★</span>
+                  `).join('')}
+                </div>
+                ${a.comentario ? `<div style="font-size:0.85rem;color:#cbd5e1;font-style:italic;">"${escapeHtml(a.comentario)}"</div>` : '<div style="font-size:0.85rem;color:#64748b;">Sem comentário</div>'}
+                <div style="font-size:0.75rem;color:#94a3b8;margin-top:6px;">Por: ${escapeHtml(a.avaliador_nome || '—')} • ${a.criado_em ? new Date(a.criado_em).toLocaleString('pt-BR') : '—'}</div>
+              </div>
+            </div>
+          </div>
+        `).join('')
+      }
+    </div>
+
+    <!-- TAB: SOLICITAÇÕES CRIADAS -->
+    <div class="vol-tab-content" data-tab="solicitacoes">
+      ${solicitacoesCriadas.length === 0
+        ? '<div style="padding:24px;text-align:center;color:#64748b;">Nenhuma solicitação criada por este voluntário.</div>'
+        : solicitacoesCriadas.map(s => `
+          <div style="background:#161b27;border:1px solid #1e2535;border-radius:10px;padding:14px;margin-bottom:12px;">
+            <div style="display:flex;justify-content:space-between;align-items:start;gap:12px;">
+              <div style="flex:1;">
+                <div style="font-weight:700;color:#e2e8f0;margin-bottom:6px;">${escapeHtml(s.nome)}</div>
+                <div style="font-size:0.85rem;color:#cbd5e1;margin-bottom:4px;">📍 ${escapeHtml(s.endereco || '')} • ${escapeHtml(s.cidade)}, ${escapeHtml(s.estado)}</div>
+                <div style="font-size:0.8rem;color:#94a3b8;margin-bottom:6px;">🔖 ${(s.tipos_ajuda || []).map(escapeHtml).join(', ') || '—'}</div>
+                <div style="font-size:0.78rem;color:#64748b;">📋 ${escapeHtml(s.descricao || '').substring(0, 80)}${(s.descricao || '').length > 80 ? '...' : ''}</div>
+              </div>
+              <div style="text-align:right;flex-shrink:0;">
+                ${s.urgencia === 'vermelho' ? '<span class="badge badge-verm">🔴 Urgente</span>' : s.urgencia === 'amarelo' ? '<span class="badge badge-amarelo">🟡 Preciso logo</span>' : '<span class="badge badge-verde">🟢 Pode esperar</span>'}
+                <div style="font-size:0.75rem;color:#64748b;margin-top:6px;">${s.ativo && new Date(s.expira_em) > new Date() ? '✅ Ativa' : '⚠️ Expirada'}</div>
+              </div>
+            </div>
+          </div>
+        `).join('')
+      }
+    </div>
+  `;
+
+  document.getElementById('volCompletoConteudo').innerHTML = html;
+}
+
+function trocarTabVoluntario(tabName) {
+  // Remove active de todos os botões e conteúdos
+  document.querySelectorAll('.vol-tab-btn').forEach(btn => {
+    btn.classList.remove('active');
+    btn.style.color = '#94a3b8';
+    btn.style.borderBottomColor = 'transparent';
+  });
+  document.querySelectorAll('.vol-tab-content').forEach(content => {
+    content.classList.remove('active');
+    content.style.display = 'none';
+  });
+
+  // Adiciona active ao botão e conteúdo selecionados
+  document.querySelector(`.vol-tab-btn[data-tab="${tabName}"]`).classList.add('active');
+  document.querySelector(`.vol-tab-btn[data-tab="${tabName}"]`).style.color = '#fff';
+  document.querySelector(`.vol-tab-btn[data-tab="${tabName}"]`).style.borderBottomColor = '#2255C4';
+
+  const contentEl = document.querySelector(`.vol-tab-content[data-tab="${tabName}"]`);
+  if (contentEl) {
+    contentEl.classList.add('active');
+    contentEl.style.display = 'block';
+  }
+}
+
+function fecharModalVoluntarioCompleto() {
+  const modalEl = document.getElementById('modalVoluntarioCompleto');
+  if (modalEl) modalEl.classList.remove('open');
+}
+
 function confirmarDelete(tipo, id, nome) {
   document.getElementById('modalConfirmMsg').textContent = `Excluir "${nome}"? Esta ação não pode ser desfeita.`;
   deleteCallback = async () => {
@@ -4404,6 +4610,19 @@ function limparFormMensagens() {
         <div style="display: flex; gap: 10px; justify-content: flex-end;">
           <button onclick="fecharModalEditar()" style="background: #999; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Cancelar</button>
           <button onclick="salvarEdicaoMensagem()" style="background: #1A3C8F; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Salvar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL VOLUNTÁRIO COMPLETO COM HISTÓRICO -->
+    <div class="modal-voluntario-completo" id="modalVoluntarioCompleto">
+      <div class="modal-voluntario-completo-box">
+        <div class="modal-voluntario-completo-header">
+          <div class="modal-voluntario-completo-titulo" id="volCompletoTitulo">Voluntário</div>
+          <button class="modal-voluntario-completo-close" onclick="fecharModalVoluntarioCompleto()">✕</button>
+        </div>
+        <div id="volCompletoConteudo">
+          <!-- Conteúdo dinamicamente preenchido -->
         </div>
       </div>
     </div>
