@@ -3942,10 +3942,16 @@ setInterval(async () => {
 // MODAL VOLUNTÁRIO — FLUXO
 // ═══════════════════════════════════════
 async function abrirModalVoluntario() {
+  console.log('🔍 abrirModalVoluntario() chamada');
   const semLogin = document.getElementById('vol-sem-login');
   const volForm  = document.getElementById('vol-form');
 
+  console.log('vol-sem-login:', semLogin);
+  console.log('vol-form:', volForm);
+  console.log('usuarioAtual:', usuarioAtual);
+
   if (!usuarioAtual) {
+    console.log('❌ Não logado — mostrando botão Google');
     semLogin.style.display = 'block';
     volForm.style.display  = 'none';
     abrirModal('modal-voluntario');
@@ -3954,12 +3960,15 @@ async function abrirModalVoluntario() {
 
   const u = usuarioAtual.user;
   const nome = u.user_metadata?.full_name || '';
+  console.log('✅ Logado como:', nome || u.email);
 
   // Verifica se já tem cadastro
   try {
     const existe = await sbFetch(`voluntarios?google_id=eq.${u.id}&select=id,nome,whatsapp,cidade`);
+    console.log('Verificação de voluntário:', existe);
     if (existe.length > 0) {
       // Já cadastrado — abre painel direto
+      console.log('✅ Já é voluntário');
       fecharModal('modal-voluntario');
       abrirPainelVoluntario();
       toast('✅ Você já é voluntário! Veja seu perfil.', 'ok');
@@ -3968,6 +3977,7 @@ async function abrirModalVoluntario() {
   } catch(e) { console.warn('Erro ao verificar:', e); }
 
   // Não cadastrado — mostra formulário
+  console.log('📝 Mostrando formulário');
   semLogin.style.display = 'none';
   volForm.style.display  = 'block';
   document.getElementById('vol-google-nome').textContent = nome || u.email;
@@ -3976,6 +3986,7 @@ async function abrirModalVoluntario() {
   if (nome && !document.getElementById('vol-nome').value) {
     document.getElementById('vol-nome').value = nome;
   }
+  console.log('🎯 Abrindo modal');
   abrirModal('modal-voluntario');
 }
 
