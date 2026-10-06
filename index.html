@@ -3394,16 +3394,6 @@ async function submeterVoluntarioReal() {
     return;
   }
 
-  // Verifica novamente se já existe
-  try {
-    const existe = await sbFetch(`voluntarios?google_id=eq.${usuarioAtual.user.id}&select=id`);
-    if (existe.length > 0) {
-      fecharModal('modal-voluntario');
-      toast('✅ Você já é voluntário!', 'ok');
-      abrirPainelVoluntario();
-      return;
-    }
-  } catch(e) {}
   const nome     = document.getElementById('vol-nome')?.value?.trim();
   const ddi = document.getElementById('vol-ddi')?.value || '+55';
   const wNum = document.getElementById('vol-whatsapp')?.value?.trim() || '';
@@ -3421,26 +3411,39 @@ async function submeterVoluntarioReal() {
   if (!nome)     { toast('⚠️ Preencha seu nome!'); return; }
   if (!wNum) { toast('⚠️ Preencha seu WhatsApp!'); return; }
 
+  const dados = {
+    nome, whatsapp,
+    cpf: cpf || null,
+    rg: rg || null,
+    endereco_rua: endereco_rua || null,
+    endereco_numero: endereco_numero || null,
+    endereco_bairro: endereco_bairro || null,
+    endereco_complemento: endereco_complemento || null,
+    endereco_cidade: endereco_cidade || null,
+    endereco_estado: endereco_estado || null,
+    habilidades: habs,
+    google_id: usuarioAtual.user.id
+  };
+
   try {
-    await sbFetch('voluntarios', {
-      method: 'POST',
-      body: JSON.stringify({
-        nome, whatsapp,
-        cpf: cpf || null,
-        rg: rg || null,
-        endereco_rua: endereco_rua || null,
-        endereco_numero: endereco_numero || null,
-        endereco_bairro: endereco_bairro || null,
-        endereco_complemento: endereco_complemento || null,
-        endereco_cidade: endereco_cidade || null,
-        endereco_estado: endereco_estado || null,
-        habilidades: habs,
-        google_id: usuarioAtual.user.id
-      })
-    });
+    // Verifica se já existe registro (criado automaticamente no login)
+    const existe = await sbFetch(`voluntarios?google_id=eq.${usuarioAtual.user.id}&select=id`);
+    if (existe.length > 0) {
+      // Já existe — atualiza com PATCH
+      await sbFetch(`voluntarios?google_id=eq.${usuarioAtual.user.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(dados)
+      });
+    } else {
+      // Não existe — cria com POST
+      await sbFetch('voluntarios', {
+        method: 'POST',
+        body: JSON.stringify(dados)
+      });
+    }
     fecharModal('modal-voluntario');
     toast('🙋 Perfil criado! Comece a ajudar agora.', 'ok');
-    
+
     // Se veio via QR code (?sol=ID), guardar e deixar o site abrir normalmente
     const params = new URLSearchParams(window.location.search);
     const solId = params.get('sol');
@@ -3448,14 +3451,10 @@ async function submeterVoluntarioReal() {
       localStorage.setItem('_sol_a_abrir', solId);
       console.log('💾 Guardado solId pra abrir:', solId);
     }
-    
+
     carregarSolicitacoes();
   } catch(e) {
-    if (e.message?.includes('unique') || e.message?.includes('duplicate')) {
-      toast('⚠️ Você já tem um perfil cadastrado.');
-    } else {
-      toast('⚠️ Erro ao criar perfil. Tente novamente.');
-    }
+    toast('⚠️ Erro ao criar perfil. Tente novamente.');
     console.error(e);
   }
 }
@@ -3936,11 +3935,11 @@ async function abrirModalVoluntario() {
   const u = usuarioAtual.user;
   const nome = u.user_metadata?.full_name || '';
 
-  // Verifica se já tem cadastro
+  // Verifica se já tem cadastro COMPLETO (com whatsapp preenchido)
   try {
-    const existe = await sbFetch(`voluntarios?google_id=eq.${u.id}&select=id`);
-    if (existe.length > 0) {
-      // Já cadastrado — abre painel direto
+    const existe = await sbFetch(`voluntarios?google_id=eq.${u.id}&select=id,whatsapp`);
+    if (existe.length > 0 && existe[0].whatsapp) {
+      // Já cadastrado com dados completos — abre painel direto
       fecharModal('modal-voluntario');
       abrirPainelVoluntario();
       toast('✅ Você já é voluntário! Veja seu perfil.', 'ok');
