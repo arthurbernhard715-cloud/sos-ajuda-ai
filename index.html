@@ -3938,7 +3938,7 @@ async function abrirModalVoluntario() {
 
   // Verifica se já tem cadastro
   try {
-    const existe = await sbFetch(`voluntarios?google_id=eq.${u.id}&select=id,nome,whatsapp,cidade`);
+    const existe = await sbFetch(`voluntarios?google_id=eq.${u.id}&select=id`);
     if (existe.length > 0) {
       // Já cadastrado — abre painel direto
       fecharModal('modal-voluntario');
