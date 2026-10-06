@@ -5906,8 +5906,18 @@ function toggleTermos(checkId, btnId) {
 async function verificarTermos(tipo, callback) {
   if (!usuarioAtual) { abrirModal('modal-auth'); return; }
   const googleId = usuarioAtual.user?.id;
+
   try {
-    const aceito = await sbFetch(`termos_aceitos?google_id=eq.${googleId}&tipo=eq.${tipo}&select=id`);
+    // Tenta verificar termos com timeout de 3 segundos
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Timeout')), 3000)
+    );
+
+    const aceito = await Promise.race([
+      sbFetch(`termos_aceitos?google_id=eq.${googleId}&tipo=eq.${tipo}&select=id`),
+      timeoutPromise
+    ]);
+
     if (aceito.length > 0) {
       callback(); // Já aceitou — continua
     } else {
@@ -5922,8 +5932,8 @@ async function verificarTermos(tipo, callback) {
       abrirModal(`modal-termos-${tipo}`);
     }
   } catch(e) {
-    console.warn('Erro ao verificar termos:', e);
-    callback(); // Em caso de erro, deixa passar
+    console.warn('Erro ao verificar termos (continuando mesmo assim):', e);
+    callback(); // Em caso de erro ou timeout, deixa passar
   }
 }
 
