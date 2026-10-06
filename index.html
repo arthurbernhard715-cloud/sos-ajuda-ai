@@ -1650,49 +1650,56 @@ document.addEventListener('DOMContentLoaded', carregarMensagensDoSite);
         <div style="font-size:0.72rem;color:#94a3b8;margin-top:4px;">O código do país é selecionado automaticamente</div>
       </div>
 
-      <!-- GPS no topo -->
+      <!-- CPF (opcional) -->
       <div class="form-group">
-        <label>📍 Localização</label>
-        <button type="button" class="btn-localizacao" onclick="usarLocalizacaoAtualVol()">
-          📍 Usar minha localização atual (GPS)
-        </button>
-        <div id="vol-localizacaoConfirmada" style="display:none;background:#ECFDF5;border:1.5px solid #A7F3D0;border-radius:10px;padding:10px 14px;margin-top:8px;font-size:0.83rem;color:#15803D;">
-          ✅ <span id="vol-localizacaoTexto">Localização confirmada!</span>
-        </div>
-        <div style="display:flex;align-items:center;gap:10px;margin:14px 0 4px;">
-          <div style="flex:1;height:1px;background:#e2e8f0;"></div>
-          <span style="font-size:0.75rem;color:#94a3b8;white-space:nowrap;">ou preencha manualmente</span>
-          <div style="flex:1;height:1px;background:#e2e8f0;"></div>
-        </div>
+        <label>CPF <small style="color:#94a3b8;font-weight:400;">(opcional)</small></label>
+        <input class="form-control" id="vol-cpf" placeholder="000.000.000-00">
       </div>
 
-      <!-- PASSO 1: País -->
+      <!-- RG (opcional) -->
       <div class="form-group">
-        <label>1️⃣ País</label>
-        <div style="position:relative;">
-          <input class="form-control" id="vol-pais" placeholder="🔍 Digite o nome do país..." autocomplete="off"
-            oninput="buscarPaisVol(this.value)" onblur="setTimeout(fecharListaPaisVol,250)">
-          <div id="listaPaisVol" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:999;background:#fff;border:1.5px solid var(--azul-med);border-top:none;border-radius:0 0 10px 10px;max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.12);"></div>
-        </div>
+        <label>RG / Documento <small style="color:#94a3b8;font-weight:400;">(opcional)</small></label>
+        <input class="form-control" id="vol-rg" placeholder="Número do RG ou documento">
       </div>
 
-      <!-- PASSO 2: Estado -->
-      <div class="form-group" id="vol-grupoEstado" style="opacity:0.35;pointer-events:none;">
-        <label>2️⃣ Estado / Província <small style="color:#94a3b8;font-weight:400;">— selecione o país primeiro</small></label>
-        <div style="position:relative;">
-          <input class="form-control" id="vol-estado" placeholder="Digite o estado..." autocomplete="off"
-            oninput="buscarEstadoVol(this.value)" onblur="setTimeout(fecharListaEstadoVol,250)">
-          <div id="listaEstadoVol" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:999;background:#fff;border:1.5px solid var(--azul-med);border-top:none;border-radius:0 0 10px 10px;max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.12);"></div>
-        </div>
-      </div>
+      <!-- Endereço (opcional) -->
+      <div style="background:#F8FAFC;border-radius:10px;padding:14px;margin-bottom:18px;border:1.5px solid #E2E8F0;">
+        <label style="display:block;font-weight:700;font-size:0.9rem;margin-bottom:12px;color:#1e293b;">📍 Endereço <small style="color:#94a3b8;font-weight:400;">(opcional)</small></label>
 
-      <!-- PASSO 3: Cidade -->
-      <div class="form-group" id="vol-grupoCidade" style="opacity:0.35;pointer-events:none;">
-        <label>3️⃣ Cidade <small style="color:#94a3b8;font-weight:400;">— selecione o estado primeiro</small></label>
-        <div style="position:relative;">
-          <input class="form-control" id="vol-cidade" placeholder="Digite sua cidade..." autocomplete="off"
-            oninput="buscarCidadeVol(this.value)" onblur="setTimeout(fecharListaCidadeVol,250)">
-          <div id="listaCidadeVol" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:999;background:#fff;border:1.5px solid var(--azul-med);border-top:none;border-radius:0 0 10px 10px;max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.12);"></div>
+        <!-- Rua -->
+        <div class="form-group" style="margin-bottom:10px;">
+          <label style="font-size:0.83rem;">Rua / Avenida</label>
+          <input class="form-control" id="vol-endereco-rua" placeholder="Rua, Avenida, Pça...">
+        </div>
+
+        <!-- Número -->
+        <div class="form-group" style="margin-bottom:10px;">
+          <label style="font-size:0.83rem;">Número</label>
+          <input class="form-control" id="vol-endereco-numero" placeholder="123" type="number">
+        </div>
+
+        <!-- Bairro -->
+        <div class="form-group" style="margin-bottom:10px;">
+          <label style="font-size:0.83rem;">Bairro</label>
+          <input class="form-control" id="vol-endereco-bairro" placeholder="Nome do bairro">
+        </div>
+
+        <!-- Complemento -->
+        <div class="form-group" style="margin-bottom:10px;">
+          <label style="font-size:0.83rem;">Complemento</label>
+          <input class="form-control" id="vol-endereco-complemento" placeholder="Apto 101, Bloco A, etc...">
+        </div>
+
+        <!-- Cidade -->
+        <div class="form-group" style="margin-bottom:10px;">
+          <label style="font-size:0.83rem;">Cidade</label>
+          <input class="form-control" id="vol-endereco-cidade" placeholder="Sua cidade">
+        </div>
+
+        <!-- Estado -->
+        <div class="form-group" style="margin-bottom:0;">
+          <label style="font-size:0.83rem;">Estado / Província</label>
+          <input class="form-control" id="vol-endereco-estado" placeholder="Seu estado">
         </div>
       </div>
 
@@ -3409,7 +3416,14 @@ async function submeterVoluntarioReal() {
       return;
     }
   } catch(e) {}
+
+  // Coleta campos obrigatórios
   const nome     = document.getElementById('vol-nome')?.value?.trim();
+  const ddi      = document.getElementById('vol-ddi')?.value || '+55';
+  const wNum     = document.getElementById('vol-whatsapp')?.value?.trim() || '';
+  const whatsapp = wNum ? ddi + ' ' + wNum : '';
+
+  // Coleta campos opcionais
   const cpf      = document.getElementById('vol-cpf')?.value?.trim() || '';
   const rg       = document.getElementById('vol-rg')?.value?.trim() || '';
   const endereco_rua = document.getElementById('vol-endereco-rua')?.value?.trim() || '';
@@ -3418,34 +3432,34 @@ async function submeterVoluntarioReal() {
   const endereco_complemento = document.getElementById('vol-endereco-complemento')?.value?.trim() || '';
   const endereco_cidade = document.getElementById('vol-endereco-cidade')?.value?.trim() || '';
   const endereco_estado = document.getElementById('vol-endereco-estado')?.value?.trim() || '';
-  const ddi = document.getElementById('vol-ddi')?.value || '+55';
-  const wNum = document.getElementById('vol-whatsapp')?.value?.trim() || '';
-  const whatsapp = wNum ? ddi + ' ' + wNum : '';
-  const pais     = document.getElementById('vol-pais')?.value?.trim();
-  const estado   = document.getElementById('vol-estado')?.value?.trim();
-  const cidade   = document.getElementById('vol-cidade')?.value?.trim();
-  const raio = 'Qualquer lugar';
-  const habs     = [...document.querySelectorAll('#vol-habilidades .chk.ativo')].map(e => e.textContent.replace(/^[^a-zA-ZÀ-ú]+/,'').trim());
 
-  if (!nome)     { toast('⚠️ Preencha seu nome!'); return; }
-  if (!wNum) { toast('⚠️ Preencha seu WhatsApp!'); return; }
-  if (!pais)     { toast('⚠️ Selecione seu país!'); return; }
-  if (!estado)   { toast('⚠️ Selecione seu estado!'); return; }
-  if (!cidade)   { toast('⚠️ Selecione sua cidade!'); return; }
+  const habs = [...document.querySelectorAll('#vol-habilidades .chk.ativo')].map(e => e.textContent.replace(/^[^a-zA-ZÀ-ú]+/,'').trim());
+
+  // Validações: apenas nome e WhatsApp são obrigatórios
+  if (!nome)  { toast('⚠️ Preencha seu nome!'); return; }
+  if (!wNum)  { toast('⚠️ Preencha seu WhatsApp!'); return; }
 
   try {
     await sbFetch('voluntarios', {
       method: 'POST',
       body: JSON.stringify({
-        nome, whatsapp, pais: pais||'Brasil', estado, cidade,
-        raio_atuacao: raio, habilidades: habs,
-        google_id: usuarioAtual.user.id,
-        cpf: ''
+        nome,
+        whatsapp,
+        cpf: cpf || null,
+        rg: rg || null,
+        endereco_rua: endereco_rua || null,
+        endereco_numero: endereco_numero || null,
+        endereco_bairro: endereco_bairro || null,
+        endereco_complemento: endereco_complemento || null,
+        endereco_cidade: endereco_cidade || null,
+        endereco_estado: endereco_estado || null,
+        habilidades: habs,
+        google_id: usuarioAtual.user.id
       })
     });
     fecharModal('modal-voluntario');
     toast('🙋 Perfil criado! Comece a ajudar agora.', 'ok');
-    
+
     // Se veio via QR code (?sol=ID), guardar e deixar o site abrir normalmente
     const params = new URLSearchParams(window.location.search);
     const solId = params.get('sol');
@@ -3453,7 +3467,7 @@ async function submeterVoluntarioReal() {
       localStorage.setItem('_sol_a_abrir', solId);
       console.log('💾 Guardado solId pra abrir:', solId);
     }
-    
+
     carregarSolicitacoes();
   } catch(e) {
     if (e.message?.includes('unique') || e.message?.includes('duplicate')) {
@@ -3927,8 +3941,6 @@ setInterval(async () => {
 // ═══════════════════════════════════════
 // MODAL VOLUNTÁRIO — FLUXO
 // ═══════════════════════════════════════
-let _volPaisSel = '', _volEstadoSel = '', _volCidadeSel = '';
-
 async function abrirModalVoluntario() {
   const semLogin = document.getElementById('vol-sem-login');
   const volForm  = document.getElementById('vol-form');
@@ -3973,199 +3985,12 @@ function entrarComGoogleVoluntario() {
   entrarComGoogle();
 }
 
-// Autocomplete País
-let _vPaisTimer = null;
-async function buscarPaisVol(valor) {
-  clearTimeout(_vPaisTimer);
-  const lista = document.getElementById('listaPaisVol');
-  if (!valor || valor.length < 2) { lista.style.display='none'; return; }
-  _vPaisTimer = setTimeout(async () => {
-    try {
-      const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(valor)}&format=json&limit=5&addressdetails=1`);
-      const data = await res.json();
-      const vistos = new Set();
-      const paises = data.filter(r => {
-        const p = r.address?.country || r.display_name.split(',').pop().trim();
-        if (vistos.has(p)) return false; vistos.add(p); return true;
-      }).slice(0,5);
-      if (!paises.length) { lista.style.display='none'; return; }
-      lista.innerHTML = paises.map(r => {
-        const nome = r.address?.country || r.display_name.split(',').pop().trim();
-        return `<div onclick="selecionarPaisVol('${escapeJsString(nome)}')"
-          style="padding:10px 14px;cursor:pointer;font-size:0.85rem;border-bottom:1px solid #f1f5f9;"
-          onmouseover="this.style.background='#EEF2FF'" onmouseout="this.style.background='#fff'">
-          🌍 <strong>${nome}</strong></div>`;
-      }).join('');
-      lista.style.display = 'block';
-    } catch(e) {}
-  }, 350);
-}
-// Mapa de países para DDI
-const DDI_MAP = {
-  'Brasil': '+55', 'United States': '+1', 'USA': '+1', 'Estados Unidos': '+1',
-  'United Kingdom': '+44', 'Reino Unido': '+44', 'Portugal': '+351',
-  'Spain': '+34', 'Espanha': '+34', 'France': '+33', 'França': '+33',
-  'Germany': '+49', 'Alemanha': '+49', 'Italy': '+39', 'Itália': '+39',
-  'Argentina': '+54', 'Chile': '+56', 'Colombia': '+57', 'Colômbia': '+57',
-  'Uruguay': '+598', 'Uruguai': '+598', 'Paraguay': '+595', 'Paraguai': '+595',
-  'Peru': '+51', 'Venezuela': '+58', 'Mexico': '+52', 'México': '+52',
-  'Japan': '+81', 'Japão': '+81', 'China': '+86', 'India': '+91', 'Índia': '+91',
-  'South Africa': '+27', 'África do Sul': '+27', 'Australia': '+61', 'Austrália': '+61',
-  'New Zealand': '+64', 'Nova Zelândia': '+64', 'Russia': '+7', 'Rússia': '+7',
-  'South Korea': '+82', 'Coreia do Sul': '+82', 'Netherlands': '+31', 'Países Baixos': '+31',
-  'Belgium': '+32', 'Bélgica': '+32', 'Switzerland': '+41', 'Suíça': '+41',
-  'Austria': '+43', 'Áustria': '+43', 'Poland': '+48', 'Polônia': '+48',
-  'Sweden': '+46', 'Suécia': '+46', 'Norway': '+47', 'Noruega': '+47',
-  'Denmark': '+45', 'Dinamarca': '+45', 'Finland': '+358', 'Finlândia': '+358',
-  'Egypt': '+20', 'Egito': '+20', 'Nigeria': '+234', 'Nigéria': '+234',
-  'Morocco': '+212', 'Marrocos': '+212'
-};
-
+// DDI é selecionado manualmente pelo voluntário
 function atualizarDDI(val) {
   // Chamado quando usuário muda manualmente o DDI
 }
 
-function selecionarPaisVol(nome) {
-  _volPaisSel = nome;
-  document.getElementById('vol-pais').value = nome;
-  document.getElementById('listaPaisVol').style.display = 'none';
-  const ge = document.getElementById('vol-grupoEstado');
-  ge.style.opacity='1'; ge.style.pointerEvents='auto';
-  ge.querySelector('small').textContent='';
-  document.getElementById('vol-estado').value='';
-  document.getElementById('vol-cidade').value='';
-  document.getElementById('vol-grupoCidade').style.opacity='0.35';
-  document.getElementById('vol-grupoCidade').style.pointerEvents='none';
-  // Auto-seleciona DDI
-  const ddi = DDI_MAP[nome];
-  if (ddi) {
-    const sel = document.getElementById('vol-ddi');
-    if (sel) sel.value = ddi;
-  }
-}
-function fecharListaPaisVol() { const el=document.getElementById('listaPaisVol'); if(el) el.style.display='none'; }
-
-async function usarLocalizacaoAtualVol() {
-  const btn = event.target;
-  if (!navigator.geolocation) { toast('⚠️ GPS não disponível no seu navegador.'); return; }
-  btn.textContent = '⏳ Obtendo localização...';
-  btn.disabled = true;
-
-  navigator.geolocation.getCurrentPosition(async (pos) => {
-    try {
-      const { latitude, longitude } = pos.coords;
-      const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`);
-      const data = await res.json();
-      const addr = data.address || {};
-
-      const mapaEst = {'Rio Grande do Sul':'RS','Santa Catarina':'SC','Paraná':'PR','São Paulo':'SP','Rio de Janeiro':'RJ','Minas Gerais':'MG','Bahia':'BA','Pernambuco':'PE','Ceará':'CE','Goiás':'GO','Mato Grosso':'MT','Mato Grosso do Sul':'MS','Pará':'PA','Maranhão':'MA','Amazonas':'AM','Espírito Santo':'ES','Alagoas':'AL','Piauí':'PI','Rio Grande do Norte':'RN','Paraíba':'PB','Sergipe':'SE','Rondônia':'RO','Tocantins':'TO','Acre':'AC','Amapá':'AP','Roraima':'RR','Distrito Federal':'DF'};
-      const pais   = addr.country || '';
-      const estado = mapaEst[addr.state] || addr.state || '';
-      const cidade = addr.city || addr.town || addr.village || '';
-
-      if (pais)   { document.getElementById('vol-pais').value = pais; _volPaisSel = pais; }
-      if (estado) { document.getElementById('vol-estado').value = estado; _volEstadoSel = estado; }
-      if (cidade) { document.getElementById('vol-cidade').value = cidade; _volCidadeSel = cidade; }
-
-      // Unlock all steps
-      ['vol-grupoEstado','vol-grupoCidade'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) { el.style.opacity='1'; el.style.pointerEvents='auto'; el.querySelector('small').textContent=''; }
-      });
-
-      // Show confirmation
-      const conf = document.getElementById('vol-localizacaoConfirmada');
-      const txt  = document.getElementById('vol-localizacaoTexto');
-      if (conf && txt) { txt.textContent = `📍 ${cidade}, ${estado}, ${pais}`; conf.style.display='block'; }
-
-      btn.textContent = '✅ Localização obtida!';
-      btn.style.background = '#ECFDF5'; btn.style.color = '#15803D'; btn.style.borderColor = '#A7F3D0';
-      toast('📍 Localização preenchida automaticamente!', 'ok');
-    } catch(e) {
-      btn.textContent = '📍 Usar minha localização atual (GPS)';
-      btn.disabled = false;
-      toast('⚠️ Erro ao obter localização.');
-    }
-  }, () => {
-    btn.textContent = '📍 Usar minha localização atual (GPS)';
-    btn.disabled = false;
-    toast('⚠️ Permissão de GPS negada.');
-  }, { enableHighAccuracy: true, timeout: 10000 });
-}
-
-// Autocomplete Estado
-let _vEstadoTimer = null;
-async function buscarEstadoVol(valor) {
-  clearTimeout(_vEstadoTimer);
-  const lista = document.getElementById('listaEstadoVol');
-  if (!valor || valor.length < 2) { lista.style.display='none'; return; }
-  _vEstadoTimer = setTimeout(async () => {
-    try {
-      const q = encodeURIComponent(`${valor}, ${_volPaisSel}`);
-      const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=5&addressdetails=1`);
-      const data = await res.json();
-      const vistos = new Set();
-      const estados = data.filter(r => {
-        const s = r.address?.state || r.display_name.split(',')[0];
-        if (vistos.has(s)) return false; vistos.add(s); return true;
-      }).slice(0,5);
-      if (!estados.length) { lista.style.display='none'; return; }
-      lista.innerHTML = estados.map(r => {
-        const nome = r.address?.state || r.display_name.split(',')[0];
-        return `<div onclick="selecionarEstadoVol('${escapeJsString(nome)}')"
-          style="padding:10px 14px;cursor:pointer;font-size:0.85rem;border-bottom:1px solid #f1f5f9;"
-          onmouseover="this.style.background='#EEF2FF'" onmouseout="this.style.background='#fff'">
-          📍 <strong>${nome}</strong></div>`;
-      }).join('');
-      lista.style.display = 'block';
-    } catch(e) {}
-  }, 350);
-}
-function selecionarEstadoVol(nome) {
-  _volEstadoSel = nome;
-  document.getElementById('vol-estado').value = nome;
-  document.getElementById('listaEstadoVol').style.display='none';
-  const gc = document.getElementById('vol-grupoCidade');
-  gc.style.opacity='1'; gc.style.pointerEvents='auto';
-  gc.querySelector('small').textContent='';
-  document.getElementById('vol-cidade').value='';
-}
-function fecharListaEstadoVol() { const el=document.getElementById('listaEstadoVol'); if(el) el.style.display='none'; }
-
-// Autocomplete Cidade
-let _vCidadeTimer = null;
-async function buscarCidadeVol(valor) {
-  clearTimeout(_vCidadeTimer);
-  const lista = document.getElementById('listaCidadeVol');
-  if (!valor || valor.length < 2) { lista.style.display='none'; return; }
-  _vCidadeTimer = setTimeout(async () => {
-    try {
-      const q = encodeURIComponent(`${valor}, ${_volEstadoSel}, ${_volPaisSel}`);
-      const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=5&addressdetails=1`);
-      const data = await res.json();
-      const vistos = new Set();
-      const cidades = data.filter(r => {
-        const c = r.address?.city||r.address?.town||r.address?.village||r.display_name.split(',')[0];
-        if (vistos.has(c)) return false; vistos.add(c); return true;
-      }).slice(0,5);
-      if (!cidades.length) { lista.style.display='none'; return; }
-      lista.innerHTML = cidades.map(r => {
-        const nome = r.address?.city||r.address?.town||r.address?.village||r.display_name.split(',')[0];
-        return `<div onclick="selecionarCidadeVol('${escapeJsString(nome)}')"
-          style="padding:10px 14px;cursor:pointer;font-size:0.85rem;border-bottom:1px solid #f1f5f9;"
-          onmouseover="this.style.background='#EEF2FF'" onmouseout="this.style.background='#fff'">
-          🏙️ <strong>${nome}</strong> <small style="color:#64748b;">${_volEstadoSel}</small></div>`;
-      }).join('');
-      lista.style.display='block';
-    } catch(e) {}
-  }, 350);
-}
-function selecionarCidadeVol(nome) {
-  _volCidadeSel = nome;
-  document.getElementById('vol-cidade').value = nome;
-  document.getElementById('listaCidadeVol').style.display='none';
-}
-function fecharListaCidadeVol() { const el=document.getElementById('listaCidadeVol'); if(el) el.style.display='none'; }
+// Funções de autocomplete e GPS removidas — endereço do voluntário é preenchido manualmente
 
 
 
