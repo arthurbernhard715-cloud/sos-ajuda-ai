@@ -419,6 +419,9 @@ tbody tr:last-child td{border-bottom:none;}
       <div class="nav-item" data-page="mensagens" onclick="irPara('mensagens'); carregarMensagens();">
         <span class="ni-icon">📢</span> Mensagens
       </div>
+      <div class="nav-item" data-page="configuracoes" onclick="irPara('configuracoes'); carregarConfiguracoes();">
+        <span class="ni-icon">⚙️</span> Configurações
+      </div>
       <div class="nav-item" onclick="window.open('https://sosajudaai.com.br','_blank')">
         <span class="ni-icon">🌐</span> Ver site
       </div>
@@ -1117,6 +1120,44 @@ tbody tr:last-child td{border-bottom:none;}
       </div>
     </div>
 
+    <!-- ═══ CONFIGURAÇÕES ═══ -->
+    <div class="page" id="page-configuracoes">
+      <div style="padding: 20px;">
+        <h2>⚙️ Configurações do Sistema</h2>
+        <p style="color: #666; margin-bottom: 30px;">Ajuste os parâmetros gerais do SOS Ajuda Aí.</p>
+
+        <div style="background: #f8f9fa; padding: 25px; border-radius: 8px; max-width: 600px;">
+
+          <!-- Duração das solicitações -->
+          <div style="margin-bottom: 25px;">
+            <label style="display: block; font-weight: 700; margin-bottom: 8px; font-size: 1rem;">⏱️ Duração das solicitações</label>
+            <p style="color: #666; font-size: 0.85rem; margin-bottom: 10px;">Tempo (em horas) que uma solicitação fica ativa antes de expirar. Use valores decimais para testes (ex: 0.017 = ~1 minuto).</p>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <input type="number" id="cfgDuracaoHoras" step="0.001" min="0.001" value="24" style="width: 150px; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem;">
+              <span style="color: #666;">horas</span>
+            </div>
+            <p id="cfgDuracaoPreview" style="color: #1A3C8F; font-size: 0.8rem; margin-top: 6px;">= 24 horas (1440 minutos)</p>
+          </div>
+
+          <!-- Máximo de voluntários -->
+          <div style="margin-bottom: 25px;">
+            <label style="display: block; font-weight: 700; margin-bottom: 8px; font-size: 1rem;">👥 Máximo de voluntários por solicitação</label>
+            <p style="color: #666; font-size: 0.85rem; margin-bottom: 10px;">Limite máximo de voluntários que podem se candidatar a uma mesma solicitação.</p>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <input type="number" id="cfgMaxVoluntarios" step="1" min="1" max="100" value="15" style="width: 150px; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem;">
+              <span style="color: #666;">voluntários</span>
+            </div>
+          </div>
+
+          <div style="border-top: 1px solid #ddd; padding-top: 20px; display: flex; align-items: center; gap: 15px;">
+            <button onclick="salvarConfiguracoes()" style="background: #1A3C8F; color: white; padding: 12px 30px; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 1rem;">💾 Salvar Configurações</button>
+            <span id="cfgStatus" style="color: #22c55e; font-weight: 600; display: none;">✓ Salvo!</span>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
 
 <script>
 const SB_URL = "https://wrpfgrwayzmiucyavphk.supabase.co";
@@ -1321,11 +1362,19 @@ async function acaoEmMassa(tipo, acao) {
   const token = usuarioAtual?.access_token || SB_KEY;
   let sucesso = 0, falhas = 0;
 
+  // Buscar duração configurada
+  let duracaoHoras = 24;
+  try {
+    const cfgR = await sbFetch('/rest/v1/configuracoes?id=eq.1&select=duracao_horas');
+    const cfgD = await cfgR.json();
+    if (cfgD && cfgD.length > 0) duracaoHoras = cfgD[0].duracao_horas;
+  } catch(e) {}
+
   for (const id of ids) {
     try {
       if (acao === 'reativar') {
         const base = new Date();
-        base.setHours(base.getHours() + 24);
+        base.setTime(base.getTime() + duracaoHoras * 60 * 60 * 1000);
         await fetch(`${SB_URL}/rest/v1/${tabela}?id=eq.${id}`, {
           method: 'PATCH',
           headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
@@ -3521,6 +3570,7 @@ function irPara(pagina) {
   if (pagina === 'zonarisco') resetarCamposRisco();
   if (pagina === 'simulacao') { resetarCamposSim(); atualizarResumoSimulacao(); }
   if (pagina === 'empresas') carregarEmpresas();
+  if (pagina === 'configuracoes') carregarConfiguracoes();
 }
 
 // ── FILTROS ──
@@ -4432,6 +4482,63 @@ async function excluirEmpresa(id, nome) {
     toastAdmin('✅ Removida.', 'ok');
   } catch(e) {
     toastAdmin('⚠️ Erro ao remover.');
+  }
+}
+
+// ── CONFIGURAÇÕES ──
+async function carregarConfiguracoes() {
+  try {
+    const r = await sbFetch('/rest/v1/configuracoes?id=eq.1&select=duracao_horas,max_voluntarios');
+    const data = await r.json();
+    if (data && data.length > 0) {
+      document.getElementById('cfgDuracaoHoras').value = data[0].duracao_horas;
+      document.getElementById('cfgMaxVoluntarios').value = data[0].max_voluntarios;
+      atualizarPreviewDuracao();
+    }
+  } catch(e) {
+    toastAdmin('⚠️ Erro ao carregar configurações.');
+  }
+}
+
+function atualizarPreviewDuracao() {
+  const h = parseFloat(document.getElementById('cfgDuracaoHoras').value) || 0;
+  const minutos = Math.round(h * 60 * 100) / 100;
+  const el = document.getElementById('cfgDuracaoPreview');
+  if (h < 1) {
+    el.textContent = `= ${minutos} minutos (${Math.round(minutos * 60)} segundos)`;
+  } else {
+    el.textContent = `= ${h} horas (${minutos} minutos)`;
+  }
+}
+
+// Listener para o preview ao digitar
+document.addEventListener('DOMContentLoaded', () => {
+  const inp = document.getElementById('cfgDuracaoHoras');
+  if (inp) inp.addEventListener('input', atualizarPreviewDuracao);
+});
+
+async function salvarConfiguracoes() {
+  const duracao = parseFloat(document.getElementById('cfgDuracaoHoras').value);
+  const maxVol = parseInt(document.getElementById('cfgMaxVoluntarios').value);
+  if (!duracao || duracao <= 0) { toastAdmin('⚠️ Duração inválida.'); return; }
+  if (!maxVol || maxVol < 1) { toastAdmin('⚠️ Máximo de voluntários inválido.'); return; }
+  try {
+    const r = await sbFetch('/rest/v1/configuracoes?id=eq.1', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+      body: JSON.stringify({ duracao_horas: duracao, max_voluntarios: maxVol, atualizado_em: new Date().toISOString() })
+    });
+    if (r.ok) {
+      toastAdmin('✅ Configurações salvas com sucesso!');
+      const st = document.getElementById('cfgStatus');
+      st.style.display = 'inline';
+      setTimeout(() => st.style.display = 'none', 3000);
+      registrarLog('config_alterada', `Duração: ${duracao}h | Máx voluntários: ${maxVol}`);
+    } else {
+      toastAdmin('⚠️ Erro ao salvar configurações.');
+    }
+  } catch(e) {
+    toastAdmin('⚠️ Erro ao salvar configurações.');
   }
 }
 
