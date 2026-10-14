@@ -4011,9 +4011,10 @@ async function verificarAvaliacoesPendentes() {
         `confirmacoes?voluntario_id=eq.${volId}&criado_em=gte.${seteDiasAtras}&select=id,solicitacao_id,solicitacoes(id,nome,ativo,expira_em,email_dono)`
       );
 
-      // Filtra só as de solicitações expiradas
+      // Filtra só as de solicitações expiradas (ativo=false) OU cujo prazo já passou
+      const agora = new Date();
       const expiradas = confs.filter(c =>
-        c.solicitacoes && !c.solicitacoes.ativo
+        c.solicitacoes && (!c.solicitacoes.ativo || new Date(c.solicitacoes.expira_em) < agora)
       );
 
       // Verifica quais ainda não foram avaliadas
@@ -4054,10 +4055,14 @@ async function verificarAvaliacoesPendentesAtingido() {
     if (!email) return;
 
     const seteDiasAtras = new Date(Date.now() - 7*24*60*60*1000).toISOString();
-    // Busca solicitações do dono que expiraram
-    const sols = await sbFetch(
-      `solicitacoes?email_dono=eq.${email}&ativo=eq.false&expira_em=gte.${seteDiasAtras}&select=id,nome`
-    );
+    const agora = new Date().toISOString();
+    // Busca solicitações do dono que foram concluídas (ativo=false)
+    // OU que expiraram pelo tempo (expira_em já passou)
+    const [solsConcluidas, solsExpiradas] = await Promise.all([
+      sbFetch(`solicitacoes?email_dono=eq.${email}&ativo=eq.false&expira_em=gte.${seteDiasAtras}&select=id,nome`),
+      sbFetch(`solicitacoes?email_dono=eq.${email}&ativo=eq.true&expira_em=lt.${agora}&expira_em=gte.${seteDiasAtras}&select=id,nome`)
+    ]);
+    const sols = [...solsConcluidas, ...solsExpiradas];
 
     for (const sol of sols) {
       // Busca confirmações desta solicitação
