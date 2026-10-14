@@ -3438,6 +3438,14 @@ async function submeterVoluntarioReal() {
   if (!nome)     { toast('⚠️ Preencha seu nome!'); return; }
   if (!wNum) { toast('⚠️ Preencha seu WhatsApp!'); return; }
 
+  // Captura IP para segurança
+  let ipCadastro = '';
+  try {
+    const ipRes = await fetch('https://api.ipify.org?format=json');
+    const ipData = await ipRes.json();
+    ipCadastro = ipData.ip || '';
+  } catch(e) {}
+
   const dados = {
     nome, whatsapp,
     cpf: cpf || null,
@@ -3452,7 +3460,8 @@ async function submeterVoluntarioReal() {
     estado: endereco_estado || '',
     email: usuarioAtual.user.email || '',
     habilidades: habs,
-    google_id: usuarioAtual.user.id
+    google_id: usuarioAtual.user.id,
+    ip_cadastro: ipCadastro
   };
 
   try {
@@ -3556,6 +3565,8 @@ async function garantirVoluntarioCadastrado(user) {
 
     // Cria registro básico apenas se não existir
     const nome = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Voluntário';
+    let ipCad = '';
+    try { const r = await fetch('https://api.ipify.org?format=json'); ipCad = (await r.json()).ip || ''; } catch(e) {}
     await sbFetch('voluntarios', {
       method: 'POST',
       body: JSON.stringify({
@@ -3565,7 +3576,8 @@ async function garantirVoluntarioCadastrado(user) {
         cidade: '',
         estado: '',
         google_id: user.id,
-        habilidades: []
+        habilidades: [],
+        ip_cadastro: ipCad
       })
     });
     return true; // Recém-criado = perfil incompleto
@@ -3843,17 +3855,13 @@ async function abrirNotificacao(notifId, solId) {
 }
 
 async function verificarSessao() {
-  console.log('[SOS-DEBUG] verificarSessao() INICIOU');
   // Verifica hash da URL (callback do Google, confirmação de e-mail, ou recuperação de senha)
   const hash = window.location.hash;
-  console.log('[SOS-DEBUG] hash =', hash ? hash.substring(0, 60) + '...' : '(vazio)');
   if (hash.includes('access_token')) {
-    console.log('[SOS-DEBUG] Hash contém access_token');
     const params = new URLSearchParams(hash.substring(1));
     const access_token  = params.get('access_token');
     const refresh_token = params.get('refresh_token');
     const tipo = params.get('type'); // 'signup', 'recovery', ou ausente (Google/login normal)
-    console.log('[SOS-DEBUG] tipo =', tipo, '| access_token existe?', !!access_token);
 
     if (access_token) {
       // Busca dados do usuário
@@ -3861,7 +3869,6 @@ async function verificarSessao() {
         headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + access_token }
       });
       const user = await res.json();
-      console.log('[SOS-DEBUG] user.id =', user?.id, '| email =', user?.email);
       usuarioAtual = { access_token, refresh_token, user };
       localStorage.setItem('sb_session', JSON.stringify(usuarioAtual));
       atualizarUIAuth(usuarioAtual);
@@ -3876,29 +3883,18 @@ async function verificarSessao() {
           : '👋 Bem-vindo, ';
         toast(msgBoasVindas + (user.user_metadata?.full_name || user.email) + '!', 'ok');
         let perfilIncompleto = false;
-        try {
-          perfilIncompleto = await garantirVoluntarioCadastrado(user);
-          console.log('[SOS-DEBUG] perfilIncompleto =', perfilIncompleto);
-        } catch(e) { console.warn('[SOS-DEBUG] Erro garantirVol:', e); }
+        try { perfilIncompleto = await garantirVoluntarioCadastrado(user); } catch(e) {}
         setTimeout(() => verificarAvaliacoesPendentes(), 3000);
         // Abre formulário se veio do botão "Quero ser voluntário" OU se perfil ainda não tem WhatsApp
         const flagVol = localStorage.getItem('_reabrir_vol');
-        console.log('[SOS-DEBUG] flagVol =', flagVol, '| perfilIncompleto =', perfilIncompleto);
         if (flagVol) localStorage.removeItem('_reabrir_vol');
         if (flagVol || perfilIncompleto) {
-          console.log('[SOS-DEBUG] >>> VOU ABRIR MODAL VOLUNTÁRIO em 1.5s');
-          setTimeout(() => {
-            console.log('[SOS-DEBUG] >>> ABRINDO MODAL VOLUNTÁRIO AGORA');
-            abrirModalVoluntario();
-          }, 1500);
-        } else {
-          console.log('[SOS-DEBUG] Nenhum gatilho para abrir modal voluntário');
+          setTimeout(() => abrirModalVoluntario(), 1500);
         }
       }
       return;
     }
   }
-  console.log('[SOS-DEBUG] Sem hash de login, verificando sessão salva...');
   // Verifica sessão salva
   const saved = localStorage.getItem('sb_session');
   if (saved) {
