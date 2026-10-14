@@ -4516,27 +4516,22 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 async function salvarConfiguracoes() {
-  console.log('salvarConfiguracoes() chamada');
   const duracao = parseFloat(document.getElementById('cfgDuracaoHoras').value);
   const maxVol = parseInt(document.getElementById('cfgMaxVoluntarios').value);
-  console.log('duracao:', duracao, 'maxVol:', maxVol);
   if (!duracao || duracao <= 0) { toast('⚠️ Duração inválida.'); return; }
   if (!maxVol || maxVol < 1) { toast('⚠️ Máximo de voluntários inválido.'); return; }
   try {
-    console.log('Chamando sbFetch PATCH...');
-    const resultado = await sbFetch('configuracoes?id=eq.1', {
+    await sbFetch('configuracoes?id=eq.1', {
       method: 'PATCH',
       body: JSON.stringify({ duracao_horas: duracao, max_voluntarios: maxVol, atualizado_em: new Date().toISOString() })
     });
-    console.log('sbFetch retornou:', resultado);
     toast('✅ Configurações salvas com sucesso!');
     const st = document.getElementById('cfgStatus');
     st.style.display = 'inline';
     setTimeout(() => st.style.display = 'none', 3000);
     registrarLog('config_alterada', `Duração: ${duracao}h | Máx voluntários: ${maxVol}`);
   } catch(e) {
-    console.error('Erro ao salvar config:', e);
-    toast('⚠️ Erro ao salvar: ' + e.message);
+    toast('⚠️ Erro ao salvar configurações.');
   }
 }
 
