@@ -3641,9 +3641,13 @@ async function entrarComEmailSenha() {
     atualizarUIAuth(usuarioAtual);
     fecharModal('modal-auth');
     toast('👋 Bem-vindo, ' + (data.user.user_metadata?.full_name || data.user.email) + '!', 'ok');
-    garantirVoluntarioCadastrado(data.user);
+    const perfilInc = await garantirVoluntarioCadastrado(data.user);
     setTimeout(() => verificarAvaliacoesPendentes(), 3000);
-    _verificarReabrirVol();
+    const flagV = localStorage.getItem('_reabrir_vol');
+    if (flagV) localStorage.removeItem('_reabrir_vol');
+    if (flagV || perfilInc) {
+      setTimeout(() => abrirModalVoluntario(), 1500);
+    }
   } catch(e) {
     toast('⚠️ ' + e.message);
   }
@@ -3838,23 +3842,18 @@ async function abrirNotificacao(notifId, solId) {
   }
 }
 
-function _verificarReabrirVol() {
-  try {
-    if (localStorage.getItem('_reabrir_vol')) {
-      localStorage.removeItem('_reabrir_vol');
-      setTimeout(() => abrirModalVoluntario(), 1500);
-    }
-  } catch(e) {}
-}
-
 async function verificarSessao() {
+  console.log('[SOS-DEBUG] verificarSessao() INICIOU');
   // Verifica hash da URL (callback do Google, confirmação de e-mail, ou recuperação de senha)
   const hash = window.location.hash;
+  console.log('[SOS-DEBUG] hash =', hash ? hash.substring(0, 60) + '...' : '(vazio)');
   if (hash.includes('access_token')) {
+    console.log('[SOS-DEBUG] Hash contém access_token');
     const params = new URLSearchParams(hash.substring(1));
     const access_token  = params.get('access_token');
     const refresh_token = params.get('refresh_token');
     const tipo = params.get('type'); // 'signup', 'recovery', ou ausente (Google/login normal)
+    console.log('[SOS-DEBUG] tipo =', tipo, '| access_token existe?', !!access_token);
 
     if (access_token) {
       // Busca dados do usuário
@@ -3862,6 +3861,7 @@ async function verificarSessao() {
         headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + access_token }
       });
       const user = await res.json();
+      console.log('[SOS-DEBUG] user.id =', user?.id, '| email =', user?.email);
       usuarioAtual = { access_token, refresh_token, user };
       localStorage.setItem('sb_session', JSON.stringify(usuarioAtual));
       atualizarUIAuth(usuarioAtual);
@@ -3875,13 +3875,30 @@ async function verificarSessao() {
           ? '✅ E-mail confirmado! Bem-vindo, '
           : '👋 Bem-vindo, ';
         toast(msgBoasVindas + (user.user_metadata?.full_name || user.email) + '!', 'ok');
-        try { await garantirVoluntarioCadastrado(user); } catch(e) { console.warn('Erro garantirVol:', e); }
+        let perfilIncompleto = false;
+        try {
+          perfilIncompleto = await garantirVoluntarioCadastrado(user);
+          console.log('[SOS-DEBUG] perfilIncompleto =', perfilIncompleto);
+        } catch(e) { console.warn('[SOS-DEBUG] Erro garantirVol:', e); }
         setTimeout(() => verificarAvaliacoesPendentes(), 3000);
-        _verificarReabrirVol();
+        // Abre formulário se veio do botão "Quero ser voluntário" OU se perfil ainda não tem WhatsApp
+        const flagVol = localStorage.getItem('_reabrir_vol');
+        console.log('[SOS-DEBUG] flagVol =', flagVol, '| perfilIncompleto =', perfilIncompleto);
+        if (flagVol) localStorage.removeItem('_reabrir_vol');
+        if (flagVol || perfilIncompleto) {
+          console.log('[SOS-DEBUG] >>> VOU ABRIR MODAL VOLUNTÁRIO em 1.5s');
+          setTimeout(() => {
+            console.log('[SOS-DEBUG] >>> ABRINDO MODAL VOLUNTÁRIO AGORA');
+            abrirModalVoluntario();
+          }, 1500);
+        } else {
+          console.log('[SOS-DEBUG] Nenhum gatilho para abrir modal voluntário');
+        }
       }
       return;
     }
   }
+  console.log('[SOS-DEBUG] Sem hash de login, verificando sessão salva...');
   // Verifica sessão salva
   const saved = localStorage.getItem('sb_session');
   if (saved) {
