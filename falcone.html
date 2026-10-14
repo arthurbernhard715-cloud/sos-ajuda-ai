@@ -4488,7 +4488,7 @@ async function excluirEmpresa(id, nome) {
 // ── CONFIGURAÇÕES ──
 async function carregarConfiguracoes() {
   try {
-    const r = await sbFetch('/rest/v1/configuracoes?id=eq.1&select=duracao_horas,max_voluntarios');
+    const r = await sbFetch('configuracoes?id=eq.1&select=duracao_horas,max_voluntarios');
     const data = await r.json();
     if (data && data.length > 0) {
       document.getElementById('cfgDuracaoHoras').value = data[0].duracao_horas;
@@ -4496,7 +4496,7 @@ async function carregarConfiguracoes() {
       atualizarPreviewDuracao();
     }
   } catch(e) {
-    toastAdmin('⚠️ Erro ao carregar configurações.');
+    toast('⚠️ Erro ao carregar configurações.');
   }
 }
 
