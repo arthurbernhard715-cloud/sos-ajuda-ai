@@ -4488,8 +4488,7 @@ async function excluirEmpresa(id, nome) {
 // ── CONFIGURAÇÕES ──
 async function carregarConfiguracoes() {
   try {
-    const r = await sbFetch('configuracoes?id=eq.1&select=duracao_horas,max_voluntarios');
-    const data = await r.json();
+    const data = await sbFetch('configuracoes?id=eq.1&select=duracao_horas,max_voluntarios');
     if (data && data.length > 0) {
       document.getElementById('cfgDuracaoHoras').value = data[0].duracao_horas;
       document.getElementById('cfgMaxVoluntarios').value = data[0].max_voluntarios;
