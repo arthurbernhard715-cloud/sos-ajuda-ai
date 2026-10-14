@@ -2062,9 +2062,9 @@ function abrirDetalhe(i,expirado){
 
 function validarLimiteVoluntarios(input) {
   const valor = parseInt(input.value);
-  if (valor > 15) {
-    input.value = 15;
-    toast('⚠️ Limite máximo é 15 voluntários', 'warn');
+  if (valor > CFG_MAX_VOLUNTARIOS) {
+    input.value = CFG_MAX_VOLUNTARIOS;
+    toast(`⚠️ Limite máximo é ${CFG_MAX_VOLUNTARIOS} voluntários`, 'warn');
   } else if (valor < 1) {
     input.value = 1;
   }
@@ -2569,6 +2569,33 @@ if(mapaEl) mapaObserver.observe(mapaEl);
 // ═══════════════════════════════════════
 const SB_URL = "https://wrpfgrwayzmiucyavphk.supabase.co";
 const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndycGZncndheXptaXVjeWF2cGhrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzMDQ3MzUsImV4cCI6MjA5Njg4MDczNX0.ZdgpjxlLRmIaIdGKXZsUthgqM15QQehyijCB4apDA6E";
+
+// Configurações dinâmicas (carregadas do Supabase)
+let CFG_DURACAO_HORAS = 24;
+let CFG_MAX_VOLUNTARIOS = 15;
+
+async function carregarConfigSistema() {
+  try {
+    const r = await fetch(SB_URL + '/rest/v1/configuracoes?id=eq.1&select=duracao_horas,max_voluntarios', {
+      headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY }
+    });
+    const data = await r.json();
+    if (data && data.length > 0) {
+      CFG_DURACAO_HORAS = parseFloat(data[0].duracao_horas) || 24;
+      CFG_MAX_VOLUNTARIOS = parseInt(data[0].max_voluntarios) || 15;
+      // Atualizar os inputs de limite que já existem no DOM
+      document.querySelectorAll('#limiteInput, #edit-limite').forEach(inp => {
+        inp.max = CFG_MAX_VOLUNTARIOS;
+      });
+      document.querySelectorAll('label').forEach(lbl => {
+        if (lbl.textContent.includes('máx. 15')) {
+          lbl.textContent = lbl.textContent.replace('máx. 15', 'máx. ' + CFG_MAX_VOLUNTARIOS);
+        }
+      });
+    }
+  } catch(e) { /* mantém valores padrão */ }
+}
+carregarConfigSistema();
 
 async function sbFetch(endpoint, options = {}) {
   // Usa o JWT do usuário logado quando disponível
@@ -3296,7 +3323,7 @@ async function submeterCadastroReal() {
   const endBairro     = document.getElementById('bairroInput')?.value?.trim() || '';
   const endereco      = [endRua, endNum, endComplemento, endBairro].filter(Boolean).join(', ');
   const descricao= document.getElementById('descricaoInput')?.value?.trim();
-  const limite   = parseInt(document.getElementById('limiteInput')?.value) || 15;
+  const limite   = parseInt(document.getElementById('limiteInput')?.value) || CFG_MAX_VOLUNTARIOS;
 
   if (!nome) { toast('⚠️ Preencha seu nome!'); return; }
   if (!pais) { toast('⚠️ Selecione o país!'); return; }
@@ -3360,7 +3387,7 @@ async function submeterCadastroReal() {
         foto_url: _fotoUrl || null,
         email_dono: usuarioAtual?.user?.email || null,
         ativo: true, lat, lng,
-        expira_em: new Date(Date.now() + 24*60*60*1000).toISOString()
+        expira_em: new Date(Date.now() + CFG_DURACAO_HORAS*60*60*1000).toISOString()
       })
     });
     fecharModal('modal-atingido');
@@ -3472,7 +3499,7 @@ async function reativarSolicitacao() {
     // num momento que já passou.
     await sbFetch(`confirmacoes?solicitacao_id=eq.${solId}`, { method: 'DELETE' });
 
-    const novaExpiracao = new Date(Date.now() + 24*60*60*1000).toISOString();
+    const novaExpiracao = new Date(Date.now() + CFG_DURACAO_HORAS*60*60*1000).toISOString();
     await sbFetch(`solicitacoes?id=eq.${solId}`, {
       method: 'PATCH',
       body: JSON.stringify({
@@ -5182,7 +5209,7 @@ async function abrirEdicaoSolicitacao(solId) {
     document.getElementById('edit-descricao').value = s.descricao || '';
     document.getElementById('edit-tipos').value = (s.tipos_ajuda || []).join(', ');
     document.getElementById('edit-urgencia').value = s.urgencia || 'amarelo';
-    document.getElementById('edit-limite').value = s.limite_voluntarios || 15;
+    document.getElementById('edit-limite').value = s.limite_voluntarios || CFG_MAX_VOLUNTARIOS;
     document.getElementById('edit-foto').value = s.foto_url || '';
 
     fecharPainelVoluntario();
@@ -5202,7 +5229,7 @@ async function salvarEdicaoSolicitacao() {
   const descricao = document.getElementById('edit-descricao').value.trim();
   const tiposText = document.getElementById('edit-tipos').value.trim();
   const urgencia = document.getElementById('edit-urgencia').value;
-  const limite = parseInt(document.getElementById('edit-limite').value) || 15;
+  const limite = parseInt(document.getElementById('edit-limite').value) || CFG_MAX_VOLUNTARIOS;
   const foto_url = document.getElementById('edit-foto').value.trim() || null;
 
   if (!nome) { toast('⚠️ Preencha o nome!'); return; }
@@ -5300,7 +5327,7 @@ async function reativarDoPainel(solId) {
         concluida: false,
         concluida_em: null,
         voluntarios_confirmados: 0,
-        expira_em: new Date(Date.now() + 24*60*60*1000).toISOString()
+        expira_em: new Date(Date.now() + CFG_DURACAO_HORAS*60*60*1000).toISOString()
       })
     });
     toast('✅ Solicitação reativada por mais 24h!', 'ok');
