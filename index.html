@@ -2576,16 +2576,13 @@ let CFG_MAX_VOLUNTARIOS = 15;
 
 async function carregarConfigSistema() {
   try {
-    console.log('[CONFIG] Buscando configurações do sistema...');
     const r = await fetch(SB_URL + '/rest/v1/configuracoes?id=eq.1&select=duracao_horas,max_voluntarios', {
       headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY }
     });
     const data = await r.json();
-    console.log('[CONFIG] Resposta:', data);
     if (data && data.length > 0) {
       CFG_DURACAO_HORAS = parseFloat(data[0].duracao_horas) || 24;
       CFG_MAX_VOLUNTARIOS = parseInt(data[0].max_voluntarios) || 15;
-      console.log('[CONFIG] Duração:', CFG_DURACAO_HORAS, 'h | Max vol:', CFG_MAX_VOLUNTARIOS);
       // Atualizar os inputs de limite que já existem no DOM
       document.querySelectorAll('#limiteInput, #edit-limite').forEach(inp => {
         inp.max = CFG_MAX_VOLUNTARIOS;
