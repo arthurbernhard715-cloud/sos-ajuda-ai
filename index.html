@@ -3448,9 +3448,9 @@ async function submeterVoluntarioReal() {
     endereco_complemento: endereco_complemento || null,
     endereco_cidade: endereco_cidade || null,
     endereco_estado: endereco_estado || null,
-    cidade: endereco_cidade || null,
-    estado: endereco_estado || null,
-    email: usuarioAtual.user.email || null,
+    cidade: endereco_cidade || '',
+    estado: endereco_estado || '',
+    email: usuarioAtual.user.email || '',
     habilidades: habs,
     google_id: usuarioAtual.user.id
   };
