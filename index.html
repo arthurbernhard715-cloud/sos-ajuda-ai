@@ -4091,6 +4091,7 @@ async function verificarAvaliacoesPendentesAtingido() {
     ]);
     const sols = [...solsConcluidas, ...solsExpiradas];
 
+    let temAvalPendente = false;
     for (const sol of sols) {
       // Busca confirmações desta solicitação
       const confs = await sbFetch(
@@ -4117,8 +4118,19 @@ async function verificarAvaliacoesPendentesAtingido() {
             `Avalie o voluntário que te ajudou!`,
             `Como foi a ajuda que você recebeu em "${sol.nome}"?`
           );
+          temAvalPendente = true;
           return;
         }
+      }
+    }
+
+    // Se há solicitações expiradas mas nenhuma avaliação pendente
+    // (ninguém se candidatou, ou já avaliou todos), mostrar convite de doação direto
+    if (!temAvalPendente && sols.length > 0) {
+      const chaveLocal = 'doacao_convite_' + sols[0].id;
+      if (!localStorage.getItem(chaveLocal)) {
+        localStorage.setItem(chaveLocal, Date.now());
+        setTimeout(() => abrirConviteDoacao('atingido_avalia_voluntario'), 2000);
       }
     }
   } catch(e) { console.warn('Erro ao verificar avaliações do atingido:', e); }
