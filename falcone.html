@@ -1365,7 +1365,7 @@ async function acaoEmMassa(tipo, acao) {
   // Buscar duração configurada
   let duracaoHoras = 24;
   try {
-    const cfgR = await sbFetch('/rest/v1/configuracoes?id=eq.1&select=duracao_horas');
+    const cfgR = await sbFetch('configuracoes?id=eq.1&select=duracao_horas');
     const cfgD = await cfgR.json();
     if (cfgD && cfgD.length > 0) duracaoHoras = cfgD[0].duracao_horas;
   } catch(e) {}
@@ -4520,25 +4520,25 @@ document.addEventListener('DOMContentLoaded', () => {
 async function salvarConfiguracoes() {
   const duracao = parseFloat(document.getElementById('cfgDuracaoHoras').value);
   const maxVol = parseInt(document.getElementById('cfgMaxVoluntarios').value);
-  if (!duracao || duracao <= 0) { toastAdmin('⚠️ Duração inválida.'); return; }
-  if (!maxVol || maxVol < 1) { toastAdmin('⚠️ Máximo de voluntários inválido.'); return; }
+  if (!duracao || duracao <= 0) { toast('⚠️ Duração inválida.'); return; }
+  if (!maxVol || maxVol < 1) { toast('⚠️ Máximo de voluntários inválido.'); return; }
   try {
-    const r = await sbFetch('/rest/v1/configuracoes?id=eq.1', {
+    const r = await sbFetch('configuracoes?id=eq.1', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
       body: JSON.stringify({ duracao_horas: duracao, max_voluntarios: maxVol, atualizado_em: new Date().toISOString() })
     });
     if (r.ok) {
-      toastAdmin('✅ Configurações salvas com sucesso!');
+      toast('✅ Configurações salvas com sucesso!');
       const st = document.getElementById('cfgStatus');
       st.style.display = 'inline';
       setTimeout(() => st.style.display = 'none', 3000);
       registrarLog('config_alterada', `Duração: ${duracao}h | Máx voluntários: ${maxVol}`);
     } else {
-      toastAdmin('⚠️ Erro ao salvar configurações.');
+      toast('⚠️ Erro ao salvar configurações.');
     }
   } catch(e) {
-    toastAdmin('⚠️ Erro ao salvar configurações.');
+    toast('⚠️ Erro ao salvar configurações.');
   }
 }
 
