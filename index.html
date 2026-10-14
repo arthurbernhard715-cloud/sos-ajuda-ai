@@ -3545,13 +3545,13 @@ const SB_AUTH_URL = "https://wrpfgrwayzmiucyavphk.supabase.co/auth/v1";
 let usuarioAtual = null;
 
 async function garantirVoluntarioCadastrado(user) {
-  if (!user?.id) return;
+  if (!user?.id) return false;
   try {
     // Verifica se já existe pelo google_id
-    const existe = await sbFetch(`voluntarios?google_id=eq.${user.id}&select=id,nome`);
+    const existe = await sbFetch(`voluntarios?google_id=eq.${user.id}&select=id,nome,whatsapp`);
     if (existe.length > 0) {
-      console.log('✅ Voluntário já existe:', existe[0].nome);
-      return; // Já existe — não cria novo
+      // Retorna true se perfil INCOMPLETO (sem whatsapp)
+      return !existe[0].whatsapp;
     }
 
     // Cria registro básico apenas se não existir
@@ -3568,13 +3568,12 @@ async function garantirVoluntarioCadastrado(user) {
         habilidades: []
       })
     });
-    console.log('✅ Voluntário criado automaticamente');
+    return true; // Recém-criado = perfil incompleto
   } catch(e) {
     if (!e.message?.includes('unique') && !e.message?.includes('duplicate')) {
       console.warn('Erro ao criar voluntário:', e.message);
-    } else {
-      console.log('✅ Voluntário já existe (unique constraint)');
     }
+    return false;
   }
 }
 
