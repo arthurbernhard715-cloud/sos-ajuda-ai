@@ -4268,7 +4268,7 @@ function renderModalVoluntarioCompleto(v, confirmacoes, avaliacoes, solicitacoes
               <div style="flex:1;">
                 <div style="display:flex;gap:2px;margin-bottom:8px;">
                   ${[...Array(5)].map((_, i) => `
-                    <span style="font-size:1.2rem;color:${i < (a.nota || 0) ? '#FDE68A' : '#1e2535'};">★</span>
+                    <span style="font-size:1.2rem;color:${i < (a.estrelas || 0) ? '#FDE68A' : '#1e2535'};">★</span>
                   `).join('')}
                 </div>
                 ${a.comentario ? `<div style="font-size:0.85rem;color:#cbd5e1;font-style:italic;">"${escapeHtml(a.comentario)}"</div>` : '<div style="font-size:0.85rem;color:#64748b;">Sem comentário</div>'}
