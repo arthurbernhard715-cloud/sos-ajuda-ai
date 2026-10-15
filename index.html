@@ -4052,6 +4052,11 @@ async function verificarAvaliacoesPendentes() {
 
       // Verifica quais ainda não foram avaliadas
       for (const conf of expiradas) {
+        // Checa se o usuário já dispensou este banner hoje
+        const chaveIgnorada = 'aval_ignorada_' + conf.id;
+        const ignoradaEm = localStorage.getItem(chaveIgnorada);
+        if (ignoradaEm && (Date.now() - parseInt(ignoradaEm)) < 24*60*60*1000) continue;
+
         const jaAvaliou = await sbFetch(
           `avaliacoes?confirmacao_id=eq.${conf.id}&avaliador_id=eq.${volId}&select=id`
         );
@@ -4105,6 +4110,11 @@ async function verificarAvaliacoesPendentesAtingido() {
       );
 
       for (const conf of confs) {
+        // Checa se o usuário já dispensou este banner hoje
+        const chaveIgn = 'aval_ignorada_' + conf.id;
+        const ignEm = localStorage.getItem(chaveIgn);
+        if (ignEm && (Date.now() - parseInt(ignEm)) < 24*60*60*1000) continue;
+
         // Verifica se já existe avaliação registrada para esta confirmação,
         // do tipo "atingido avalia voluntário" (não existe avaliador_id de
         // voluntário nesse caso, então checamos por tipo + confirmacao_id)
@@ -4185,10 +4195,23 @@ async function abrirAvaliacaoBanner() {
     document.getElementById('avaliacao-sub').textContent = 'Avalie a experiência';
   }
 
+  // Resolve nome do avaliador
+  let nomeAvaliadorBanner = '';
+  if (tipo === 'voluntario_avalia_atingido' && _avalPendente.avaliador_id) {
+    try {
+      const volAv = await sbFetch(`voluntarios?id=eq.${_avalPendente.avaliador_id}&select=nome`);
+      nomeAvaliadorBanner = volAv[0]?.nome || '';
+    } catch(e) {}
+  } else {
+    nomeAvaliadorBanner = usuarioAtual?.user?.user_metadata?.full_name
+      || usuarioAtual?.user?.email?.split('@')[0] || '';
+  }
+
   _avaliacaoData = {
     confirmacao_id: _avalPendente.confirmacao_id,
     avaliador_id:   tipo === 'voluntario_avalia_atingido' ? _avalPendente.avaliador_id : null,
     avaliador_email: tipo === 'atingido_avalia_voluntario' ? (_avalPendente.avaliador_email || null) : null,
+    avaliador_nome: nomeAvaliadorBanner,
     avaliado_id:    tipo === 'atingido_avalia_voluntario' ? _avalPendente.avaliado_id : null,
     avaliado_email: tipo === 'voluntario_avalia_atingido' ? (_avalPendente.email_dono || null) : null,
     tipo
@@ -4203,9 +4226,17 @@ async function abrirAvaliacaoBanner() {
 
 // Botão avaliar no histórico do painel do voluntário
 async function abrirAvaliacaoHistorico(confId, solNome, avaliadorId, avaliadoEmail) {
+  // Busca nome do voluntário avaliador
+  let nomeAvaliadorHist = '';
+  try {
+    const volAvaliador = await sbFetch(`voluntarios?id=eq.${avaliadorId}&select=nome`);
+    nomeAvaliadorHist = volAvaliador[0]?.nome || '';
+  } catch(e) {}
+
   _avaliacaoData = {
     confirmacao_id: confId,
     avaliador_id: avaliadorId,
+    avaliador_nome: nomeAvaliadorHist,
     avaliado_id: null,
     avaliado_email: avaliadoEmail || null,
     tipo: 'voluntario_avalia_atingido'
@@ -4707,6 +4738,41 @@ const __submeterOriginal = window._submeterCadastroReal || null;
 let _avaliacaoData = {};
 let _estrelaSelecionada = 0;
 let _solAtualId = null;
+let _filaAvaliacaoVols = [];
+
+// Abre a próxima avaliação da fila (quando o dono conclui a solicitação)
+async function _abrirProximaAvaliacaoVol() {
+  if (!_filaAvaliacaoVols.length) return;
+  const item = _filaAvaliacaoVols.shift();
+
+  // Busca nome do voluntário
+  let nomeVol = 'Voluntário';
+  try {
+    const vol = await sbFetch(`voluntarios?id=eq.${item.voluntario_id}&select=nome`);
+    nomeVol = vol[0]?.nome || 'Voluntário';
+  } catch(e) {}
+
+  const emailAvaliador = usuarioAtual?.user?.email || '';
+  const nomeAvaliador = usuarioAtual?.user?.user_metadata?.full_name || emailAvaliador.split('@')[0] || '';
+
+  _avaliacaoData = {
+    confirmacao_id: item.confirmacao_id,
+    avaliador_id: null,
+    avaliador_email: emailAvaliador,
+    avaliador_nome: nomeAvaliador,
+    avaliado_id: item.voluntario_id,
+    tipo: 'atingido_avalia_voluntario'
+  };
+
+  document.getElementById('avaliacao-nome').textContent = nomeVol;
+  document.getElementById('avaliacao-tipo-txt').textContent = 'Como foi a ajuda que você recebeu?';
+  document.getElementById('avaliacao-sub').textContent = 'Avalie o voluntário que te ajudou';
+  _estrelaSelecionada = 0;
+  document.querySelectorAll('.star-btn').forEach(s => s.classList.remove('ativo'));
+  document.getElementById('avaliacaoComentario').value = '';
+  document.getElementById('estrela-label').textContent = 'Clique nas estrelas para avaliar';
+  abrirModal('modal-avaliacao');
+}
 
 // Mostra botão "Concluir" se for o dono da solicitação
 async function verificarJaConfirmou(solId) {
@@ -4841,23 +4907,12 @@ async function abrirAvaliacaoVoluntario(solId) {
     const confs = await sbFetch(`confirmacoes?solicitacao_id=eq.${solId}&select=*`);
     if (!confs.length) return;
 
-    // Para simplificar, avalia o primeiro voluntário confirmado
-    const conf = confs[0];
-    _avaliacaoData = {
-      confirmacao_id: conf.id,
-      avaliador_id: usuarioAtual?.user?.id,
-      avaliado_id: conf.voluntario_id,
-      tipo: 'atingido_avalia_voluntario'
-    };
-
-    document.getElementById('avaliacao-nome').textContent = 'Voluntário que te ajudou';
-    document.getElementById('avaliacao-tipo-txt').textContent = 'Como foi a ajuda que você recebeu?';
-    document.getElementById('avaliacao-sub').textContent = 'Avalie o voluntário que te ajudou';
-    _estrelaSelecionada = 0;
-    document.querySelectorAll('.star-btn').forEach(s => s.classList.remove('ativo'));
-    document.getElementById('avaliacaoComentario').value = '';
-    document.getElementById('estrela-label').textContent = 'Clique nas estrelas para avaliar';
-    abrirModal('modal-avaliacao');
+    // Guarda fila de voluntários para avaliar um por vez
+    _filaAvaliacaoVols = confs.map(c => ({
+      confirmacao_id: c.id,
+      voluntario_id: c.voluntario_id
+    }));
+    _abrirProximaAvaliacaoVol();
   } catch(e) { console.warn('Erro ao abrir avaliação:', e); }
 }
 
@@ -4909,6 +4964,12 @@ async function enviarAvaliacao() {
     fecharModal('modal-avaliacao');
     toast('⭐ Avaliação enviada! Obrigado pelo feedback.', 'ok');
 
+    // Se há mais voluntários na fila para avaliar, abre o próximo
+    if (_filaAvaliacaoVols && _filaAvaliacaoVols.length > 0) {
+      setTimeout(() => _abrirProximaAvaliacaoVol(), 1200);
+      return;
+    }
+
     // Convida voluntário a avaliar de volta (simulado por ora)
     setTimeout(() => {
       toast('📨 O voluntário também receberá um convite para te avaliar.', '');
@@ -4931,6 +4992,13 @@ async function enviarAvaliacao() {
 function pularAvaliacaoEDoar() {
   const tipo = _avaliacaoData?.tipo;
   fecharModal('modal-avaliacao');
+
+  // Se há mais voluntários na fila, abre o próximo em vez de ir para doação
+  if (_filaAvaliacaoVols && _filaAvaliacaoVols.length > 0) {
+    setTimeout(() => _abrirProximaAvaliacaoVol(), 800);
+    return;
+  }
+
   setTimeout(() => abrirConviteDoacao(tipo), 400);
 }
 
