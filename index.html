@@ -1292,13 +1292,15 @@ document.addEventListener('DOMContentLoaded', carregarMensagensDoSite);
     <div style="display:flex;align-items:center;justify-content:center;gap:14px;margin:20px 0 6px;">
       <button type="button" onclick="ajustarValorConvite(-10)"
         style="width:40px;height:40px;border-radius:50%;border:1.5px solid var(--cinza-b);background:#fff;color:var(--azul);font-size:1.3rem;font-weight:700;cursor:pointer;line-height:1;">−</button>
-      <div style="font-family:'Montserrat',sans-serif;font-weight:800;font-size:1.8rem;color:var(--azul);min-width:110px;">
+      <div id="conviteValorWrap" onclick="editarValorConvite()"
+        style="font-family:'Montserrat',sans-serif;font-weight:800;font-size:1.8rem;color:var(--azul);min-width:110px;cursor:pointer;position:relative;"
+        title="Clique para digitar o valor">
         R$ <span id="conviteValorTexto">50</span>
       </div>
       <button type="button" onclick="ajustarValorConvite(10)"
         style="width:40px;height:40px;border-radius:50%;border:1.5px solid var(--cinza-b);background:#fff;color:var(--azul);font-size:1.3rem;font-weight:700;cursor:pointer;line-height:1;">+</button>
     </div>
-    <div style="font-size:0.76rem;color:var(--cinza-t);margin-bottom:6px;">Valor sugerido — ajuste como quiser</div>
+    <div style="font-size:0.76rem;color:var(--cinza-t);margin-bottom:6px;">Valor sugerido — clique no valor ou use +/− para ajustar</div>
 
     <button type="button" onclick="fecharModal('modal-convite-doacao');abrirModalPix();"
       style="width:100%;background:var(--verm);color:#fff;border:none;border-radius:12px;padding:14px;font-family:'Montserrat',sans-serif;font-weight:700;font-size:0.95rem;cursor:pointer;margin-top:14px;">
@@ -5005,10 +5007,40 @@ function pularAvaliacaoEDoar() {
 // Ajusta o valor sugerido no convite de doação pós-avaliação, em
 // incrementos de R$10, com piso de R$10 (nunca permite valor zero/negativo).
 let _valorConviteDoacao = 50;
+let _editandoValorConvite = false;
 function ajustarValorConvite(delta) {
+  if (_editandoValorConvite) return;
   _valorConviteDoacao = Math.max(10, _valorConviteDoacao + delta);
-  document.getElementById('conviteValorTexto').textContent = _valorConviteDoacao;
+  document.getElementById('conviteValorTexto').textContent = _valorConviteDoacao.toLocaleString('pt-BR');
   _valorDoacaoAtual = _valorConviteDoacao;
+}
+
+function editarValorConvite() {
+  if (_editandoValorConvite) return;
+  _editandoValorConvite = true;
+  const wrap = document.getElementById('conviteValorWrap');
+  const valorAtual = _valorConviteDoacao;
+  wrap.innerHTML = `R$ <input id="conviteValorInput" type="text" inputmode="numeric" value="${valorAtual}"
+    style="font-family:'Montserrat',sans-serif;font-weight:800;font-size:1.8rem;color:var(--azul);
+    width:100px;border:none;border-bottom:2.5px solid var(--azul);background:transparent;
+    text-align:center;outline:none;padding:0 2px;">`;
+  const inp = document.getElementById('conviteValorInput');
+  inp.focus();
+  inp.select();
+
+  function confirmar() {
+    const v = parseInt(inp.value.replace(/\D/g, ''), 10);
+    _valorConviteDoacao = (!v || v < 10) ? 10 : v;
+    _valorDoacaoAtual = _valorConviteDoacao;
+    wrap.innerHTML = `R$ <span id="conviteValorTexto">${_valorConviteDoacao.toLocaleString('pt-BR')}</span>`;
+    _editandoValorConvite = false;
+  }
+
+  inp.addEventListener('blur', confirmar);
+  inp.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') { e.preventDefault(); inp.blur(); }
+    if (e.key === 'Escape') { inp.value = valorAtual; inp.blur(); }
+  });
 }
 
 function abrirConviteDoacao(tipo) {
@@ -5018,7 +5050,9 @@ function abrirConviteDoacao(tipo) {
   // Reseta o valor sugerido para R$50 a cada nova abertura, evitando
   // carregar um valor ajustado numa convite anterior na mesma sessão
   _valorConviteDoacao = 50;
-  document.getElementById('conviteValorTexto').textContent = _valorConviteDoacao;
+  _editandoValorConvite = false;
+  const wrapDoacao = document.getElementById('conviteValorWrap');
+  wrapDoacao.innerHTML = `R$ <span id="conviteValorTexto">50</span>`;
   _valorDoacaoAtual = _valorConviteDoacao;
 
   if (tipo === 'atingido_avalia_voluntario') {
