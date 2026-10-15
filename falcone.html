@@ -4218,6 +4218,7 @@ function renderModalVoluntarioCompleto(v, confirmacoes, avaliacoes, solicitacoes
         ${linhaDetalhe('WhatsApp', escapeHtml(v.whatsapp || '—'))}
         ${linhaDetalhe('E-mail', v.email ? `<a href="mailto:${escapeHtml(v.email)}">${escapeHtml(v.email)}</a>` : '—')}
         ${linhaDetalhe('CPF', escapeHtml(v.cpf || '—'))}
+        ${linhaDetalhe('IP de Cadastro', v.ip_cadastro ? `<code style="font-size:0.85rem;background:#1e2535;padding:2px 8px;border-radius:4px;">${escapeHtml(v.ip_cadastro)}</code>` : '<span style="color:#64748b;">Não registrado</span>')}
       </div>
 
       <div class="detalhe-secao">
