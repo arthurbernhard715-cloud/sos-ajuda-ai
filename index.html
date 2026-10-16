@@ -403,6 +403,10 @@ textarea.form-control { resize: vertical; min-height: 88px; }
   display: none; text-align: center; padding: 12px;
   font-size: 0.85rem; color: var(--azul); font-weight: 600;
 }
+/* Botão câmera: visível só em mobile (touch) */
+.foto-camera-btn { display: none; }
+@media (pointer: coarse) { .foto-camera-btn { display: block; } }
+@media (hover: none) { .foto-camera-btn { display: block; } }
 
 
 /* ── BANNER AVALIAÇÃO ── */
@@ -1405,12 +1409,22 @@ document.addEventListener('DOMContentLoaded', carregarMensagensDoSite);
     <!-- Foto do local -->
     <div class="form-group">
       <label>📷 Foto do local (opcional)</label>
-      <div class="foto-upload-area" onclick="document.getElementById('ponto-fotoInput').click()">
-        <input type="file" id="ponto-fotoInput" accept="image/*" onchange="previsualizarFoto(this,'ponto-')">
-        <div class="foto-upload-icon">📸</div>
-        <div class="foto-upload-txt">
-          <strong>Clique para adicionar uma foto</strong><br>
-          JPG, PNG ou HEIC — máx. 10MB
+      <div style="display:flex;gap:8px;margin-bottom:8px;">
+        <div class="foto-upload-area" onclick="document.getElementById('ponto-fotoInput').click()" style="flex:1;margin-bottom:0;">
+          <input type="file" id="ponto-fotoInput" accept="image/*" onchange="previsualizarFoto(this,'ponto-')">
+          <div class="foto-upload-icon">🖼️</div>
+          <div class="foto-upload-txt">
+            <strong>Escolher da galeria</strong><br>
+            JPG, PNG ou HEIC — máx. 10MB
+          </div>
+        </div>
+        <div class="foto-upload-area foto-camera-btn" onclick="document.getElementById('ponto-fotoCameraInput').click()" style="flex:1;margin-bottom:0;">
+          <input type="file" id="ponto-fotoCameraInput" accept="image/*" capture="environment" onchange="previsualizarFoto(this,'ponto-')">
+          <div class="foto-upload-icon">📷</div>
+          <div class="foto-upload-txt">
+            <strong>Tirar foto agora</strong><br>
+            Abre a câmera do celular
+          </div>
         </div>
       </div>
       <div class="foto-dica">
@@ -1525,12 +1539,22 @@ document.addEventListener('DOMContentLoaded', carregarMensagensDoSite);
     <!-- Foto da fachada -->
     <div class="form-group">
       <label>📷 Foto da fachada da casa</label>
-      <div class="foto-upload-area" onclick="document.getElementById('fotoInput').click()">
-        <input type="file" id="fotoInput" accept="image/*" onchange="previsualizarFoto(this)">
-        <div class="foto-upload-icon">📸</div>
-        <div class="foto-upload-txt">
-          <strong>Clique para adicionar uma foto</strong><br>
-          JPG, PNG ou HEIC — máx. 10MB
+      <div style="display:flex;gap:8px;margin-bottom:8px;">
+        <div class="foto-upload-area" onclick="document.getElementById('fotoInput').click()" style="flex:1;margin-bottom:0;">
+          <input type="file" id="fotoInput" accept="image/*" onchange="previsualizarFoto(this)">
+          <div class="foto-upload-icon">🖼️</div>
+          <div class="foto-upload-txt">
+            <strong>Escolher da galeria</strong><br>
+            JPG, PNG ou HEIC — máx. 10MB
+          </div>
+        </div>
+        <div class="foto-upload-area foto-camera-btn" onclick="document.getElementById('fotoCameraInput').click()" style="flex:1;margin-bottom:0;">
+          <input type="file" id="fotoCameraInput" accept="image/*" capture="environment" onchange="previsualizarFoto(this)">
+          <div class="foto-upload-icon">📷</div>
+          <div class="foto-upload-txt">
+            <strong>Tirar foto agora</strong><br>
+            Abre a câmera do celular
+          </div>
         </div>
       </div>
       <div class="foto-dica">
@@ -6125,6 +6149,8 @@ function removerFoto(prefixo) {
   prefixo = prefixo || '';
   if (prefixo === 'ponto-') { _fotoUrlPonto = null; } else { _fotoUrl = null; }
   document.getElementById(prefixo + 'fotoInput').value = '';
+  var camInput = document.getElementById(prefixo + 'fotoCameraInput');
+  if (camInput) camInput.value = '';
   document.getElementById(prefixo + 'fotoPreviewWrap').style.display = 'none';
   document.getElementById(prefixo + 'fotoPreview').src = '';
 }
