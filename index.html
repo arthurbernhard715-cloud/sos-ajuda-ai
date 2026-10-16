@@ -910,7 +910,7 @@ document.addEventListener('DOMContentLoaded', carregarMensagensDoSite);
     <button class="btn-verm" onclick="if(!usuarioAtual){abrirModal('modal-auth')}else{verificarTermos('atingido',()=>{ limparLocalizacao(); abrirModal('modal-atingido'); })}">🏠 Fui atingido — preciso de ajuda</button>
     <button class="btn-azul" onclick="if(!usuarioAtual){localStorage.setItem('_reabrir_vol','1');abrirModal('modal-auth')}else{verificarTermos('voluntario',()=>abrirModalVoluntario())}">🤝 Quero ser voluntário</button>
     <button class="btn-apoiar" onclick="document.getElementById('apoie').scrollIntoView({behavior:'smooth'})">💛 Apoiar financeiramente</button>
-    <button class="btn-ponto" onclick="abrirModalPontoApoio()">📍 Cadastrar abrigo ou ponto de apoio</button>
+    <button class="btn-ponto" onclick="if(!usuarioAtual){abrirModal('modal-auth')}else{verificarTermos('ponto_apoio',()=>abrirModalPontoApoio())}">📍 Cadastrar abrigo ou ponto de apoio</button>
     <div class="panel-divider"></div>
     <div class="stats">
       <div class="stat"><div class="stat-n">2.4<em>mil</em></div><div class="stat-l">Pessoas ajudadas</div></div>
@@ -948,7 +948,7 @@ document.addEventListener('DOMContentLoaded', carregarMensagensDoSite);
       <button class="filtro-apoio" data-tipo="doacoes_mantimentos" onclick="filtrarPinsApoio(this)">📦❤️ Doações e Mantimentos</button>
       <button class="filtro-apoio" data-tipo="nenhum" onclick="filtrarPinsApoio(this)">🚫 Ocultar</button>
     </div>
-    <button class="btn-cadastrar-ponto" onclick="abrirModalPontoApoio()">➕ Cadastrar ponto de apoio (abrigo ou doações/mantimentos)</button>
+    <button class="btn-cadastrar-ponto" onclick="if(!usuarioAtual){abrirModal('modal-auth')}else{verificarTermos('ponto_apoio',()=>abrirModalPontoApoio())}">➕ Cadastrar ponto de apoio (abrigo ou doações/mantimentos)</button>
   </div>
   <div class="mapa-wrap">
     <div class="mapa-container">
@@ -1809,6 +1809,61 @@ document.addEventListener('DOMContentLoaded', carregarMensagensDoSite);
   </div>
 </div>
 
+<!-- MODAL: TERMOS PONTO DE APOIO -->
+<div class="modal-overlay" id="modal-termos-ponto_apoio">
+  <div class="modal modal-termos">
+    <button class="modal-close" onclick="fecharModal('modal-termos-ponto_apoio')">✕</button>
+    <h2>📋 Termos — Ponto de apoio</h2>
+    <p class="modal-sub">Leia e aceite os termos antes de cadastrar um abrigo ou ponto de apoio.</p>
+
+    <div class="termos-body">
+      <h4>1. Sobre o cadastro de pontos de apoio</h4>
+      <p>Ao cadastrar um abrigo ou ponto de apoio no SOS Ajuda Aí, você declara que as informações fornecidas são verdadeiras e que o local está efetivamente disponível para receber pessoas ou doações.</p>
+
+      <h4>2. Dados coletados</h4>
+      <p>Ao cadastrar um ponto de apoio, coletamos:</p>
+      <ul>
+        <li>Nome do local ou responsável</li>
+        <li>Endereço completo (rua, cidade, estado)</li>
+        <li>Telefone de contato (opcional)</li>
+        <li>Descrição e capacidade do local</li>
+        <li>Foto do local (opcional)</li>
+        <li>Email da conta Google utilizada</li>
+      </ul>
+
+      <h4>3. Como seus dados são usados</h4>
+      <ul>
+        <li>Exibir o ponto de apoio no mapa para pessoas que precisam de ajuda</li>
+        <li>Permitir contato entre quem precisa e o responsável pelo ponto</li>
+        <li>Gerar relatórios estatísticos para órgãos públicos</li>
+      </ul>
+
+      <h4>4. Responsabilidades do cadastrante</h4>
+      <ul>
+        <li>Garantir que as informações cadastradas são verdadeiras e atualizadas</li>
+        <li>Informar caso o ponto deixe de estar disponível</li>
+        <li>Não cadastrar locais falsos ou com informações enganosas</li>
+        <li>Zelar pela segurança e bem-estar das pessoas que utilizarem o ponto</li>
+      </ul>
+
+      <h4>5. Seus direitos (LGPD)</h4>
+      <p>Você pode solicitar a exclusão dos dados do ponto de apoio a qualquer momento através do email: <strong>arthurbernhard715@gmail.com</strong></p>
+
+      <h4>6. Isenção de responsabilidade</h4>
+      <p>O SOS Ajuda Aí é uma plataforma de conexão. A responsabilidade pelas condições do local e pela veracidade das informações é exclusivamente do cadastrante. A plataforma não se responsabiliza por danos ocorridos nos pontos de apoio cadastrados.</p>
+    </div>
+
+    <div class="termos-check" onclick="toggleTermos('check-ponto_apoio','btn-aceitar-ponto_apoio')">
+      <input type="checkbox" id="check-ponto_apoio" onchange="toggleTermos('check-ponto_apoio','btn-aceitar-ponto_apoio')">
+      <label for="check-ponto_apoio">Li e aceito os <strong>Termos de Uso, Política de Privacidade e Responsabilidades</strong> para cadastro de ponto de apoio no SOS Ajuda Aí.</label>
+    </div>
+
+    <button class="btn-aceitar-termos" id="btn-aceitar-ponto_apoio" onclick="aceitarTermos('ponto_apoio')">
+      ✅ Aceitar e continuar
+    </button>
+  </div>
+</div>
+
 <!-- MODAL: TERMOS VOLUNTÁRIO -->
 <div class="modal-overlay" id="modal-termos-voluntario">
   <div class="modal modal-termos">
@@ -2257,7 +2312,7 @@ async function salvarPontoApoio() {
     foto_url: _fotoUrlPonto || null,
     verificado: false,
     ativo: true,
-    criado_por_uid: usuarioAtual?.id || null
+    criado_por_uid: usuarioAtual?.user?.id || null
   };
 
   if (_tipoPontoSelecionado === 'abrigo') {
@@ -6056,8 +6111,8 @@ async function verificarTermos(tipo, callback) {
     } else {
       _acaoAposTermos = callback;
       // Reset checkbox
-      const checkId = tipo === 'atingido' ? 'check-atingido' : 'check-voluntario';
-      const btnId   = tipo === 'atingido' ? 'btn-aceitar-atingido' : 'btn-aceitar-voluntario';
+      const checkId = `check-${tipo}`;
+      const btnId   = `btn-aceitar-${tipo}`;
       const check = document.getElementById(checkId);
       const btn   = document.getElementById(btnId);
       if (check) check.checked = false;
