@@ -1380,6 +1380,18 @@ async function acaoEmMassa(tipo, acao) {
           body: JSON.stringify({ ativo: true, expira_em: base.toISOString() })
         });
       } else {
+        // Se for voluntário, limpa termos_aceitos antes de deletar
+        if (tipo === 'vol') {
+          try {
+            const volD = await sbFetch(`voluntarios?id=eq.${id}&select=google_id`);
+            if (volD.length > 0 && volD[0].google_id) {
+              await fetch(`${SB_URL}/rest/v1/termos_aceitos?google_id=eq.${volD[0].google_id}`, {
+                method: 'DELETE',
+                headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' }
+              });
+            }
+          } catch(e) { /* ignora erro de limpeza de termos */ }
+        }
         const res = await fetch(`${SB_URL}/rest/v1/${tabela}?id=eq.${id}`, {
           method: 'DELETE',
           headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' }
@@ -2787,6 +2799,19 @@ async function executarExclusaoRegional(nivel, pais, estado, cidade, localLabel)
       }
     }
 
+    // Limpa termos_aceitos dos voluntários excluídos nesta região
+    const volsRegiao = registrosPorTabela['voluntarios'] || [];
+    for (const vol of volsRegiao) {
+      if (vol.google_id) {
+        try {
+          await fetch(`${SB_URL}/rest/v1/termos_aceitos?google_id=eq.${vol.google_id}`, {
+            method: 'DELETE',
+            headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' }
+          });
+        } catch(e) { /* ignora */ }
+      }
+    }
+
     registrarLog('excluir_regiao', 'multiplas_tabelas', null, `Excluiu região "${localLabel}" (${nivel}): ${totalExcluido} registro(s) no total`);
     toast(`☢️ ${totalExcluido} registro(s) excluído(s) de "${localLabel}". Backup salvo no seu computador.`, 'ok');
   } catch(e) {
@@ -3092,6 +3117,18 @@ async function executarExclusaoGeral() {
         } catch(e) { /* segue tentando os demais */ }
       }
     }
+
+    // Limpa também termos_aceitos ao excluir tudo
+    try {
+      const termos = await sbFetch('termos_aceitos?select=id');
+      for (const t of termos) {
+        await fetch(`${SB_URL}/rest/v1/termos_aceitos?id=eq.${t.id}`, {
+          method: 'DELETE',
+          headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' }
+        });
+        totalExcluido++;
+      }
+    } catch(e) { /* ignora erro de limpeza de termos */ }
 
     registrarLog('excluir_geral', 'multiplas_tabelas', null, `Excluiu TODOS os dados do site: ${totalExcluido} registro(s) no total`);
     toast(`💣 ${totalExcluido} registro(s) excluído(s) de todo o site. Backup salvo no seu computador.`, 'ok');
@@ -4342,6 +4379,20 @@ function confirmarDelete(tipo, id, nome) {
     try {
       const tabela = tipo === 'sol' ? 'solicitacoes' : tipo === 'vol' ? 'voluntarios' : tipo === 'conf' ? 'confirmacoes' : tipo === 'pontosapoio' ? 'pontos_apoio' : 'prefeituras';
       const token = usuarioAtual?.access_token || SB_KEY;
+
+      // Se for voluntário, busca google_id para limpar termos_aceitos
+      if (tipo === 'vol') {
+        try {
+          const volData = await sbFetch(`voluntarios?id=eq.${id}&select=google_id`);
+          if (volData.length > 0 && volData[0].google_id) {
+            await fetch(`${SB_URL}/rest/v1/termos_aceitos?google_id=eq.${volData[0].google_id}`, {
+              method: 'DELETE',
+              headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' }
+            });
+          }
+        } catch(e) { console.warn('Aviso: não foi possível limpar termos_aceitos', e); }
+      }
+
       const delRes = await fetch(`${SB_URL}/rest/v1/${tabela}?id=eq.${id}`, {
         method: 'DELETE',
         headers: {
