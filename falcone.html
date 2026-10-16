@@ -1385,7 +1385,19 @@ async function acaoEmMassa(tipo, acao) {
           try {
             const volD = await sbFetch(`voluntarios?id=eq.${id}&select=google_id`);
             if (volD.length > 0 && volD[0].google_id) {
-              await fetch(`${SB_URL}/rest/v1/termos_aceitos?google_id=eq.${volD[0].google_id}`, {
+              await fetch(`${SB_URL}/rest/v1/termos_aceitos?google_id=eq.${volD[0].google_id}&tipo=eq.voluntario`, {
+                method: 'DELETE',
+                headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' }
+              });
+            }
+          } catch(e) { /* ignora erro de limpeza de termos */ }
+        }
+        // Se for ponto de apoio, limpa termos_aceitos antes de deletar
+        if (tipo === 'pontosapoio') {
+          try {
+            const pontoD = await sbFetch(`pontos_apoio?id=eq.${id}&select=criado_por_uid`);
+            if (pontoD.length > 0 && pontoD[0].criado_por_uid) {
+              await fetch(`${SB_URL}/rest/v1/termos_aceitos?google_id=eq.${pontoD[0].criado_por_uid}&tipo=eq.ponto_apoio`, {
                 method: 'DELETE',
                 headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' }
               });
@@ -2804,7 +2816,20 @@ async function executarExclusaoRegional(nivel, pais, estado, cidade, localLabel)
     for (const vol of volsRegiao) {
       if (vol.google_id) {
         try {
-          await fetch(`${SB_URL}/rest/v1/termos_aceitos?google_id=eq.${vol.google_id}`, {
+          await fetch(`${SB_URL}/rest/v1/termos_aceitos?google_id=eq.${vol.google_id}&tipo=eq.voluntario`, {
+            method: 'DELETE',
+            headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' }
+          });
+        } catch(e) { /* ignora */ }
+      }
+    }
+
+    // Limpa termos_aceitos dos pontos de apoio excluídos nesta região
+    const pontosRegiao = registrosPorTabela['pontos_apoio'] || [];
+    for (const ponto of pontosRegiao) {
+      if (ponto.criado_por_uid) {
+        try {
+          await fetch(`${SB_URL}/rest/v1/termos_aceitos?google_id=eq.${ponto.criado_por_uid}&tipo=eq.ponto_apoio`, {
             method: 'DELETE',
             headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' }
           });
@@ -4385,12 +4410,25 @@ function confirmarDelete(tipo, id, nome) {
         try {
           const volData = await sbFetch(`voluntarios?id=eq.${id}&select=google_id`);
           if (volData.length > 0 && volData[0].google_id) {
-            await fetch(`${SB_URL}/rest/v1/termos_aceitos?google_id=eq.${volData[0].google_id}`, {
+            await fetch(`${SB_URL}/rest/v1/termos_aceitos?google_id=eq.${volData[0].google_id}&tipo=eq.voluntario`, {
               method: 'DELETE',
               headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' }
             });
           }
         } catch(e) { console.warn('Aviso: não foi possível limpar termos_aceitos', e); }
+      }
+
+      // Se for ponto de apoio, busca criado_por_uid para limpar termos_aceitos
+      if (tipo === 'pontosapoio') {
+        try {
+          const pontoData = await sbFetch(`pontos_apoio?id=eq.${id}&select=criado_por_uid`);
+          if (pontoData.length > 0 && pontoData[0].criado_por_uid) {
+            await fetch(`${SB_URL}/rest/v1/termos_aceitos?google_id=eq.${pontoData[0].criado_por_uid}&tipo=eq.ponto_apoio`, {
+              method: 'DELETE',
+              headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' }
+            });
+          }
+        } catch(e) { console.warn('Aviso: não foi possível limpar termos_aceitos de ponto de apoio', e); }
       }
 
       const delRes = await fetch(`${SB_URL}/rest/v1/${tabela}?id=eq.${id}`, {
