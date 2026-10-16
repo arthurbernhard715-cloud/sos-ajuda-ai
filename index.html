@@ -1451,9 +1451,18 @@ document.addEventListener('DOMContentLoaded', carregarMensagensDoSite);
     <!-- GPS no topo -->
     <div class="form-group">
       <label>📍 Localização</label>
-      <button type="button" class="btn-localizacao" id="btnLocalizacao" onclick="usarLocalizacaoAtual()" style="margin-bottom:0;">
-        📍 Usar minha localização atual (GPS)
-      </button>
+      <div style="display:flex;gap:8px;">
+        <button type="button" class="btn-localizacao" id="btnLocalizacao" onclick="usarLocalizacaoAtual()" style="flex:1;margin-bottom:0;">
+          📍 Usar GPS
+        </button>
+        <button type="button" class="btn-localizacao" id="btnMarcarMapaSol" onclick="toggleMapaConfirmacaoSol()" style="flex:1;margin-bottom:0;">
+          🗺️ Marcar no mapa
+        </button>
+      </div>
+      <div id="miniMapaSolWrap" style="display:none;margin-top:8px;">
+        <div id="miniMapaSol" style="height:220px;border-radius:10px;overflow:hidden;border:1.5px solid var(--cinza-b);"></div>
+        <div style="font-size:0.74rem;color:#64748b;margin-top:6px;">📌 Toque ou clique no mapa para marcar o local exato da sua casa.</div>
+      </div>
       <div id="localizacaoConfirmada" style="display:none;background:#ECFDF5;border:1.5px solid #A7F3D0;border-radius:10px;padding:10px 14px;margin-top:8px;font-size:0.83rem;color:#15803D;">
         ✅ <span id="localizacaoTexto">Localização confirmada!</span>
       </div>
@@ -2234,7 +2243,7 @@ async function usarLocalizacaoAtualPonto() {
     toast('⚠️ Não foi possível obter sua localização. Preencha o endereço manualmente.');
     btn.textContent = '📍 Usar minha localização (GPS)';
     btn.disabled = false;
-  });
+  }, { enableHighAccuracy: true, timeout: 10000 });
 }
 
 // ── MINI-MAPA: marcar local manualmente ──
@@ -3427,15 +3436,25 @@ async function submeterCadastroReal() {
 
   if (!lat || !lng) {
     try {
-      const q = encodeURIComponent(`${endRua}, ${cidade}, ${estado}, Brasil`);
+      // Tenta com endereço completo (rua + número + bairro) para máxima precisão
+      const endCompleto = [endRua, endNum, endBairro].filter(Boolean).join(', ');
+      const q = encodeURIComponent(`${endCompleto}, ${cidade}, ${estado}, Brasil`);
       const geo = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1`);
       const gd = await geo.json();
       if (gd.length) { lat = parseFloat(gd[0].lat); lng = parseFloat(gd[0].lon); }
       else {
-        const q2 = encodeURIComponent(`${cidade}, ${estado}, Brasil`);
-        const geo2 = await fetch(`https://nominatim.openstreetmap.org/search?q=${q2}&format=json&limit=1`);
-        const gd2 = await geo2.json();
-        if (gd2.length) { lat = parseFloat(gd2[0].lat); lng = parseFloat(gd2[0].lon); }
+        // Fallback: só rua + cidade
+        const q1b = encodeURIComponent(`${endRua}, ${cidade}, ${estado}, Brasil`);
+        const geo1b = await fetch(`https://nominatim.openstreetmap.org/search?q=${q1b}&format=json&limit=1`);
+        const gd1b = await geo1b.json();
+        if (gd1b.length) { lat = parseFloat(gd1b[0].lat); lng = parseFloat(gd1b[0].lon); }
+        else {
+          // Último fallback: só cidade
+          const q2 = encodeURIComponent(`${cidade}, ${estado}, Brasil`);
+          const geo2 = await fetch(`https://nominatim.openstreetmap.org/search?q=${q2}&format=json&limit=1`);
+          const gd2 = await geo2.json();
+          if (gd2.length) { lat = parseFloat(gd2[0].lat); lng = parseFloat(gd2[0].lon); }
+        }
       }
     } catch(e) { console.warn('Geocoding falhou:', e); }
   }
@@ -4440,6 +4459,80 @@ function limparLocalizacao() {
   window.lngSelecionada = null;
   const box = document.getElementById('localizacaoConfirmada');
   if (box) box.style.display = 'none';
+  // Esconde mini-mapa se estava aberto
+  const wrap = document.getElementById('miniMapaSolWrap');
+  if (wrap) wrap.style.display = 'none';
+}
+
+// ── MINI-MAPA: confirmar/corrigir localização da solicitação ──
+let _miniMapaSol = null;
+let _miniMapaSolMarker = null;
+
+function toggleMapaConfirmacaoSol() {
+  const wrap = document.getElementById('miniMapaSolWrap');
+  const abrindo = wrap.style.display === 'none';
+  wrap.style.display = abrindo ? 'block' : 'none';
+  if (abrindo) {
+    setTimeout(() => {
+      if (!_miniMapaSol) {
+        const centro = (window.latSelecionada && window.lngSelecionada)
+          ? [window.latSelecionada, window.lngSelecionada]
+          : (window._cidadeLat && window._cidadeLng)
+            ? [window._cidadeLat, window._cidadeLng]
+            : SINIMBU;
+        _miniMapaSol = L.map('miniMapaSol').setView(centro, 14);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(_miniMapaSol);
+        _miniMapaSol.on('click', (e) => marcarLocalNoMiniMapaSol(e.latlng.lat, e.latlng.lng));
+        if (window.latSelecionada && window.lngSelecionada) atualizarPinMiniMapaSol(window.latSelecionada, window.lngSelecionada);
+      } else {
+        _miniMapaSol.invalidateSize();
+        // Recentra se já tem coordenadas
+        if (window.latSelecionada && window.lngSelecionada) {
+          _miniMapaSol.setView([window.latSelecionada, window.lngSelecionada], 15);
+        }
+      }
+    }, 50);
+  }
+}
+
+async function marcarLocalNoMiniMapaSol(lat, lng) {
+  window.latSelecionada = lat;
+  window.lngSelecionada = lng;
+  atualizarPinMiniMapaSol(lat, lng);
+  toast('📌 Local marcado! Buscando o endereço...', 'ok');
+
+  try {
+    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`);
+    const data = await res.json();
+    const addr = data.address || {};
+    const rua    = addr.road || addr.pedestrian || '';
+    const numero = addr.house_number || '';
+    const bairro = addr.suburb || addr.city_district || '';
+    const cidade = addr.city || addr.town || addr.village || addr.municipality || '';
+    const estado = addr.state || '';
+    const pais   = addr.country || 'Brasil';
+
+    if (rua && document.getElementById('enderecoInput')) document.getElementById('enderecoInput').value = rua;
+    if (numero && document.getElementById('numeroInput')) document.getElementById('numeroInput').value = numero;
+    if (bairro && document.getElementById('bairroInput') && !document.getElementById('bairroInput').value) document.getElementById('bairroInput').value = bairro;
+
+    if (pais) { document.getElementById('paisInput').value = pais; _paisSelecionado = pais; document.getElementById('grupoEstado').style.opacity = '1'; document.getElementById('grupoEstado').style.pointerEvents = 'auto'; }
+    if (estado) { document.getElementById('estadoInputText').value = estado; _estadoSelecionado = estado; document.getElementById('grupoCidade').style.opacity = '1'; document.getElementById('grupoCidade').style.pointerEvents = 'auto'; }
+    if (cidade) { document.getElementById('cidadeInput').value = cidade; _cidadeSelecionada = cidade; document.getElementById('grupoEndereco').style.opacity = '1'; document.getElementById('grupoEndereco').style.pointerEvents = 'auto'; }
+
+    confirmarLocalizacaoVisual(rua ? `${rua}${numero ? ', ' + numero : ''} — ${cidade}` : 'Local marcado no mapa');
+    toast('📍 Localização marcada com sucesso!', 'ok');
+  } catch(e) {
+    confirmarLocalizacaoVisual('Local marcado no mapa');
+    toast('📌 Local marcado. Não encontrei o endereço automaticamente — confira os campos abaixo.');
+  }
+}
+
+function atualizarPinMiniMapaSol(lat, lng) {
+  if (!_miniMapaSol) return;
+  if (_miniMapaSolMarker) { _miniMapaSol.removeLayer(_miniMapaSolMarker); }
+  _miniMapaSolMarker = L.marker([lat, lng]).addTo(_miniMapaSol);
+  _miniMapaSol.setView([lat, lng], 16);
 }
 
 // ── FLUXO PAÍS → ESTADO → CIDADE → ENDEREÇO ──
@@ -4504,6 +4597,14 @@ function selecionarPais(nome, code) {
   document.getElementById('grupoEndereco').style.pointerEvents = 'none';
   window.latSelecionada = null; window.lngSelecionada = null;
   window._cidadeLat = null; window._cidadeLng = null;
+  // Reset mini-mapa da solicitação
+  const miniWrap = document.getElementById('miniMapaSolWrap');
+  if (miniWrap) miniWrap.style.display = 'none';
+  if (_miniMapaSolMarker && _miniMapaSol) { _miniMapaSol.removeLayer(_miniMapaSolMarker); _miniMapaSolMarker = null; }
+  const locConf = document.getElementById('localizacaoConfirmada');
+  if (locConf) locConf.style.display = 'none';
+  const btnLoc = document.getElementById('btnLocalizacao');
+  if (btnLoc) { btnLoc.textContent = '📍 Usar GPS'; btnLoc.style.background = ''; btnLoc.style.color = ''; btnLoc.style.borderColor = ''; btnLoc.classList.remove('loading'); }
 }
 
 function fecharListaPais() {
@@ -4775,14 +4876,30 @@ async function usarLocalizacaoAtual() {
         document.getElementById('grupoEndereco').style.pointerEvents = 'auto';
       }
       confirmarLocalizacaoVisual(rua || 'GPS detectado');
-      toast('📍 Localização preenchida automaticamente!', 'ok');
+      // Abre o mini-mapa com o pin para o usuário confirmar/corrigir
+      atualizarPinMiniMapaSol(latitude, longitude);
+      const wrap = document.getElementById('miniMapaSolWrap');
+      if (wrap && wrap.style.display === 'none') {
+        wrap.style.display = 'block';
+        setTimeout(() => {
+          if (!_miniMapaSol) {
+            _miniMapaSol = L.map('miniMapaSol').setView([latitude, longitude], 16);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(_miniMapaSol);
+            _miniMapaSol.on('click', (e) => marcarLocalNoMiniMapaSol(e.latlng.lat, e.latlng.lng));
+            atualizarPinMiniMapaSol(latitude, longitude);
+          } else {
+            _miniMapaSol.invalidateSize();
+          }
+        }, 50);
+      }
+      toast('📍 Localização obtida! Confira o pin no mapa — clique para corrigir se necessário.', 'ok');
     } catch(e) {
-      btn.textContent = '📍 Usar minha localização atual (GPS)';
+      btn.textContent = '📍 Usar GPS';
       btn.classList.remove('loading');
       toast('⚠️ Não foi possível obter o endereço. Preencha manualmente.');
     }
   }, (err) => {
-    btn.textContent = '📍 Usar minha localização atual (GPS)';
+    btn.textContent = '📍 Usar GPS';
     btn.classList.remove('loading');
     if (err.code === 1) toast('⚠️ Permissão de localização negada. Ative o GPS.');
     else toast('⚠️ Erro ao obter localização. Preencha manualmente.');
@@ -5430,6 +5547,13 @@ async function salvarEdicaoSolicitacao() {
     const geo = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1`);
     const gd = await geo.json();
     if (gd.length) { lat = parseFloat(gd[0].lat); lng = parseFloat(gd[0].lon); }
+    else {
+      // Fallback: só cidade
+      const q2 = encodeURIComponent(`${cidade}, ${estado}, Brasil`);
+      const geo2 = await fetch(`https://nominatim.openstreetmap.org/search?q=${q2}&format=json&limit=1`);
+      const gd2 = await geo2.json();
+      if (gd2.length) { lat = parseFloat(gd2[0].lat); lng = parseFloat(gd2[0].lon); }
+    }
   } catch(e) { console.warn('Geocoding falhou:', e); }
 
   try {
