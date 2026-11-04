@@ -6294,16 +6294,56 @@ function copiarLinkSol() {
 }
 
 function baixarQR() {
-  const img = document.querySelector('#qrContainer img') || document.querySelector('#qrContainer canvas');
-  if (!img) { toast('⚠️ QR Code não gerado ainda.'); return; }
-  const link = document.createElement('a');
-  link.download = `qr-sos-${(_qrNome||'solicitacao').replace(/\s+/g,'-').toLowerCase()}.png`;
-  if (img.tagName === 'CANVAS') {
-    link.href = img.toDataURL();
-  } else {
-    link.href = img.src;
+  const imgEl = document.querySelector('#qrContainer img');
+  const canvasEl = document.querySelector('#qrContainer canvas');
+  if (!imgEl && !canvasEl) { toast('⚠️ QR Code não gerado ainda.'); return; }
+
+  const nomeArquivo = `qr-sos-${(_qrNome||'solicitacao').replace(/[^a-zA-Z0-9À-ÿ\s-]/g,'').replace(/\s+/g,'-').toLowerCase()}.png`;
+
+  // Cria um canvas limpo com margem branca ao redor do QR
+  const tamanho = 300;
+  const margem = 30;
+  const canvas = document.createElement('canvas');
+  canvas.width = tamanho + margem * 2;
+  canvas.height = tamanho + margem * 2 + 40;
+  const ctx = canvas.getContext('2d');
+
+  // Fundo branco
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Desenha o QR no canvas
+  const fonte = imgEl || canvasEl;
+  try {
+    ctx.drawImage(fonte, margem, margem, tamanho, tamanho);
+  } catch(e) {
+    // Se der erro de CORS no img, tenta o canvas direto
+    if (canvasEl) {
+      ctx.drawImage(canvasEl, margem, margem, tamanho, tamanho);
+    } else {
+      toast('⚠️ Não foi possível gerar a imagem.'); return;
+    }
   }
-  link.click();
+
+  // Texto embaixo
+  ctx.fillStyle = '#1A3C8F';
+  ctx.font = 'bold 14px Inter, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('SOS Ajuda Aí — sosajudaai.com.br', canvas.width / 2, tamanho + margem + 28);
+
+  // Download
+  canvas.toBlob(function(blob) {
+    if (!blob) { toast('⚠️ Erro ao gerar imagem.'); return; }
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = nomeArquivo;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    toast('✅ QR Code salvo!', 'ok');
+  }, 'image/png');
 }
 
 // Abre solicitação específica se vier com ?sol=ID na URL
