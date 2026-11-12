@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sinimbu e o Tempo — Gerador Rio Pardinho</title>
+<style>
+:root{--navy:#07345b;--blue:#119bd7;--sky:#eaf7ff;--green:#45c768;--yellow:#ffd21b;--red:#e83c3c;--ink:#123b60}
+*{box-sizing:border-box}body{margin:0;background:#eef5fa;color:var(--ink);font-family:Arial,Helvetica,sans-serif}.app{max-width:1180px;margin:auto;padding:24px}
+.top{background:linear-gradient(135deg,#07345b,#0d6398);color:#fff;border-radius:18px;padding:20px 24px;margin-bottom:18px;display:flex;justify-content:space-between;align-items:center}.brand{display:flex;align-items:center;gap:14px}.brand h1{font:800 30px Georgia,serif;font-style:italic;margin:0}.brand span{font-size:12px;letter-spacing:2px}.drop{width:54px;height:62px;background:linear-gradient(#5fd2fa,#0786c9);clip-path:polygon(50% 0,94% 58%,87% 80%,69% 94%,50% 100%,31% 94%,13% 80%,6% 58%);border:3px solid #fff;border-radius:50%}
+.controls,.panel{background:#fff;border-radius:18px;padding:20px;box-shadow:0 5px 18px #0b41631a}.controls{margin-bottom:18px}.controls h2{margin:0 0 12px}.row{display:flex;gap:12px;flex-wrap:wrap;align-items:end}.field{flex:1;min-width:220px}.field label{display:block;font-size:13px;font-weight:700;margin-bottom:6px}.field input{width:100%;padding:13px;border:1px solid #c9d9e5;border-radius:10px;font-size:18px}.btn{border:0;border-radius:10px;padding:13px 17px;font-weight:800;cursor:pointer;background:var(--navy);color:#fff}.btn.green{background:#169b68}.btn.secondary{background:#dcebf4;color:var(--navy)}.help{font-size:12px;color:#667b8c;margin-top:9px}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 410px;gap:18px}.preview{background:#dfeaf1;border-radius:12px;padding:10px}.preview canvas{display:block;width:100%;height:auto;border-radius:7px;box-shadow:0 4px 14px #0002}
+.panel h3{margin:0 0 12px}.history{width:100%;border-collapse:collapse;font-size:12px}.history th{background:var(--navy);color:#fff;padding:8px;text-align:left}.history td{padding:8px 5px;border-bottom:1px solid #e3edf3}.history tr:last-child td{border-bottom:0}.edit{border:0;border-radius:7px;background:#e7f1f7;color:var(--navy);font-weight:700;padding:5px 8px;cursor:pointer}.del{border:0;background:transparent;color:#b52d2d;font-weight:700;cursor:pointer}.empty{text-align:center;color:#728797;padding:24px 5px}.note{font-size:12px;color:#65798a;margin-top:10px}
+@media(max-width:900px){.layout{grid-template-columns:1fr}.top{align-items:flex-start}.brand h1{font-size:25px}}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+<div class="app">
+<header class="top">
+  <div class="brand"><div class="drop"></div><div><h1>Sinimbu e o Tempo</h1><span>RIO PARDINHO • SINIMBU CENTRO</span></div></div>
+  <div style="font-size:12px;opacity:.82;text-align:right">Gerador de publicação<br>Facebook / Instagram</div>
+</header>
+
+<section class="controls" id="loginBox" style="display:none">
+  <h2>Entrar</h2>
+  <div class="row">
+    <div class="field"><label>E-mail</label><input id="loginEmail" type="email" autocomplete="username"></div>
+    <div class="field"><label>Senha</label><input id="loginSenha" type="password" autocomplete="current-password" onkeydown="if(event.key==='Enter')login()"></div>
+    <button class="btn" onclick="login()">Entrar</button>
+  </div>
+</section>
+
+<div id="appBox" style="display:none">
+<section class="controls">
+  <h2 id="formTitle">Nova medição</h2>
+  <div class="row">
+    <div class="field"><label>Leitura da régua digital (uso interno)</label><input id="reading" type="number" step="0.01" placeholder="Ex.: 57.88"></div>
+    <div class="field"><label>Data e hora</label><input id="datetime" type="datetime-local"></div>
+    <button class="btn" id="saveBtn" onclick="saveMeasurement()">Registrar medição</button>
+    <button class="btn secondary" id="cancelBtn" onclick="cancelEdit()" style="display:none">Cancelar edição</button>
+    <button class="btn green" onclick="downloadPNG()">Baixar PNG</button>
+    <button class="btn secondary" id="logoutBtn" onclick="logout()">Sair</button>
+  </div>
+  <div class="help">A leitura da régua é informação interna e nunca aparece na arte. O cálculo é feito automaticamente: nível = régua digital − 56,40 m. A publicação considera <b>8,03 m ou mais como inundação</b>.</div>
+</section>
+
+<div class="layout">
+  <section class="panel">
+    <h3>Prévia da publicação</h3>
+    <div class="preview"><canvas id="canvas" width="1080" height="1350"></canvas></div>
+    <div class="note">Arte final em 1080 × 1350, com tipografia ampliada para facilitar a leitura em celulares e para pessoas com baixa acuidade visual.</div>
+  </section>
+
+  <section class="panel">
+    <h3>Últimas 10 medições</h3>
+    <div id="historyBox"></div>
+    <div class="note">Use <b>Editar</b> se lançar uma medição errada. Ao corrigir, o nível atual e o maior nível do ano são recalculados.</div>
+  </section>
+</div>
+</div>
+</div>
+
+<script>
+// Configuração do Supabase (projeto do SOS Ajuda Aí).
+// Cole aqui a chave "anon public" em Project Settings → API.
+const SUPABASE_URL="https://wrpfgrwayzmiucyavphk.supabase.co";
+const SUPABASE_ANON_KEY="COLE_SUA_CHAVE_ANON_AQUI";
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+
+const OFFSET=56.40,FLOOD=8.03,MAX2024=12.08;
+let data=[];
+let editId=null;
+let anoMax=0;
+const readingEl=document.getElementById("reading"),dateEl=document.getElementById("datetime");
+
+function pad(n){return String(n).padStart(2,"0")}
+function nowLocal(){const d=new Date();return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`}
+function toLocalInput(iso){const d=new Date(iso);return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`}
+dateEl.value=nowLocal();
+function levelOf(r){return +(r-OFFSET).toFixed(2)}
+function fmtDate(s){const d=new Date(s);return `${pad(d.getDate())}/${pad(d.getMonth()+1)} - ${pad(d.getHours())}:${pad(d.getMinutes())}`}
+
+/* ---------- Login ---------- */
+function showApp(logado){
+  document.getElementById("loginBox").style.display=logado?"none":"block";
+  document.getElementById("appBox").style.display=logado?"block":"none";
+}
+async function login(){
+  const email=document.getElementById("loginEmail").value.trim();
+  const password=document.getElementById("loginSenha").value;
+  const {error}=await sb.auth.signInWithPassword({email,password});
+  if(error){alert("E-mail ou senha inválidos.");return}
+  document.getElementById("loginSenha").value="";
+}
+async function logout(){await sb.auth.signOut()}
+
+/* ---------- Banco de dados ---------- */
+async function loadData(){
+  const ano=new Date().getFullYear();
+  const [ult,anual]=await Promise.all([
+    sb.from("medicoes_nivel").select("*").order("data_hora",{ascending:false}).limit(10),
+    sb.from("medicoes_nivel").select("nivel").gte("data_hora",`${ano}-01-01T00:00:00-03:00`)
+  ]);
+  if(ult.error){alert("Erro ao carregar medições: "+ult.error.message);return}
+  data=ult.data.map(r=>({id:r.id,reading:+r.leitura,level:+r.nivel,dt:r.data_hora}));
+  anoMax=anual.data&&anual.data.length?Math.max(...anual.data.map(x=>+x.nivel)):0;
+  render();
+}
+async function saveMeasurement(){
+  const r=parseFloat(readingEl.value);
+  if(!Number.isFinite(r)){alert("Digite uma leitura válida da régua digital.");return}
+  const payload={leitura:r,nivel:levelOf(r),data_hora:new Date(dateEl.value||nowLocal()).toISOString()};
+  const res=editId===null
+    ? await sb.from("medicoes_nivel").insert(payload)
+    : await sb.from("medicoes_nivel").update(payload).eq("id",editId);
+  if(res.error){alert("Erro ao salvar: "+res.error.message);return}
+  cancelEdit();
+  await loadData();
+}
+function startEdit(id){
+  const item=data.find(x=>x.id===id);
+  if(!item)return;
+  editId=id;
+  readingEl.value=item.reading.toFixed(2);
+  dateEl.value=toLocalInput(item.dt);
+  document.getElementById("formTitle").textContent="Editar medição";
+  document.getElementById("saveBtn").textContent="Salvar alteração";
+  document.getElementById("cancelBtn").style.display="inline-block";
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+function cancelEdit(){
+  editId=null;readingEl.value="";dateEl.value=nowLocal();
+  document.getElementById("formTitle").textContent="Nova medição";
+  document.getElementById("saveBtn").textContent="Registrar medição";
+  document.getElementById("cancelBtn").style.display="none";
+}
+async function deleteMeasurement(id){
+  if(!confirm("Excluir esta medição?"))return;
+  const {error}=await sb.from("medicoes_nivel").delete().eq("id",id);
+  if(error){alert("Erro ao excluir: "+error.message);return}
+  if(editId===id)cancelEdit();
+  await loadData();
+}
+
+/* ---------- Cálculos e tela ---------- */
+function annualMax(){return anoMax}
+function trendFor(i){
+  if(i>=data.length-1)return ["—","trend-same"];
+  const d=data[i].level-data[i+1].level;
+  if(d>0)return ["↑ Subindo","trend-up"];
+  if(d<0)return ["↓ Baixando","trend-down"];
+  return ["→ Estável","trend-same"];
+}
+function renderHistory(){
+  const box=document.getElementById("historyBox");
+  if(!data.length){box.innerHTML='<div class="empty">Nenhuma medição registrada ainda.</div>';return}
+  let h='<table class="history"><thead><tr><th>Data/hora</th><th>Nível</th><th>Tendência</th><th>Ação</th></tr></thead><tbody>';
+  data.forEach((x,i)=>{const [t,c]=trendFor(i);h+=`<tr><td>${fmtDate(x.dt)}</td><td><b>${x.level.toFixed(2)} m</b></td><td class="${c}">${t}</td><td><button class="edit" onclick="startEdit('${x.id}')">Editar</button> <button class="del" onclick="deleteMeasurement('${x.id}')">×</button></td></tr>`});
+  h+='</tbody></table>';box.innerHTML=h;
+}
+
+function rr(c,x,y,w,h,r,fill,stroke,lw=1){c.beginPath();c.roundRect(x,y,w,h,r);c.fillStyle=fill;c.fill();if(stroke){c.strokeStyle=stroke;c.lineWidth=lw;c.stroke()}}
+function tx(c,s,x,y,size,weight="400",color="#123b60",align="left",font="Arial"){c.font=`${weight} ${size}px ${font}`;c.fillStyle=color;c.textAlign=align;c.textBaseline="middle";c.fillText(s,x,y)}
+function draw(){
+ const c=document.getElementById("canvas").getContext("2d"),W=1080,H=1350;c.clearRect(0,0,W,H);
+ let bg=c.createLinearGradient(0,0,0,H);bg.addColorStop(0,"#06365e");bg.addColorStop(.35,"#edf9ff");bg.addColorStop(1,"#c6eaf7");c.fillStyle=bg;c.fillRect(0,0,W,H);
+ c.fillStyle="#07385f";c.fillRect(0,0,W,175);
+ c.fillStyle="#18a7df";c.beginPath();c.moveTo(0,145);c.quadraticCurveTo(250,95,470,150);c.quadraticCurveTo(770,200,1080,135);c.lineTo(1080,205);c.lineTo(0,205);c.fill();
+ // title/logo
+ tx(c,"RIO PARDINHO",540,67,61,"800","#fff","center");tx(c,"SINIMBU CENTRO",540,120,24,"700","#d8f4ff","center");
+ // simple mountain/water mark
+ c.strokeStyle="#36b8ec";c.lineWidth=10;c.beginPath();c.moveTo(885,105);c.lineTo(925,52);c.lineTo(950,82);c.lineTo(982,38);c.lineTo(1022,96);c.stroke();c.lineWidth=6;c.beginPath();c.arc(955,110,65,.15,2.8);c.stroke();
+ const cur=data[0]||{reading:57.88,level:1.48,dt:"2025-05-15T10:32"};
+ const max=annualMax()||cur.level;
+ const flood=cur.level>=FLOOD;
+ const attention=cur.level>=4.01 && cur.level<FLOOD;
+ const situation=flood?"INUNDAÇÃO":attention?"ATENÇÃO":"Abaixo da cota de inundação";
+ const sitColor=flood?"#e83c3c":attention?"#b77900":"#238b4b";
+ // left cards
+ rr(c,34,190,325,185,20,"#0b6597");tx(c,"NÍVEL ATUAL",70,225,25,"800","#fff");tx(c,cur.level.toFixed(2)+" m",196,304,72,"800","#fff","center");
+ rr(c,34,395,325,135,20,"#fff","#a9d9ee",2);tx(c,"DATA E HORA",68,430,21,"800");tx(c,fmtDate(cur.dt),68,480,30,"700","#0b4c76");
+ rr(c,34,550,325,140,20,attention?"#fff8df":flood?"#fff0f0":"#eefaf2",attention?"#e6c75e":flood?"#e7aaaa":"#a9dfbd",2);tx(c,"SITUAÇÃO ATUAL",68,585,20,"800","#0b6349");if(flood){tx(c,"INUNDAÇÃO",68,640,25,"800",sitColor)}else if(attention){tx(c,"ATENÇÃO",68,640,27,"800",sitColor)}else{tx(c,"Abaixo da cota de",68,625,22,"800",sitColor);tx(c,"inundação",68,654,22,"800",sitColor)};
+ // gauge
+ const gx=455,gy=205,gw=92,gh=585;let grad=c.createLinearGradient(0,gy+gh,0,gy);grad.addColorStop(0,"#159bd7");grad.addColorStop(.34,"#43c768");grad.addColorStop(.61,"#ffd21b");grad.addColorStop(.79,"#ff961a");grad.addColorStop(1,"#e83c3c");
+ rr(c,gx,gy,gw,gh,45,grad,"#fff",6);
+ for(let i=0;i<=12;i++){let y=gy+gh-(i/12)*gh;c.strokeStyle="#fff";c.lineWidth=2;c.beginPath();c.moveTo(gx+gw+8,y);c.lineTo(gx+gw+27,y);c.stroke();tx(c,String(i).padStart(2,"0")+",00",gx+gw+44,y,19,"700","#16496b")}
+ const lv=Math.max(0,Math.min(12,cur.level)),py=gy+gh-(lv/12)*gh;c.strokeStyle="#073b63";c.lineWidth=9;c.beginPath();c.moveTo(gx-18,py);c.lineTo(gx+gw+35,py);c.stroke();c.strokeStyle="#fff";c.lineWidth=3;c.beginPath();c.moveTo(gx-18,py);c.lineTo(gx+gw+35,py);c.stroke();c.fillStyle="#fff";c.beginPath();c.arc(gx+gw/2,py,14,0,Math.PI*2);c.fill();c.strokeStyle="#073b63";c.lineWidth=4;c.stroke();tx(c,cur.level.toFixed(2)+" m",gx+gw/2,py-39,24,"800","#073b63","center");
+ // flood mark
+ const fy=gy+gh-(FLOOD/12)*gh;c.strokeStyle="#e83c3c";c.setLineDash([12,8]);c.lineWidth=3;c.beginPath();c.moveTo(gx-65,fy);c.lineTo(gx+gw+35,fy);c.stroke();c.setLineDash([]);rr(c,gx-170,fy-23,100,46,18,"#e83c3c");tx(c,"8,03 m",gx-120,fy,23,"800","#fff","center");tx(c,"Início da inundação",gx-175,fy+39,18,"700","#123b60");
+ // max 2024
+ const my=gy+gh-(MAX2024/12)*gh;c.strokeStyle="#123b60";c.setLineDash([10,8]);c.lineWidth=2;c.beginPath();c.moveTo(gx-65,my);c.lineTo(gx+gw+35,my);c.stroke();c.setLineDash([]);tx(c,"12,08 m",gx-100,my-5,22,"800","#123b60","right");tx(c,"Máximo da enchente",gx-175,my+22,17,"700","#123b60");tx(c,"2024",gx-175,my+42,17,"700","#123b60");
+ // right reference cards
+ rr(c,700,190,345,145,18,"#fff","#b9dcec",2);tx(c,"REFERÊNCIAS",725,220,23,"800","#073b63");tx(c,"A PARTIR DE 8,03 m",725,266,25,"800","#c92323");tx(c,"JÁ É INUNDAÇÃO",725,305,27,"800","#c92323");
+ rr(c,700,350,345,145,18,"#fff0f3","#e2b3c1",2);tx(c,"Máximo da enchente 2024",725,388,21,"700","#b51f57");tx(c,"12,08 m",725,445,42,"800","#b51f57");tx(c,"referência histórica",725,475,15,"400","#667b8c");
+ rr(c,700,510,345,145,18,"#edf4ff","#b8cef3",2);tx(c,"Maior nível no ano vigente",725,548,21,"700","#174f9a");tx(c,max.toFixed(2)+" m",725,605,42,"800","#174f9a");tx(c,"atualizado automaticamente",725,635,15,"400","#667b8c");
+ rr(c,700,670,345,160,18,"#fff","#c7dce8",2);tx(c,"FAIXAS DE NÍVEL",725,698,22,"800","#073b63");
+ c.fillStyle="#e83c3c";c.beginPath();c.arc(750,738,16,0,Math.PI*2);c.fill();tx(c,"Inundação",780,738,19,"800");tx(c,"8,03 m ou mais",900,738,17,"700","#456579");
+ c.fillStyle="#ffd21b";c.beginPath();c.arc(750,775,16,0,Math.PI*2);c.fill();tx(c,"Atenção",780,775,19,"800");tx(c,"4,01 m – 8,02 m",900,775,17,"700","#456579");
+ c.fillStyle="#43c768";c.beginPath();c.arc(750,812,16,0,Math.PI*2);c.fill();tx(c,"Normal",780,812,19,"800");tx(c,"0,00 m – 4,00 m",900,812,17,"700","#456579");
+ // Histórico ampliado, sem a faixa decorativa vazia entre o medidor e a tabela
+ c.fillStyle="#073b63";c.fillRect(0,850,W,400);
+ tx(c,"◷  HISTÓRICO — ÚLTIMAS 10 MEDIÇÕES",50,885,30,"800","#fff");
+ rr(c,46,915,988,310,18,"#fff","#b9dcec",2);
+ tx(c,"DATA / HORA",70,945,17,"800","#17496b");tx(c,"NÍVEL (m)",390,945,17,"800","#17496b");tx(c,"TENDÊNCIA",680,945,17,"800","#17496b");
+ const hist=data.slice(0,10);
+ if(hist.length){hist.forEach((x,i)=>{let y=972+i*23.5;tx(c,fmtDate(x.dt),70,y,17,"600","#173e5d");tx(c,x.level.toFixed(2)+" m",390,y,17,"800","#173e5d");let t=i<hist.length-1?(x.level>hist[i+1].level?"↑ Subindo":x.level<hist[i+1].level?"↓ Baixando":"→ Estável"):"—";tx(c,t,680,y,17,"700",t.includes("Subindo")?"#159b78":t.includes("Baixando")?"#1682cf":"#667b8c")})}
+ else tx(c,"As próximas medições aparecerão aqui.",70,980,18,"400","#667b8c");
+ // rodapé e marca-d'água discreta
+ c.fillStyle="#062f52";c.fillRect(0,1250,W,100);tx(c,"Sinimbu",75,1285,42,"800","#fff","left","Georgia");tx(c,"e o Tempo",75,1320,35,"800","#fff","left","Georgia");tx(c,"INFORMAÇÃO QUE CONECTA NOSSA GENTE",470,1290,15,"700","#d9f5ff");c.save();c.globalAlpha=0.24;c.translate(900,1300);c.rotate(-0.08);tx(c,"Sinimbu e o Tempo",0,0,22,"700","#ffffff","center","Georgia");c.restore();
+}
+function render(){renderHistory();draw()}
+function downloadPNG(){draw();const a=document.createElement("a");a.download="rio-pardinho-sinimbu-e-o-tempo.png";a.href=document.getElementById("canvas").toDataURL("image/png");a.click()}
+
+/* ---------- Inicialização ---------- */
+sb.auth.onAuthStateChange((_evento,sessao)=>{
+  showApp(!!sessao);
+  if(sessao)loadData();
+});
+sb.auth.getSession().then(({data:{session}})=>{
+  showApp(!!session);
+  if(session)loadData();
+  else render();
+});
+</script>
+</body>
+</html>
