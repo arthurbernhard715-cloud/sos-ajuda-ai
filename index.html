@@ -109,14 +109,6 @@ nav.scrolled {
   margin-top: 11px;
 }
 .btn-apoiar:hover { border-color: #C9A227; color: #C9A227; background: rgba(201,162,39,0.06); }
-.btn-ponto {
-  width: 100%; max-width: 290px; display: block;
-  background: transparent; color: var(--cinza-t);
-  padding: 11px; border-radius: 12px; border: 1.5px dashed var(--cinza-b); cursor: pointer;
-  font-family: 'Montserrat', sans-serif; font-weight: 600; font-size: .85rem; transition: all .2s;
-  margin-top: 6px;
-}
-.btn-ponto:hover { border-color: #16a34a; color: #16a34a; background: rgba(22,163,74,0.06); }
 .panel-divider { width: 100%; max-width: 290px; height: 1px; background: var(--cinza-b); margin: 24px 0; }
 .stats { display: grid; grid-template-columns: repeat(2,1fr); gap: 10px; width: 100%; max-width: 290px; }
 .stat { background: var(--cinza-f); border-radius: 12px; padding: 14px 10px; text-align: center; border: 1.5px solid var(--cinza-b); transition: border-color .2s; }
@@ -338,7 +330,7 @@ textarea.form-control { resize: vertical; min-height: 88px; }
   .ranking-grid { grid-template-columns: 1fr; }
 }
 @media(max-width:768px) {
-  .nav-links a:not(.nav-cta) { display: none; }
+  .nav-links a:not(.nav-cta):not(.nav-instagram) { display: none; }
   #navBtnLogin { padding: 7px 10px !important; font-size: 0.78rem !important; margin-left: 0 !important; }
   .nav-cta { padding: 9px 14px !important; font-size: 0.82rem !important; }
   nav { padding: 0 4%; gap: 6px; }
@@ -403,10 +395,6 @@ textarea.form-control { resize: vertical; min-height: 88px; }
   display: none; text-align: center; padding: 12px;
   font-size: 0.85rem; color: var(--azul); font-weight: 600;
 }
-/* Botão câmera: visível só em mobile (touch) */
-.foto-camera-btn { display: none; }
-@media (pointer: coarse) { .foto-camera-btn { display: block; } }
-@media (hover: none) { .foto-camera-btn { display: block; } }
 
 
 /* ── BANNER AVALIAÇÃO ── */
@@ -912,9 +900,8 @@ document.addEventListener('DOMContentLoaded', carregarMensagensDoSite);
     <img class="panel-logo" src="logo.png" alt="SOS Ajuda Aí">
     <p class="panel-slogan">"Conectando quem precisa,<br>com quem quer <strong>ajudar!</strong>"</p>
     <button class="btn-verm" onclick="if(!usuarioAtual){abrirModal('modal-auth')}else{verificarTermos('atingido',()=>{ limparLocalizacao(); abrirModal('modal-atingido'); })}">🏠 Fui atingido — preciso de ajuda</button>
-    <button class="btn-azul" onclick="if(!usuarioAtual){localStorage.setItem('_reabrir_vol','1');abrirModal('modal-auth')}else{verificarTermos('voluntario',()=>abrirModalVoluntario())}">🤝 Quero ser voluntário</button>
+    <button class="btn-azul" onclick="if(!usuarioAtual){abrirModal('modal-auth')}else{verificarTermos('voluntario',()=>abrirModalVoluntario())}">🤝 Quero ser voluntário</button>
     <button class="btn-apoiar" onclick="document.getElementById('apoie').scrollIntoView({behavior:'smooth'})">💛 Apoiar financeiramente</button>
-    <button class="btn-ponto" onclick="if(!usuarioAtual){abrirModal('modal-auth')}else{verificarTermos('ponto_apoio',()=>abrirModalPontoApoio())}">📍 Cadastrar abrigo ou ponto de apoio</button>
     <div class="panel-divider"></div>
     <div class="stats">
       <div class="stat"><div class="stat-n">2.4<em>mil</em></div><div class="stat-l">Pessoas ajudadas</div></div>
@@ -952,7 +939,7 @@ document.addEventListener('DOMContentLoaded', carregarMensagensDoSite);
       <button class="filtro-apoio" data-tipo="doacoes_mantimentos" onclick="filtrarPinsApoio(this)">📦❤️ Doações e Mantimentos</button>
       <button class="filtro-apoio" data-tipo="nenhum" onclick="filtrarPinsApoio(this)">🚫 Ocultar</button>
     </div>
-    <button class="btn-cadastrar-ponto" onclick="if(!usuarioAtual){abrirModal('modal-auth')}else{verificarTermos('ponto_apoio',()=>abrirModalPontoApoio())}">➕ Cadastrar ponto de apoio (abrigo ou doações/mantimentos)</button>
+    <button class="btn-cadastrar-ponto" onclick="abrirModalPontoApoio()">➕ Cadastrar ponto de apoio (abrigo ou doações/mantimentos)</button>
   </div>
   <div class="mapa-wrap">
     <div class="mapa-container">
@@ -1305,15 +1292,13 @@ document.addEventListener('DOMContentLoaded', carregarMensagensDoSite);
     <div style="display:flex;align-items:center;justify-content:center;gap:14px;margin:20px 0 6px;">
       <button type="button" onclick="ajustarValorConvite(-10)"
         style="width:40px;height:40px;border-radius:50%;border:1.5px solid var(--cinza-b);background:#fff;color:var(--azul);font-size:1.3rem;font-weight:700;cursor:pointer;line-height:1;">−</button>
-      <div id="conviteValorWrap" onclick="editarValorConvite()"
-        style="font-family:'Montserrat',sans-serif;font-weight:800;font-size:1.8rem;color:var(--azul);min-width:110px;cursor:pointer;position:relative;"
-        title="Clique para digitar o valor">
+      <div style="font-family:'Montserrat',sans-serif;font-weight:800;font-size:1.8rem;color:var(--azul);min-width:110px;">
         R$ <span id="conviteValorTexto">50</span>
       </div>
       <button type="button" onclick="ajustarValorConvite(10)"
         style="width:40px;height:40px;border-radius:50%;border:1.5px solid var(--cinza-b);background:#fff;color:var(--azul);font-size:1.3rem;font-weight:700;cursor:pointer;line-height:1;">+</button>
     </div>
-    <div style="font-size:0.76rem;color:var(--cinza-t);margin-bottom:6px;">Valor sugerido — clique no valor ou use +/− para ajustar</div>
+    <div style="font-size:0.76rem;color:var(--cinza-t);margin-bottom:6px;">Valor sugerido — ajuste como quiser</div>
 
     <button type="button" onclick="fecharModal('modal-convite-doacao');abrirModalPix();"
       style="width:100%;background:var(--verm);color:#fff;border:none;border-radius:12px;padding:14px;font-family:'Montserrat',sans-serif;font-weight:700;font-size:0.95rem;cursor:pointer;margin-top:14px;">
@@ -1409,22 +1394,12 @@ document.addEventListener('DOMContentLoaded', carregarMensagensDoSite);
     <!-- Foto do local -->
     <div class="form-group">
       <label>📷 Foto do local (opcional)</label>
-      <div style="display:flex;gap:8px;margin-bottom:8px;">
-        <div class="foto-upload-area" onclick="document.getElementById('ponto-fotoInput').click()" style="flex:1;margin-bottom:0;">
-          <input type="file" id="ponto-fotoInput" accept="image/*" onchange="previsualizarFoto(this,'ponto-')">
-          <div class="foto-upload-icon">🖼️</div>
-          <div class="foto-upload-txt">
-            <strong>Escolher da galeria</strong><br>
-            JPG, PNG ou HEIC — máx. 10MB
-          </div>
-        </div>
-        <div class="foto-upload-area foto-camera-btn" onclick="document.getElementById('ponto-fotoCameraInput').click()" style="flex:1;margin-bottom:0;">
-          <input type="file" id="ponto-fotoCameraInput" accept="image/*" capture="environment" onchange="previsualizarFoto(this,'ponto-')">
-          <div class="foto-upload-icon">📷</div>
-          <div class="foto-upload-txt">
-            <strong>Tirar foto agora</strong><br>
-            Abre a câmera do celular
-          </div>
+      <div class="foto-upload-area" onclick="document.getElementById('ponto-fotoInput').click()">
+        <input type="file" id="ponto-fotoInput" accept="image/*" onchange="previsualizarFoto(this,'ponto-')">
+        <div class="foto-upload-icon">📸</div>
+        <div class="foto-upload-txt">
+          <strong>Clique para adicionar uma foto</strong><br>
+          JPG, PNG ou HEIC — máx. 10MB
         </div>
       </div>
       <div class="foto-dica">
@@ -1465,18 +1440,9 @@ document.addEventListener('DOMContentLoaded', carregarMensagensDoSite);
     <!-- GPS no topo -->
     <div class="form-group">
       <label>📍 Localização</label>
-      <div style="display:flex;gap:8px;">
-        <button type="button" class="btn-localizacao" id="btnLocalizacao" onclick="usarLocalizacaoAtual()" style="flex:1;margin-bottom:0;">
-          📍 Usar GPS
-        </button>
-        <button type="button" class="btn-localizacao" id="btnMarcarMapaSol" onclick="toggleMapaConfirmacaoSol()" style="flex:1;margin-bottom:0;">
-          🗺️ Marcar no mapa
-        </button>
-      </div>
-      <div id="miniMapaSolWrap" style="display:none;margin-top:8px;">
-        <div id="miniMapaSol" style="height:220px;border-radius:10px;overflow:hidden;border:1.5px solid var(--cinza-b);"></div>
-        <div style="font-size:0.74rem;color:#64748b;margin-top:6px;">📌 Toque ou clique no mapa para marcar o local exato da sua casa.</div>
-      </div>
+      <button type="button" class="btn-localizacao" id="btnLocalizacao" onclick="usarLocalizacaoAtual()" style="margin-bottom:0;">
+        📍 Usar minha localização atual (GPS)
+      </button>
       <div id="localizacaoConfirmada" style="display:none;background:#ECFDF5;border:1.5px solid #A7F3D0;border-radius:10px;padding:10px 14px;margin-top:8px;font-size:0.83rem;color:#15803D;">
         ✅ <span id="localizacaoTexto">Localização confirmada!</span>
       </div>
@@ -1539,22 +1505,12 @@ document.addEventListener('DOMContentLoaded', carregarMensagensDoSite);
     <!-- Foto da fachada -->
     <div class="form-group">
       <label>📷 Foto da fachada da casa</label>
-      <div style="display:flex;gap:8px;margin-bottom:8px;">
-        <div class="foto-upload-area" onclick="document.getElementById('fotoInput').click()" style="flex:1;margin-bottom:0;">
-          <input type="file" id="fotoInput" accept="image/*" onchange="previsualizarFoto(this)">
-          <div class="foto-upload-icon">🖼️</div>
-          <div class="foto-upload-txt">
-            <strong>Escolher da galeria</strong><br>
-            JPG, PNG ou HEIC — máx. 10MB
-          </div>
-        </div>
-        <div class="foto-upload-area foto-camera-btn" onclick="document.getElementById('fotoCameraInput').click()" style="flex:1;margin-bottom:0;">
-          <input type="file" id="fotoCameraInput" accept="image/*" capture="environment" onchange="previsualizarFoto(this)">
-          <div class="foto-upload-icon">📷</div>
-          <div class="foto-upload-txt">
-            <strong>Tirar foto agora</strong><br>
-            Abre a câmera do celular
-          </div>
+      <div class="foto-upload-area" onclick="document.getElementById('fotoInput').click()">
+        <input type="file" id="fotoInput" accept="image/*" onchange="previsualizarFoto(this)">
+        <div class="foto-upload-icon">📸</div>
+        <div class="foto-upload-txt">
+          <strong>Clique para adicionar uma foto</strong><br>
+          JPG, PNG ou HEIC — máx. 10MB
         </div>
       </div>
       <div class="foto-dica">
@@ -1694,44 +1650,49 @@ document.addEventListener('DOMContentLoaded', carregarMensagensDoSite);
         <div style="font-size:0.72rem;color:#94a3b8;margin-top:4px;">O código do país é selecionado automaticamente</div>
       </div>
 
-      <!-- CPF (opcional) -->
+      <!-- GPS no topo -->
       <div class="form-group">
-        <label>CPF <small style="color:#94a3b8;font-weight:400;">(opcional)</small></label>
-        <input class="form-control" id="vol-cpf" placeholder="000.000.000-00">
+        <label>📍 Localização</label>
+        <button type="button" class="btn-localizacao" onclick="usarLocalizacaoAtualVol()">
+          📍 Usar minha localização atual (GPS)
+        </button>
+        <div id="vol-localizacaoConfirmada" style="display:none;background:#ECFDF5;border:1.5px solid #A7F3D0;border-radius:10px;padding:10px 14px;margin-top:8px;font-size:0.83rem;color:#15803D;">
+          ✅ <span id="vol-localizacaoTexto">Localização confirmada!</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;margin:14px 0 4px;">
+          <div style="flex:1;height:1px;background:#e2e8f0;"></div>
+          <span style="font-size:0.75rem;color:#94a3b8;white-space:nowrap;">ou preencha manualmente</span>
+          <div style="flex:1;height:1px;background:#e2e8f0;"></div>
+        </div>
       </div>
 
-      <!-- RG (opcional) -->
+      <!-- PASSO 1: País -->
       <div class="form-group">
-        <label>RG / Documento <small style="color:#94a3b8;font-weight:400;">(opcional)</small></label>
-        <input class="form-control" id="vol-rg" placeholder="Número do RG ou documento">
+        <label>1️⃣ País</label>
+        <div style="position:relative;">
+          <input class="form-control" id="vol-pais" placeholder="🔍 Digite o nome do país..." autocomplete="off"
+            oninput="buscarPaisVol(this.value)" onblur="setTimeout(fecharListaPaisVol,250)">
+          <div id="listaPaisVol" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:999;background:#fff;border:1.5px solid var(--azul-med);border-top:none;border-radius:0 0 10px 10px;max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.12);"></div>
+        </div>
       </div>
 
-      <!-- Endereço (opcional) -->
-      <div style="background:#F8FAFC;border-radius:10px;padding:14px;margin-bottom:18px;border:1.5px solid #E2E8F0;">
-        <label style="display:block;font-weight:700;font-size:0.9rem;margin-bottom:12px;color:#1e293b;">📍 Endereço <small style="color:#94a3b8;font-weight:400;">(opcional)</small></label>
-        <div class="form-group" style="margin-bottom:10px;">
-          <label style="font-size:0.83rem;">Rua / Avenida</label>
-          <input class="form-control" id="vol-endereco-rua" placeholder="Rua, Avenida, Pça...">
+      <!-- PASSO 2: Estado -->
+      <div class="form-group" id="vol-grupoEstado" style="opacity:0.35;pointer-events:none;">
+        <label>2️⃣ Estado / Província <small style="color:#94a3b8;font-weight:400;">— selecione o país primeiro</small></label>
+        <div style="position:relative;">
+          <input class="form-control" id="vol-estado" placeholder="Digite o estado..." autocomplete="off"
+            oninput="buscarEstadoVol(this.value)" onblur="setTimeout(fecharListaEstadoVol,250)">
+          <div id="listaEstadoVol" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:999;background:#fff;border:1.5px solid var(--azul-med);border-top:none;border-radius:0 0 10px 10px;max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.12);"></div>
         </div>
-        <div class="form-group" style="margin-bottom:10px;">
-          <label style="font-size:0.83rem;">Número</label>
-          <input class="form-control" id="vol-endereco-numero" placeholder="123">
-        </div>
-        <div class="form-group" style="margin-bottom:10px;">
-          <label style="font-size:0.83rem;">Bairro</label>
-          <input class="form-control" id="vol-endereco-bairro" placeholder="Nome do bairro">
-        </div>
-        <div class="form-group" style="margin-bottom:10px;">
-          <label style="font-size:0.83rem;">Complemento</label>
-          <input class="form-control" id="vol-endereco-complemento" placeholder="Apto 101, Bloco A, etc...">
-        </div>
-        <div class="form-group" style="margin-bottom:10px;">
-          <label style="font-size:0.83rem;">Cidade</label>
-          <input class="form-control" id="vol-endereco-cidade" placeholder="Sua cidade">
-        </div>
-        <div class="form-group" style="margin-bottom:0;">
-          <label style="font-size:0.83rem;">Estado / Província</label>
-          <input class="form-control" id="vol-endereco-estado" placeholder="Seu estado">
+      </div>
+
+      <!-- PASSO 3: Cidade -->
+      <div class="form-group" id="vol-grupoCidade" style="opacity:0.35;pointer-events:none;">
+        <label>3️⃣ Cidade <small style="color:#94a3b8;font-weight:400;">— selecione o estado primeiro</small></label>
+        <div style="position:relative;">
+          <input class="form-control" id="vol-cidade" placeholder="Digite sua cidade..." autocomplete="off"
+            oninput="buscarCidadeVol(this.value)" onblur="setTimeout(fecharListaCidadeVol,250)">
+          <div id="listaCidadeVol" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:999;background:#fff;border:1.5px solid var(--azul-med);border-top:none;border-radius:0 0 10px 10px;max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.12);"></div>
         </div>
       </div>
 
@@ -1757,13 +1718,13 @@ document.addEventListener('DOMContentLoaded', carregarMensagensDoSite);
 </div>
 
 
-<!-- MODAL: QR CODE / COMPARTILHAR -->
+<!-- MODAL: QR CODE -->
 <div class="modal-overlay" id="modal-qr">
   <div class="modal modal-qr">
     <button class="modal-close" onclick="fecharModal('modal-qr')">✕</button>
-    <div style="font-size:2rem;margin-bottom:8px;">📤</div>
-    <div class="qr-titulo">Compartilhe este pedido de ajuda!</div>
-    <div class="qr-sub">Divulgue nas redes sociais, envie pelo WhatsApp ou mostre o QR Code. Cada compartilhamento pode trazer mais voluntários!</div>
+    <div style="font-size:2rem;margin-bottom:8px;">📱</div>
+    <div class="qr-titulo">Compartilhe sua solicitação!</div>
+    <div class="qr-sub">Mostre este QR Code para voluntários ou envie pelo WhatsApp. Quem ler será direcionado direto para o seu pedido.</div>
 
     <div class="qr-box">
       <div id="qrContainer" style="display:flex;align-items:center;justify-content:center;width:200px;height:200px;"></div>
@@ -1773,34 +1734,12 @@ document.addEventListener('DOMContentLoaded', carregarMensagensDoSite);
       </div>
     </div>
 
-    <!-- Copiar link -->
-    <div style="display:flex;gap:8px;margin-bottom:12px;">
-      <input type="text" id="compartilhar-link-input" readonly style="flex:1;padding:10px 12px;border:1.5px solid var(--cinza-b);border-radius:10px;font-size:.8rem;color:#334155;background:var(--cinza-f);font-family:'Inter',sans-serif;" />
-      <button onclick="copiarLinkSol()" style="padding:10px 14px;border-radius:10px;border:none;background:var(--azul);color:#fff;font-weight:700;font-size:.8rem;cursor:pointer;white-space:nowrap;font-family:'Montserrat',sans-serif;transition:all .2s;" id="btnCopiarLink">📋 Copiar</button>
-    </div>
-
-    <!-- Redes sociais -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
-      <button class="btn-compartilhar" onclick="compartilharWhatsApp()" style="margin:0;border-radius:10px;padding:11px 10px;font-size:.8rem;">
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-        WhatsApp
-      </button>
-      <button onclick="compartilharInstagram()" style="display:flex;align-items:center;justify-content:center;gap:6px;padding:11px 10px;border-radius:10px;border:none;background:linear-gradient(45deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);color:#fff;font-weight:700;font-size:.8rem;cursor:pointer;font-family:'Montserrat',sans-serif;">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
-        Instagram
-      </button>
-      <button onclick="compartilharFacebook()" style="display:flex;align-items:center;justify-content:center;gap:6px;padding:11px 10px;border-radius:10px;border:none;background:#1877F2;color:#fff;font-weight:700;font-size:.8rem;cursor:pointer;font-family:'Montserrat',sans-serif;">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-        Facebook
-      </button>
-      <button onclick="compartilharTwitter()" style="display:flex;align-items:center;justify-content:center;gap:6px;padding:11px 10px;border-radius:10px;border:none;background:#000;color:#fff;font-weight:700;font-size:.8rem;cursor:pointer;font-family:'Montserrat',sans-serif;">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-        X / Twitter
-      </button>
-    </div>
-
-    <button class="btn-baixar-qr" onclick="baixarQR()">💾 Baixar QR Code como imagem</button>
-    <div class="qr-dica">💡 Quem abrir o link ou escanear o código será direcionado direto para este pedido de ajuda.</div>
+    <button class="btn-compartilhar" onclick="compartilharWhatsApp()">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+      Compartilhar no WhatsApp
+    </button>
+    <button class="btn-baixar-qr" onclick="baixarQR()">⬇️ Baixar QR Code</button>
+    <div class="qr-dica">💡 O voluntário que ler este código será direcionado direto para o seu pedido de ajuda.</div>
   </div>
 </div>
 
@@ -1844,7 +1783,7 @@ document.addEventListener('DOMContentLoaded', carregarMensagensDoSite);
         <li>Solicitar correção ou exclusão a qualquer momento</li>
         <li>Revogar o consentimento</li>
       </ul>
-      <p>Para exercer seus direitos, entre em contato: <strong>contato@sosajudaai.com.br</strong></p>
+      <p>Para exercer seus direitos, entre em contato: <strong>arthurbernhard715@gmail.com</strong></p>
 
       <h4>6. Segurança</h4>
       <p>Seus dados são armazenados de forma segura no Supabase e as fotos no Cloudinary, ambos com criptografia em trânsito e em repouso.</p>
@@ -1859,61 +1798,6 @@ document.addEventListener('DOMContentLoaded', carregarMensagensDoSite);
     </div>
 
     <button class="btn-aceitar-termos" id="btn-aceitar-atingido" onclick="aceitarTermos('atingido')">
-      ✅ Aceitar e continuar
-    </button>
-  </div>
-</div>
-
-<!-- MODAL: TERMOS PONTO DE APOIO -->
-<div class="modal-overlay" id="modal-termos-ponto_apoio">
-  <div class="modal modal-termos">
-    <button class="modal-close" onclick="fecharModal('modal-termos-ponto_apoio')">✕</button>
-    <h2>📋 Termos — Ponto de apoio</h2>
-    <p class="modal-sub">Leia e aceite os termos antes de cadastrar um abrigo ou ponto de apoio.</p>
-
-    <div class="termos-body">
-      <h4>1. Sobre o cadastro de pontos de apoio</h4>
-      <p>Ao cadastrar um abrigo ou ponto de apoio no SOS Ajuda Aí, você declara que as informações fornecidas são verdadeiras e que o local está efetivamente disponível para receber pessoas ou doações.</p>
-
-      <h4>2. Dados coletados</h4>
-      <p>Ao cadastrar um ponto de apoio, coletamos:</p>
-      <ul>
-        <li>Nome do local ou responsável</li>
-        <li>Endereço completo (rua, cidade, estado)</li>
-        <li>Telefone de contato (opcional)</li>
-        <li>Descrição e capacidade do local</li>
-        <li>Foto do local (opcional)</li>
-        <li>Email da conta Google utilizada</li>
-      </ul>
-
-      <h4>3. Como seus dados são usados</h4>
-      <ul>
-        <li>Exibir o ponto de apoio no mapa para pessoas que precisam de ajuda</li>
-        <li>Permitir contato entre quem precisa e o responsável pelo ponto</li>
-        <li>Gerar relatórios estatísticos para órgãos públicos</li>
-      </ul>
-
-      <h4>4. Responsabilidades do cadastrante</h4>
-      <ul>
-        <li>Garantir que as informações cadastradas são verdadeiras e atualizadas</li>
-        <li>Informar caso o ponto deixe de estar disponível</li>
-        <li>Não cadastrar locais falsos ou com informações enganosas</li>
-        <li>Zelar pela segurança e bem-estar das pessoas que utilizarem o ponto</li>
-      </ul>
-
-      <h4>5. Seus direitos (LGPD)</h4>
-      <p>Você pode solicitar a exclusão dos dados do ponto de apoio a qualquer momento através do email: <strong>contato@sosajudaai.com.br</strong></p>
-
-      <h4>6. Isenção de responsabilidade</h4>
-      <p>O SOS Ajuda Aí é uma plataforma de conexão. A responsabilidade pelas condições do local e pela veracidade das informações é exclusivamente do cadastrante. A plataforma não se responsabiliza por danos ocorridos nos pontos de apoio cadastrados.</p>
-    </div>
-
-    <div class="termos-check" onclick="toggleTermos('check-ponto_apoio','btn-aceitar-ponto_apoio')">
-      <input type="checkbox" id="check-ponto_apoio" onchange="toggleTermos('check-ponto_apoio','btn-aceitar-ponto_apoio')">
-      <label for="check-ponto_apoio">Li e aceito os <strong>Termos de Uso, Política de Privacidade e Responsabilidades</strong> para cadastro de ponto de apoio no SOS Ajuda Aí.</label>
-    </div>
-
-    <button class="btn-aceitar-termos" id="btn-aceitar-ponto_apoio" onclick="aceitarTermos('ponto_apoio')">
       ✅ Aceitar e continuar
     </button>
   </div>
@@ -1956,7 +1840,7 @@ document.addEventListener('DOMContentLoaded', carregarMensagensDoSite);
       </ul>
 
       <h4>5. Seus direitos (LGPD)</h4>
-      <p>Você pode solicitar a exclusão do seu perfil e dados a qualquer momento através do email: <strong>contato@sosajudaai.com.br</strong></p>
+      <p>Você pode solicitar a exclusão do seu perfil e dados a qualquer momento através do email: <strong>arthurbernhard715@gmail.com</strong></p>
 
       <h4>6. Isenção de responsabilidade</h4>
       <p>O SOS Ajuda Aí é uma plataforma de conexão. A responsabilidade pelas atividades realizadas é exclusivamente do voluntário. A plataforma não se responsabiliza por acidentes ou danos durante as atividades voluntárias.</p>
@@ -2126,11 +2010,6 @@ document.addEventListener('DOMContentLoaded', carregarMensagensDoSite);
       onclick="cancelarPresenca(this)">
       ❌ Cancelar minha confirmação
     </button>
-    <!-- Botão compartilhar -->
-    <button id="btn-compartilhar-sol" onclick="abrirCompartilhar()" style="width:100%;padding:12px;border-radius:12px;border:2px solid var(--azul-med);background:transparent;color:var(--azul-med);font-family:'Montserrat',sans-serif;font-weight:700;font-size:0.9rem;cursor:pointer;margin-bottom:10px;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px;"
-      onmouseover="this.style.background='#EEF2FF'" onmouseout="this.style.background='transparent'">
-      📤 Compartilhar este pedido
-    </button>
     <div class="modal-footer">
       <button class="btn-cancel" onclick="fecharModal('modal-detalhe')">Fechar</button>
       <button class="btn-submit" id="btn-confirmar-presenca" onclick="confirmarPresenca(null,this)">🙋 Confirmar presença</button>
@@ -2188,9 +2067,9 @@ function abrirDetalhe(i,expirado){
 
 function validarLimiteVoluntarios(input) {
   const valor = parseInt(input.value);
-  if (valor > CFG_MAX_VOLUNTARIOS) {
-    input.value = CFG_MAX_VOLUNTARIOS;
-    toast(`⚠️ Limite máximo é ${CFG_MAX_VOLUNTARIOS} voluntários`, 'warn');
+  if (valor > 15) {
+    input.value = 15;
+    toast('⚠️ Limite máximo é 15 voluntários', 'warn');
   } else if (valor < 1) {
     input.value = 1;
   }
@@ -2294,7 +2173,7 @@ async function usarLocalizacaoAtualPonto() {
     toast('⚠️ Não foi possível obter sua localização. Preencha o endereço manualmente.');
     btn.textContent = '📍 Usar minha localização (GPS)';
     btn.disabled = false;
-  }, { enableHighAccuracy: true, timeout: 10000 });
+  });
 }
 
 // ── MINI-MAPA: marcar local manualmente ──
@@ -2372,7 +2251,7 @@ async function salvarPontoApoio() {
     foto_url: _fotoUrlPonto || null,
     verificado: false,
     ativo: true,
-    criado_por_uid: usuarioAtual?.user?.id || null
+    criado_por_uid: usuarioAtual?.id || null
   };
 
   if (_tipoPontoSelecionado === 'abrigo') {
@@ -2695,33 +2574,6 @@ if(mapaEl) mapaObserver.observe(mapaEl);
 // ═══════════════════════════════════════
 const SB_URL = "https://wrpfgrwayzmiucyavphk.supabase.co";
 const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndycGZncndheXptaXVjeWF2cGhrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzMDQ3MzUsImV4cCI6MjA5Njg4MDczNX0.ZdgpjxlLRmIaIdGKXZsUthgqM15QQehyijCB4apDA6E";
-
-// Configurações dinâmicas (carregadas do Supabase)
-let CFG_DURACAO_HORAS = 24;
-let CFG_MAX_VOLUNTARIOS = 15;
-
-async function carregarConfigSistema() {
-  try {
-    const r = await fetch(SB_URL + '/rest/v1/configuracoes?id=eq.1&select=duracao_horas,max_voluntarios', {
-      headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY }
-    });
-    const data = await r.json();
-    if (data && data.length > 0) {
-      CFG_DURACAO_HORAS = parseFloat(data[0].duracao_horas) || 24;
-      CFG_MAX_VOLUNTARIOS = parseInt(data[0].max_voluntarios) || 15;
-      // Atualizar os inputs de limite que já existem no DOM
-      document.querySelectorAll('#limiteInput, #edit-limite').forEach(inp => {
-        inp.max = CFG_MAX_VOLUNTARIOS;
-      });
-      document.querySelectorAll('label').forEach(lbl => {
-        if (lbl.textContent.includes('máx. 15')) {
-          lbl.textContent = lbl.textContent.replace('máx. 15', 'máx. ' + CFG_MAX_VOLUNTARIOS);
-        }
-      });
-    }
-  } catch(e) { /* mantém valores padrão */ }
-}
-carregarConfigSistema();
 
 async function sbFetch(endpoint, options = {}) {
   // Usa o JWT do usuário logado quando disponível
@@ -3449,7 +3301,7 @@ async function submeterCadastroReal() {
   const endBairro     = document.getElementById('bairroInput')?.value?.trim() || '';
   const endereco      = [endRua, endNum, endComplemento, endBairro].filter(Boolean).join(', ');
   const descricao= document.getElementById('descricaoInput')?.value?.trim();
-  const limite   = parseInt(document.getElementById('limiteInput')?.value) || CFG_MAX_VOLUNTARIOS;
+  const limite   = parseInt(document.getElementById('limiteInput')?.value) || 15;
 
   if (!nome) { toast('⚠️ Preencha seu nome!'); return; }
   if (!pais) { toast('⚠️ Selecione o país!'); return; }
@@ -3487,25 +3339,15 @@ async function submeterCadastroReal() {
 
   if (!lat || !lng) {
     try {
-      // Tenta com endereço completo (rua + número + bairro) para máxima precisão
-      const endCompleto = [endRua, endNum, endBairro].filter(Boolean).join(', ');
-      const q = encodeURIComponent(`${endCompleto}, ${cidade}, ${estado}, Brasil`);
+      const q = encodeURIComponent(`${endRua}, ${cidade}, ${estado}, Brasil`);
       const geo = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1`);
       const gd = await geo.json();
       if (gd.length) { lat = parseFloat(gd[0].lat); lng = parseFloat(gd[0].lon); }
       else {
-        // Fallback: só rua + cidade
-        const q1b = encodeURIComponent(`${endRua}, ${cidade}, ${estado}, Brasil`);
-        const geo1b = await fetch(`https://nominatim.openstreetmap.org/search?q=${q1b}&format=json&limit=1`);
-        const gd1b = await geo1b.json();
-        if (gd1b.length) { lat = parseFloat(gd1b[0].lat); lng = parseFloat(gd1b[0].lon); }
-        else {
-          // Último fallback: só cidade
-          const q2 = encodeURIComponent(`${cidade}, ${estado}, Brasil`);
-          const geo2 = await fetch(`https://nominatim.openstreetmap.org/search?q=${q2}&format=json&limit=1`);
-          const gd2 = await geo2.json();
-          if (gd2.length) { lat = parseFloat(gd2[0].lat); lng = parseFloat(gd2[0].lon); }
-        }
+        const q2 = encodeURIComponent(`${cidade}, ${estado}, Brasil`);
+        const geo2 = await fetch(`https://nominatim.openstreetmap.org/search?q=${q2}&format=json&limit=1`);
+        const gd2 = await geo2.json();
+        if (gd2.length) { lat = parseFloat(gd2[0].lat); lng = parseFloat(gd2[0].lon); }
       }
     } catch(e) { console.warn('Geocoding falhou:', e); }
   }
@@ -3523,7 +3365,7 @@ async function submeterCadastroReal() {
         foto_url: _fotoUrl || null,
         email_dono: usuarioAtual?.user?.email || null,
         ativo: true, lat, lng,
-        expira_em: new Date(Date.now() + CFG_DURACAO_HORAS*60*60*1000).toISOString()
+        expira_em: new Date(Date.now() + 24*60*60*1000).toISOString()
       })
     });
     fecharModal('modal-atingido');
@@ -3557,68 +3399,45 @@ async function submeterVoluntarioReal() {
     return;
   }
 
+  // Verifica novamente se já existe
+  try {
+    const existe = await sbFetch(`voluntarios?google_id=eq.${usuarioAtual.user.id}&select=id`);
+    if (existe.length > 0) {
+      fecharModal('modal-voluntario');
+      toast('✅ Você já é voluntário!', 'ok');
+      abrirPainelVoluntario();
+      return;
+    }
+  } catch(e) {}
   const nome     = document.getElementById('vol-nome')?.value?.trim();
   const ddi = document.getElementById('vol-ddi')?.value || '+55';
   const wNum = document.getElementById('vol-whatsapp')?.value?.trim() || '';
   const whatsapp = wNum ? ddi + ' ' + wNum : '';
-  const cpf      = document.getElementById('vol-cpf')?.value?.trim() || '';
-  const rg       = document.getElementById('vol-rg')?.value?.trim() || '';
-  const endereco_rua = document.getElementById('vol-endereco-rua')?.value?.trim() || '';
-  const endereco_numero = document.getElementById('vol-endereco-numero')?.value?.trim() || '';
-  const endereco_bairro = document.getElementById('vol-endereco-bairro')?.value?.trim() || '';
-  const endereco_complemento = document.getElementById('vol-endereco-complemento')?.value?.trim() || '';
-  const endereco_cidade = document.getElementById('vol-endereco-cidade')?.value?.trim() || '';
-  const endereco_estado = document.getElementById('vol-endereco-estado')?.value?.trim() || '';
+  const pais     = document.getElementById('vol-pais')?.value?.trim();
+  const estado   = document.getElementById('vol-estado')?.value?.trim();
+  const cidade   = document.getElementById('vol-cidade')?.value?.trim();
+  const raio = 'Qualquer lugar';
   const habs     = [...document.querySelectorAll('#vol-habilidades .chk.ativo')].map(e => e.textContent.replace(/^[^a-zA-ZÀ-ú]+/,'').trim());
 
   if (!nome)     { toast('⚠️ Preencha seu nome!'); return; }
   if (!wNum) { toast('⚠️ Preencha seu WhatsApp!'); return; }
-
-  // Captura IP para segurança
-  let ipCadastro = '';
-  try {
-    const ipRes = await fetch('https://api.ipify.org?format=json');
-    const ipData = await ipRes.json();
-    ipCadastro = ipData.ip || '';
-  } catch(e) {}
-
-  const dados = {
-    nome, whatsapp,
-    cpf: cpf || null,
-    rg: rg || null,
-    endereco_rua: endereco_rua || null,
-    endereco_numero: endereco_numero || null,
-    endereco_bairro: endereco_bairro || null,
-    endereco_complemento: endereco_complemento || null,
-    endereco_cidade: endereco_cidade || null,
-    endereco_estado: endereco_estado || null,
-    cidade: endereco_cidade || '',
-    estado: endereco_estado || '',
-    email: usuarioAtual.user.email || '',
-    habilidades: habs,
-    google_id: usuarioAtual.user.id,
-    ip_cadastro: ipCadastro
-  };
+  if (!pais)     { toast('⚠️ Selecione seu país!'); return; }
+  if (!estado)   { toast('⚠️ Selecione seu estado!'); return; }
+  if (!cidade)   { toast('⚠️ Selecione sua cidade!'); return; }
 
   try {
-    // Verifica se já existe registro (criado automaticamente no login)
-    const existe = await sbFetch(`voluntarios?google_id=eq.${usuarioAtual.user.id}&select=id`);
-    if (existe.length > 0) {
-      // Já existe — atualiza com PATCH
-      await sbFetch(`voluntarios?google_id=eq.${usuarioAtual.user.id}`, {
-        method: 'PATCH',
-        body: JSON.stringify(dados)
-      });
-    } else {
-      // Não existe — cria com POST
-      await sbFetch('voluntarios', {
-        method: 'POST',
-        body: JSON.stringify(dados)
-      });
-    }
+    await sbFetch('voluntarios', {
+      method: 'POST',
+      body: JSON.stringify({
+        nome, whatsapp, pais: pais||'Brasil', estado, cidade,
+        raio_atuacao: raio, habilidades: habs,
+        google_id: usuarioAtual.user.id,
+        cpf: ''
+      })
+    });
     fecharModal('modal-voluntario');
     toast('🙋 Perfil criado! Comece a ajudar agora.', 'ok');
-
+    
     // Se veio via QR code (?sol=ID), guardar e deixar o site abrir normalmente
     const params = new URLSearchParams(window.location.search);
     const solId = params.get('sol');
@@ -3626,10 +3445,14 @@ async function submeterVoluntarioReal() {
       localStorage.setItem('_sol_a_abrir', solId);
       console.log('💾 Guardado solId pra abrir:', solId);
     }
-
+    
     carregarSolicitacoes();
   } catch(e) {
-    toast('⚠️ Erro ao criar perfil. Tente novamente.');
+    if (e.message?.includes('unique') || e.message?.includes('duplicate')) {
+      toast('⚠️ Você já tem um perfil cadastrado.');
+    } else {
+      toast('⚠️ Erro ao criar perfil. Tente novamente.');
+    }
     console.error(e);
   }
 }
@@ -3644,7 +3467,7 @@ async function reativarSolicitacao() {
     // num momento que já passou.
     await sbFetch(`confirmacoes?solicitacao_id=eq.${solId}`, { method: 'DELETE' });
 
-    const novaExpiracao = new Date(Date.now() + CFG_DURACAO_HORAS*60*60*1000).toISOString();
+    const novaExpiracao = new Date(Date.now() + 24*60*60*1000).toISOString();
     await sbFetch(`solicitacoes?id=eq.${solId}`, {
       method: 'PATCH',
       body: JSON.stringify({
@@ -3690,19 +3513,17 @@ const SB_AUTH_URL = "https://wrpfgrwayzmiucyavphk.supabase.co/auth/v1";
 let usuarioAtual = null;
 
 async function garantirVoluntarioCadastrado(user) {
-  if (!user?.id) return false;
+  if (!user?.id) return;
   try {
     // Verifica se já existe pelo google_id
-    const existe = await sbFetch(`voluntarios?google_id=eq.${user.id}&select=id,nome,whatsapp`);
+    const existe = await sbFetch(`voluntarios?google_id=eq.${user.id}&select=id,nome`);
     if (existe.length > 0) {
-      // Retorna true se perfil INCOMPLETO (sem whatsapp)
-      return !existe[0].whatsapp;
+      console.log('✅ Voluntário já existe:', existe[0].nome);
+      return; // Já existe — não cria novo
     }
 
     // Cria registro básico apenas se não existir
     const nome = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Voluntário';
-    let ipCad = '';
-    try { const r = await fetch('https://api.ipify.org?format=json'); ipCad = (await r.json()).ip || ''; } catch(e) {}
     await sbFetch('voluntarios', {
       method: 'POST',
       body: JSON.stringify({
@@ -3712,16 +3533,16 @@ async function garantirVoluntarioCadastrado(user) {
         cidade: '',
         estado: '',
         google_id: user.id,
-        habilidades: [],
-        ip_cadastro: ipCad
+        habilidades: []
       })
     });
-    return true; // Recém-criado = perfil incompleto
+    console.log('✅ Voluntário criado automaticamente');
   } catch(e) {
     if (!e.message?.includes('unique') && !e.message?.includes('duplicate')) {
       console.warn('Erro ao criar voluntário:', e.message);
+    } else {
+      console.log('✅ Voluntário já existe (unique constraint)');
     }
-    return false;
   }
 }
 
@@ -3789,13 +3610,8 @@ async function entrarComEmailSenha() {
     atualizarUIAuth(usuarioAtual);
     fecharModal('modal-auth');
     toast('👋 Bem-vindo, ' + (data.user.user_metadata?.full_name || data.user.email) + '!', 'ok');
-    const perfilInc = await garantirVoluntarioCadastrado(data.user);
+    garantirVoluntarioCadastrado(data.user);
     setTimeout(() => verificarAvaliacoesPendentes(), 3000);
-    const flagV = localStorage.getItem('_reabrir_vol');
-    if (flagV) localStorage.removeItem('_reabrir_vol');
-    if (flagV || perfilInc) {
-      setTimeout(() => abrirModalVoluntario(), 1500);
-    }
   } catch(e) {
     toast('⚠️ ' + e.message);
   }
@@ -4018,14 +3834,11 @@ async function verificarSessao() {
           ? '✅ E-mail confirmado! Bem-vindo, '
           : '👋 Bem-vindo, ';
         toast(msgBoasVindas + (user.user_metadata?.full_name || user.email) + '!', 'ok');
-        let perfilIncompleto = false;
-        try { perfilIncompleto = await garantirVoluntarioCadastrado(user); } catch(e) {}
+        garantirVoluntarioCadastrado(user);
         setTimeout(() => verificarAvaliacoesPendentes(), 3000);
-        // Abre formulário se veio do botão "Quero ser voluntário" OU se perfil ainda não tem WhatsApp
-        const flagVol = localStorage.getItem('_reabrir_vol');
-        if (flagVol) localStorage.removeItem('_reabrir_vol');
-        if (flagVol || perfilIncompleto) {
-          setTimeout(() => abrirModalVoluntario(), 1500);
+        if (localStorage.getItem('_reabrir_vol')) {
+          localStorage.removeItem('_reabrir_vol');
+          setTimeout(() => abrirModalVoluntario(), 800);
         }
       }
       return;
@@ -4106,6 +3919,8 @@ setInterval(async () => {
 // ═══════════════════════════════════════
 // MODAL VOLUNTÁRIO — FLUXO
 // ═══════════════════════════════════════
+let _volPaisSel = '', _volEstadoSel = '', _volCidadeSel = '';
+
 async function abrirModalVoluntario() {
   const semLogin = document.getElementById('vol-sem-login');
   const volForm  = document.getElementById('vol-form');
@@ -4120,17 +3935,17 @@ async function abrirModalVoluntario() {
   const u = usuarioAtual.user;
   const nome = u.user_metadata?.full_name || '';
 
-  // Verifica se já tem cadastro COMPLETO (com whatsapp preenchido)
+  // Verifica se já tem cadastro
   try {
-    const existe = await sbFetch(`voluntarios?google_id=eq.${u.id}&select=id,whatsapp`);
-    if (existe.length > 0 && existe[0].whatsapp) {
-      // Já cadastrado com dados completos — abre painel direto
+    const existe = await sbFetch(`voluntarios?google_id=eq.${u.id}&select=id,nome,whatsapp,cidade`);
+    if (existe.length > 0) {
+      // Já cadastrado — abre painel direto
       fecharModal('modal-voluntario');
       abrirPainelVoluntario();
       toast('✅ Você já é voluntário! Veja seu perfil.', 'ok');
       return;
     }
-  } catch(e) { console.warn('Erro ao verificar voluntário:', e); }
+  } catch(e) { console.warn('Erro ao verificar:', e); }
 
   // Não cadastrado — mostra formulário
   semLogin.style.display = 'none';
@@ -4150,9 +3965,199 @@ function entrarComGoogleVoluntario() {
   entrarComGoogle();
 }
 
+// Autocomplete País
+let _vPaisTimer = null;
+async function buscarPaisVol(valor) {
+  clearTimeout(_vPaisTimer);
+  const lista = document.getElementById('listaPaisVol');
+  if (!valor || valor.length < 2) { lista.style.display='none'; return; }
+  _vPaisTimer = setTimeout(async () => {
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(valor)}&format=json&limit=5&addressdetails=1`);
+      const data = await res.json();
+      const vistos = new Set();
+      const paises = data.filter(r => {
+        const p = r.address?.country || r.display_name.split(',').pop().trim();
+        if (vistos.has(p)) return false; vistos.add(p); return true;
+      }).slice(0,5);
+      if (!paises.length) { lista.style.display='none'; return; }
+      lista.innerHTML = paises.map(r => {
+        const nome = r.address?.country || r.display_name.split(',').pop().trim();
+        return `<div onclick="selecionarPaisVol('${escapeJsString(nome)}')"
+          style="padding:10px 14px;cursor:pointer;font-size:0.85rem;border-bottom:1px solid #f1f5f9;"
+          onmouseover="this.style.background='#EEF2FF'" onmouseout="this.style.background='#fff'">
+          🌍 <strong>${nome}</strong></div>`;
+      }).join('');
+      lista.style.display = 'block';
+    } catch(e) {}
+  }, 350);
+}
+// Mapa de países para DDI
+const DDI_MAP = {
+  'Brasil': '+55', 'United States': '+1', 'USA': '+1', 'Estados Unidos': '+1',
+  'United Kingdom': '+44', 'Reino Unido': '+44', 'Portugal': '+351',
+  'Spain': '+34', 'Espanha': '+34', 'France': '+33', 'França': '+33',
+  'Germany': '+49', 'Alemanha': '+49', 'Italy': '+39', 'Itália': '+39',
+  'Argentina': '+54', 'Chile': '+56', 'Colombia': '+57', 'Colômbia': '+57',
+  'Uruguay': '+598', 'Uruguai': '+598', 'Paraguay': '+595', 'Paraguai': '+595',
+  'Peru': '+51', 'Venezuela': '+58', 'Mexico': '+52', 'México': '+52',
+  'Japan': '+81', 'Japão': '+81', 'China': '+86', 'India': '+91', 'Índia': '+91',
+  'South Africa': '+27', 'África do Sul': '+27', 'Australia': '+61', 'Austrália': '+61',
+  'New Zealand': '+64', 'Nova Zelândia': '+64', 'Russia': '+7', 'Rússia': '+7',
+  'South Korea': '+82', 'Coreia do Sul': '+82', 'Netherlands': '+31', 'Países Baixos': '+31',
+  'Belgium': '+32', 'Bélgica': '+32', 'Switzerland': '+41', 'Suíça': '+41',
+  'Austria': '+43', 'Áustria': '+43', 'Poland': '+48', 'Polônia': '+48',
+  'Sweden': '+46', 'Suécia': '+46', 'Norway': '+47', 'Noruega': '+47',
+  'Denmark': '+45', 'Dinamarca': '+45', 'Finland': '+358', 'Finlândia': '+358',
+  'Egypt': '+20', 'Egito': '+20', 'Nigeria': '+234', 'Nigéria': '+234',
+  'Morocco': '+212', 'Marrocos': '+212'
+};
+
 function atualizarDDI(val) {
   // Chamado quando usuário muda manualmente o DDI
 }
+
+function selecionarPaisVol(nome) {
+  _volPaisSel = nome;
+  document.getElementById('vol-pais').value = nome;
+  document.getElementById('listaPaisVol').style.display = 'none';
+  const ge = document.getElementById('vol-grupoEstado');
+  ge.style.opacity='1'; ge.style.pointerEvents='auto';
+  ge.querySelector('small').textContent='';
+  document.getElementById('vol-estado').value='';
+  document.getElementById('vol-cidade').value='';
+  document.getElementById('vol-grupoCidade').style.opacity='0.35';
+  document.getElementById('vol-grupoCidade').style.pointerEvents='none';
+  // Auto-seleciona DDI
+  const ddi = DDI_MAP[nome];
+  if (ddi) {
+    const sel = document.getElementById('vol-ddi');
+    if (sel) sel.value = ddi;
+  }
+}
+function fecharListaPaisVol() { const el=document.getElementById('listaPaisVol'); if(el) el.style.display='none'; }
+
+async function usarLocalizacaoAtualVol() {
+  const btn = event.target;
+  if (!navigator.geolocation) { toast('⚠️ GPS não disponível no seu navegador.'); return; }
+  btn.textContent = '⏳ Obtendo localização...';
+  btn.disabled = true;
+
+  navigator.geolocation.getCurrentPosition(async (pos) => {
+    try {
+      const { latitude, longitude } = pos.coords;
+      const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`);
+      const data = await res.json();
+      const addr = data.address || {};
+
+      const mapaEst = {'Rio Grande do Sul':'RS','Santa Catarina':'SC','Paraná':'PR','São Paulo':'SP','Rio de Janeiro':'RJ','Minas Gerais':'MG','Bahia':'BA','Pernambuco':'PE','Ceará':'CE','Goiás':'GO','Mato Grosso':'MT','Mato Grosso do Sul':'MS','Pará':'PA','Maranhão':'MA','Amazonas':'AM','Espírito Santo':'ES','Alagoas':'AL','Piauí':'PI','Rio Grande do Norte':'RN','Paraíba':'PB','Sergipe':'SE','Rondônia':'RO','Tocantins':'TO','Acre':'AC','Amapá':'AP','Roraima':'RR','Distrito Federal':'DF'};
+      const pais   = addr.country || '';
+      const estado = mapaEst[addr.state] || addr.state || '';
+      const cidade = addr.city || addr.town || addr.village || '';
+
+      if (pais)   { document.getElementById('vol-pais').value = pais; _volPaisSel = pais; }
+      if (estado) { document.getElementById('vol-estado').value = estado; _volEstadoSel = estado; }
+      if (cidade) { document.getElementById('vol-cidade').value = cidade; _volCidadeSel = cidade; }
+
+      // Unlock all steps
+      ['vol-grupoEstado','vol-grupoCidade'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) { el.style.opacity='1'; el.style.pointerEvents='auto'; el.querySelector('small').textContent=''; }
+      });
+
+      // Show confirmation
+      const conf = document.getElementById('vol-localizacaoConfirmada');
+      const txt  = document.getElementById('vol-localizacaoTexto');
+      if (conf && txt) { txt.textContent = `📍 ${cidade}, ${estado}, ${pais}`; conf.style.display='block'; }
+
+      btn.textContent = '✅ Localização obtida!';
+      btn.style.background = '#ECFDF5'; btn.style.color = '#15803D'; btn.style.borderColor = '#A7F3D0';
+      toast('📍 Localização preenchida automaticamente!', 'ok');
+    } catch(e) {
+      btn.textContent = '📍 Usar minha localização atual (GPS)';
+      btn.disabled = false;
+      toast('⚠️ Erro ao obter localização.');
+    }
+  }, () => {
+    btn.textContent = '📍 Usar minha localização atual (GPS)';
+    btn.disabled = false;
+    toast('⚠️ Permissão de GPS negada.');
+  }, { enableHighAccuracy: true, timeout: 10000 });
+}
+
+// Autocomplete Estado
+let _vEstadoTimer = null;
+async function buscarEstadoVol(valor) {
+  clearTimeout(_vEstadoTimer);
+  const lista = document.getElementById('listaEstadoVol');
+  if (!valor || valor.length < 2) { lista.style.display='none'; return; }
+  _vEstadoTimer = setTimeout(async () => {
+    try {
+      const q = encodeURIComponent(`${valor}, ${_volPaisSel}`);
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=5&addressdetails=1`);
+      const data = await res.json();
+      const vistos = new Set();
+      const estados = data.filter(r => {
+        const s = r.address?.state || r.display_name.split(',')[0];
+        if (vistos.has(s)) return false; vistos.add(s); return true;
+      }).slice(0,5);
+      if (!estados.length) { lista.style.display='none'; return; }
+      lista.innerHTML = estados.map(r => {
+        const nome = r.address?.state || r.display_name.split(',')[0];
+        return `<div onclick="selecionarEstadoVol('${escapeJsString(nome)}')"
+          style="padding:10px 14px;cursor:pointer;font-size:0.85rem;border-bottom:1px solid #f1f5f9;"
+          onmouseover="this.style.background='#EEF2FF'" onmouseout="this.style.background='#fff'">
+          📍 <strong>${nome}</strong></div>`;
+      }).join('');
+      lista.style.display = 'block';
+    } catch(e) {}
+  }, 350);
+}
+function selecionarEstadoVol(nome) {
+  _volEstadoSel = nome;
+  document.getElementById('vol-estado').value = nome;
+  document.getElementById('listaEstadoVol').style.display='none';
+  const gc = document.getElementById('vol-grupoCidade');
+  gc.style.opacity='1'; gc.style.pointerEvents='auto';
+  gc.querySelector('small').textContent='';
+  document.getElementById('vol-cidade').value='';
+}
+function fecharListaEstadoVol() { const el=document.getElementById('listaEstadoVol'); if(el) el.style.display='none'; }
+
+// Autocomplete Cidade
+let _vCidadeTimer = null;
+async function buscarCidadeVol(valor) {
+  clearTimeout(_vCidadeTimer);
+  const lista = document.getElementById('listaCidadeVol');
+  if (!valor || valor.length < 2) { lista.style.display='none'; return; }
+  _vCidadeTimer = setTimeout(async () => {
+    try {
+      const q = encodeURIComponent(`${valor}, ${_volEstadoSel}, ${_volPaisSel}`);
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=5&addressdetails=1`);
+      const data = await res.json();
+      const vistos = new Set();
+      const cidades = data.filter(r => {
+        const c = r.address?.city||r.address?.town||r.address?.village||r.display_name.split(',')[0];
+        if (vistos.has(c)) return false; vistos.add(c); return true;
+      }).slice(0,5);
+      if (!cidades.length) { lista.style.display='none'; return; }
+      lista.innerHTML = cidades.map(r => {
+        const nome = r.address?.city||r.address?.town||r.address?.village||r.display_name.split(',')[0];
+        return `<div onclick="selecionarCidadeVol('${escapeJsString(nome)}')"
+          style="padding:10px 14px;cursor:pointer;font-size:0.85rem;border-bottom:1px solid #f1f5f9;"
+          onmouseover="this.style.background='#EEF2FF'" onmouseout="this.style.background='#fff'">
+          🏙️ <strong>${nome}</strong> <small style="color:#64748b;">${_volEstadoSel}</small></div>`;
+      }).join('');
+      lista.style.display='block';
+    } catch(e) {}
+  }, 350);
+}
+function selecionarCidadeVol(nome) {
+  _volCidadeSel = nome;
+  document.getElementById('vol-cidade').value = nome;
+  document.getElementById('listaCidadeVol').style.display='none';
+}
+function fecharListaCidadeVol() { const el=document.getElementById('listaCidadeVol'); if(el) el.style.display='none'; }
 
 
 
@@ -4180,19 +4185,13 @@ async function verificarAvaliacoesPendentes() {
         `confirmacoes?voluntario_id=eq.${volId}&criado_em=gte.${seteDiasAtras}&select=id,solicitacao_id,solicitacoes(id,nome,ativo,expira_em,email_dono)`
       );
 
-      // Filtra só as de solicitações expiradas (ativo=false) OU cujo prazo já passou
-      const agora = new Date();
+      // Filtra só as de solicitações expiradas
       const expiradas = confs.filter(c =>
-        c.solicitacoes && (!c.solicitacoes.ativo || new Date(c.solicitacoes.expira_em) < agora)
+        c.solicitacoes && !c.solicitacoes.ativo
       );
 
       // Verifica quais ainda não foram avaliadas
       for (const conf of expiradas) {
-        // Checa se o usuário já dispensou este banner hoje
-        const chaveIgnorada = 'aval_ignorada_' + conf.id;
-        const ignoradaEm = localStorage.getItem(chaveIgnorada);
-        if (ignoradaEm && (Date.now() - parseInt(ignoradaEm)) < 24*60*60*1000) continue;
-
         const jaAvaliou = await sbFetch(
           `avaliacoes?confirmacao_id=eq.${conf.id}&avaliador_id=eq.${volId}&select=id`
         );
@@ -4229,16 +4228,11 @@ async function verificarAvaliacoesPendentesAtingido() {
     if (!email) return;
 
     const seteDiasAtras = new Date(Date.now() - 7*24*60*60*1000).toISOString();
-    const agora = new Date().toISOString();
-    // Busca solicitações do dono que foram concluídas (ativo=false)
-    // OU que expiraram pelo tempo (expira_em já passou)
-    const [solsConcluidas, solsExpiradas] = await Promise.all([
-      sbFetch(`solicitacoes?email_dono=eq.${email}&ativo=eq.false&expira_em=gte.${seteDiasAtras}&select=id,nome`),
-      sbFetch(`solicitacoes?email_dono=eq.${email}&ativo=eq.true&expira_em=lt.${agora}&expira_em=gte.${seteDiasAtras}&select=id,nome`)
-    ]);
-    const sols = [...solsConcluidas, ...solsExpiradas];
+    // Busca solicitações do dono que expiraram
+    const sols = await sbFetch(
+      `solicitacoes?email_dono=eq.${email}&ativo=eq.false&expira_em=gte.${seteDiasAtras}&select=id,nome`
+    );
 
-    let temAvalPendente = false;
     for (const sol of sols) {
       // Busca confirmações desta solicitação
       const confs = await sbFetch(
@@ -4246,11 +4240,6 @@ async function verificarAvaliacoesPendentesAtingido() {
       );
 
       for (const conf of confs) {
-        // Checa se o usuário já dispensou este banner hoje
-        const chaveIgn = 'aval_ignorada_' + conf.id;
-        const ignEm = localStorage.getItem(chaveIgn);
-        if (ignEm && (Date.now() - parseInt(ignEm)) < 24*60*60*1000) continue;
-
         // Verifica se já existe avaliação registrada para esta confirmação,
         // do tipo "atingido avalia voluntário" (não existe avaliador_id de
         // voluntário nesse caso, então checamos por tipo + confirmacao_id)
@@ -4270,19 +4259,8 @@ async function verificarAvaliacoesPendentesAtingido() {
             `Avalie o voluntário que te ajudou!`,
             `Como foi a ajuda que você recebeu em "${sol.nome}"?`
           );
-          temAvalPendente = true;
           return;
         }
-      }
-    }
-
-    // Se há solicitações expiradas mas nenhuma avaliação pendente
-    // (ninguém se candidatou, ou já avaliou todos), mostrar convite de doação direto
-    if (!temAvalPendente && sols.length > 0) {
-      const chaveLocal = 'doacao_convite_' + sols[0].id;
-      if (!localStorage.getItem(chaveLocal)) {
-        localStorage.setItem(chaveLocal, Date.now());
-        setTimeout(() => abrirConviteDoacao('atingido_avalia_voluntario'), 2000);
       }
     }
   } catch(e) { console.warn('Erro ao verificar avaliações do atingido:', e); }
@@ -4331,23 +4309,10 @@ async function abrirAvaliacaoBanner() {
     document.getElementById('avaliacao-sub').textContent = 'Avalie a experiência';
   }
 
-  // Resolve nome do avaliador
-  let nomeAvaliadorBanner = '';
-  if (tipo === 'voluntario_avalia_atingido' && _avalPendente.avaliador_id) {
-    try {
-      const volAv = await sbFetch(`voluntarios?id=eq.${_avalPendente.avaliador_id}&select=nome`);
-      nomeAvaliadorBanner = volAv[0]?.nome || '';
-    } catch(e) {}
-  } else {
-    nomeAvaliadorBanner = usuarioAtual?.user?.user_metadata?.full_name
-      || usuarioAtual?.user?.email?.split('@')[0] || '';
-  }
-
   _avaliacaoData = {
     confirmacao_id: _avalPendente.confirmacao_id,
     avaliador_id:   tipo === 'voluntario_avalia_atingido' ? _avalPendente.avaliador_id : null,
     avaliador_email: tipo === 'atingido_avalia_voluntario' ? (_avalPendente.avaliador_email || null) : null,
-    avaliador_nome: nomeAvaliadorBanner,
     avaliado_id:    tipo === 'atingido_avalia_voluntario' ? _avalPendente.avaliado_id : null,
     avaliado_email: tipo === 'voluntario_avalia_atingido' ? (_avalPendente.email_dono || null) : null,
     tipo
@@ -4362,17 +4327,9 @@ async function abrirAvaliacaoBanner() {
 
 // Botão avaliar no histórico do painel do voluntário
 async function abrirAvaliacaoHistorico(confId, solNome, avaliadorId, avaliadoEmail) {
-  // Busca nome do voluntário avaliador
-  let nomeAvaliadorHist = '';
-  try {
-    const volAvaliador = await sbFetch(`voluntarios?id=eq.${avaliadorId}&select=nome`);
-    nomeAvaliadorHist = volAvaliador[0]?.nome || '';
-  } catch(e) {}
-
   _avaliacaoData = {
     confirmacao_id: confId,
     avaliador_id: avaliadorId,
-    avaliador_nome: nomeAvaliadorHist,
     avaliado_id: null,
     avaliado_email: avaliadoEmail || null,
     tipo: 'voluntario_avalia_atingido'
@@ -4510,80 +4467,6 @@ function limparLocalizacao() {
   window.lngSelecionada = null;
   const box = document.getElementById('localizacaoConfirmada');
   if (box) box.style.display = 'none';
-  // Esconde mini-mapa se estava aberto
-  const wrap = document.getElementById('miniMapaSolWrap');
-  if (wrap) wrap.style.display = 'none';
-}
-
-// ── MINI-MAPA: confirmar/corrigir localização da solicitação ──
-let _miniMapaSol = null;
-let _miniMapaSolMarker = null;
-
-function toggleMapaConfirmacaoSol() {
-  const wrap = document.getElementById('miniMapaSolWrap');
-  const abrindo = wrap.style.display === 'none';
-  wrap.style.display = abrindo ? 'block' : 'none';
-  if (abrindo) {
-    setTimeout(() => {
-      if (!_miniMapaSol) {
-        const centro = (window.latSelecionada && window.lngSelecionada)
-          ? [window.latSelecionada, window.lngSelecionada]
-          : (window._cidadeLat && window._cidadeLng)
-            ? [window._cidadeLat, window._cidadeLng]
-            : SINIMBU;
-        _miniMapaSol = L.map('miniMapaSol').setView(centro, 14);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(_miniMapaSol);
-        _miniMapaSol.on('click', (e) => marcarLocalNoMiniMapaSol(e.latlng.lat, e.latlng.lng));
-        if (window.latSelecionada && window.lngSelecionada) atualizarPinMiniMapaSol(window.latSelecionada, window.lngSelecionada);
-      } else {
-        _miniMapaSol.invalidateSize();
-        // Recentra se já tem coordenadas
-        if (window.latSelecionada && window.lngSelecionada) {
-          _miniMapaSol.setView([window.latSelecionada, window.lngSelecionada], 15);
-        }
-      }
-    }, 50);
-  }
-}
-
-async function marcarLocalNoMiniMapaSol(lat, lng) {
-  window.latSelecionada = lat;
-  window.lngSelecionada = lng;
-  atualizarPinMiniMapaSol(lat, lng);
-  toast('📌 Local marcado! Buscando o endereço...', 'ok');
-
-  try {
-    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`);
-    const data = await res.json();
-    const addr = data.address || {};
-    const rua    = addr.road || addr.pedestrian || '';
-    const numero = addr.house_number || '';
-    const bairro = addr.suburb || addr.city_district || '';
-    const cidade = addr.city || addr.town || addr.village || addr.municipality || '';
-    const estado = addr.state || '';
-    const pais   = addr.country || 'Brasil';
-
-    if (rua && document.getElementById('enderecoInput')) document.getElementById('enderecoInput').value = rua;
-    if (numero && document.getElementById('numeroInput')) document.getElementById('numeroInput').value = numero;
-    if (bairro && document.getElementById('bairroInput') && !document.getElementById('bairroInput').value) document.getElementById('bairroInput').value = bairro;
-
-    if (pais) { document.getElementById('paisInput').value = pais; _paisSelecionado = pais; document.getElementById('grupoEstado').style.opacity = '1'; document.getElementById('grupoEstado').style.pointerEvents = 'auto'; }
-    if (estado) { document.getElementById('estadoInputText').value = estado; _estadoSelecionado = estado; document.getElementById('grupoCidade').style.opacity = '1'; document.getElementById('grupoCidade').style.pointerEvents = 'auto'; }
-    if (cidade) { document.getElementById('cidadeInput').value = cidade; _cidadeSelecionada = cidade; document.getElementById('grupoEndereco').style.opacity = '1'; document.getElementById('grupoEndereco').style.pointerEvents = 'auto'; }
-
-    confirmarLocalizacaoVisual(rua ? `${rua}${numero ? ', ' + numero : ''} — ${cidade}` : 'Local marcado no mapa');
-    toast('📍 Localização marcada com sucesso!', 'ok');
-  } catch(e) {
-    confirmarLocalizacaoVisual('Local marcado no mapa');
-    toast('📌 Local marcado. Não encontrei o endereço automaticamente — confira os campos abaixo.');
-  }
-}
-
-function atualizarPinMiniMapaSol(lat, lng) {
-  if (!_miniMapaSol) return;
-  if (_miniMapaSolMarker) { _miniMapaSol.removeLayer(_miniMapaSolMarker); }
-  _miniMapaSolMarker = L.marker([lat, lng]).addTo(_miniMapaSol);
-  _miniMapaSol.setView([lat, lng], 16);
 }
 
 // ── FLUXO PAÍS → ESTADO → CIDADE → ENDEREÇO ──
@@ -4648,14 +4531,6 @@ function selecionarPais(nome, code) {
   document.getElementById('grupoEndereco').style.pointerEvents = 'none';
   window.latSelecionada = null; window.lngSelecionada = null;
   window._cidadeLat = null; window._cidadeLng = null;
-  // Reset mini-mapa da solicitação
-  const miniWrap = document.getElementById('miniMapaSolWrap');
-  if (miniWrap) miniWrap.style.display = 'none';
-  if (_miniMapaSolMarker && _miniMapaSol) { _miniMapaSol.removeLayer(_miniMapaSolMarker); _miniMapaSolMarker = null; }
-  const locConf = document.getElementById('localizacaoConfirmada');
-  if (locConf) locConf.style.display = 'none';
-  const btnLoc = document.getElementById('btnLocalizacao');
-  if (btnLoc) { btnLoc.textContent = '📍 Usar GPS'; btnLoc.style.background = ''; btnLoc.style.color = ''; btnLoc.style.borderColor = ''; btnLoc.classList.remove('loading'); }
 }
 
 function fecharListaPais() {
@@ -4927,30 +4802,14 @@ async function usarLocalizacaoAtual() {
         document.getElementById('grupoEndereco').style.pointerEvents = 'auto';
       }
       confirmarLocalizacaoVisual(rua || 'GPS detectado');
-      // Abre o mini-mapa com o pin para o usuário confirmar/corrigir
-      atualizarPinMiniMapaSol(latitude, longitude);
-      const wrap = document.getElementById('miniMapaSolWrap');
-      if (wrap && wrap.style.display === 'none') {
-        wrap.style.display = 'block';
-        setTimeout(() => {
-          if (!_miniMapaSol) {
-            _miniMapaSol = L.map('miniMapaSol').setView([latitude, longitude], 16);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(_miniMapaSol);
-            _miniMapaSol.on('click', (e) => marcarLocalNoMiniMapaSol(e.latlng.lat, e.latlng.lng));
-            atualizarPinMiniMapaSol(latitude, longitude);
-          } else {
-            _miniMapaSol.invalidateSize();
-          }
-        }, 50);
-      }
-      toast('📍 Localização obtida! Confira o pin no mapa — clique para corrigir se necessário.', 'ok');
+      toast('📍 Localização preenchida automaticamente!', 'ok');
     } catch(e) {
-      btn.textContent = '📍 Usar GPS';
+      btn.textContent = '📍 Usar minha localização atual (GPS)';
       btn.classList.remove('loading');
       toast('⚠️ Não foi possível obter o endereço. Preencha manualmente.');
     }
   }, (err) => {
-    btn.textContent = '📍 Usar GPS';
+    btn.textContent = '📍 Usar minha localização atual (GPS)';
     btn.classList.remove('loading');
     if (err.code === 1) toast('⚠️ Permissão de localização negada. Ative o GPS.');
     else toast('⚠️ Erro ao obter localização. Preencha manualmente.');
@@ -4972,41 +4831,6 @@ const __submeterOriginal = window._submeterCadastroReal || null;
 let _avaliacaoData = {};
 let _estrelaSelecionada = 0;
 let _solAtualId = null;
-let _filaAvaliacaoVols = [];
-
-// Abre a próxima avaliação da fila (quando o dono conclui a solicitação)
-async function _abrirProximaAvaliacaoVol() {
-  if (!_filaAvaliacaoVols.length) return;
-  const item = _filaAvaliacaoVols.shift();
-
-  // Busca nome do voluntário
-  let nomeVol = 'Voluntário';
-  try {
-    const vol = await sbFetch(`voluntarios?id=eq.${item.voluntario_id}&select=nome`);
-    nomeVol = vol[0]?.nome || 'Voluntário';
-  } catch(e) {}
-
-  const emailAvaliador = usuarioAtual?.user?.email || '';
-  const nomeAvaliador = usuarioAtual?.user?.user_metadata?.full_name || emailAvaliador.split('@')[0] || '';
-
-  _avaliacaoData = {
-    confirmacao_id: item.confirmacao_id,
-    avaliador_id: null,
-    avaliador_email: emailAvaliador,
-    avaliador_nome: nomeAvaliador,
-    avaliado_id: item.voluntario_id,
-    tipo: 'atingido_avalia_voluntario'
-  };
-
-  document.getElementById('avaliacao-nome').textContent = nomeVol;
-  document.getElementById('avaliacao-tipo-txt').textContent = 'Como foi a ajuda que você recebeu?';
-  document.getElementById('avaliacao-sub').textContent = 'Avalie o voluntário que te ajudou';
-  _estrelaSelecionada = 0;
-  document.querySelectorAll('.star-btn').forEach(s => s.classList.remove('ativo'));
-  document.getElementById('avaliacaoComentario').value = '';
-  document.getElementById('estrela-label').textContent = 'Clique nas estrelas para avaliar';
-  abrirModal('modal-avaliacao');
-}
 
 // Mostra botão "Concluir" se for o dono da solicitação
 async function verificarJaConfirmou(solId) {
@@ -5141,12 +4965,23 @@ async function abrirAvaliacaoVoluntario(solId) {
     const confs = await sbFetch(`confirmacoes?solicitacao_id=eq.${solId}&select=*`);
     if (!confs.length) return;
 
-    // Guarda fila de voluntários para avaliar um por vez
-    _filaAvaliacaoVols = confs.map(c => ({
-      confirmacao_id: c.id,
-      voluntario_id: c.voluntario_id
-    }));
-    _abrirProximaAvaliacaoVol();
+    // Para simplificar, avalia o primeiro voluntário confirmado
+    const conf = confs[0];
+    _avaliacaoData = {
+      confirmacao_id: conf.id,
+      avaliador_id: usuarioAtual?.user?.id,
+      avaliado_id: conf.voluntario_id,
+      tipo: 'atingido_avalia_voluntario'
+    };
+
+    document.getElementById('avaliacao-nome').textContent = 'Voluntário que te ajudou';
+    document.getElementById('avaliacao-tipo-txt').textContent = 'Como foi a ajuda que você recebeu?';
+    document.getElementById('avaliacao-sub').textContent = 'Avalie o voluntário que te ajudou';
+    _estrelaSelecionada = 0;
+    document.querySelectorAll('.star-btn').forEach(s => s.classList.remove('ativo'));
+    document.getElementById('avaliacaoComentario').value = '';
+    document.getElementById('estrela-label').textContent = 'Clique nas estrelas para avaliar';
+    abrirModal('modal-avaliacao');
   } catch(e) { console.warn('Erro ao abrir avaliação:', e); }
 }
 
@@ -5198,12 +5033,6 @@ async function enviarAvaliacao() {
     fecharModal('modal-avaliacao');
     toast('⭐ Avaliação enviada! Obrigado pelo feedback.', 'ok');
 
-    // Se há mais voluntários na fila para avaliar, abre o próximo
-    if (_filaAvaliacaoVols && _filaAvaliacaoVols.length > 0) {
-      setTimeout(() => _abrirProximaAvaliacaoVol(), 1200);
-      return;
-    }
-
     // Convida voluntário a avaliar de volta (simulado por ora)
     setTimeout(() => {
       toast('📨 O voluntário também receberá um convite para te avaliar.', '');
@@ -5226,53 +5055,16 @@ async function enviarAvaliacao() {
 function pularAvaliacaoEDoar() {
   const tipo = _avaliacaoData?.tipo;
   fecharModal('modal-avaliacao');
-
-  // Se há mais voluntários na fila, abre o próximo em vez de ir para doação
-  if (_filaAvaliacaoVols && _filaAvaliacaoVols.length > 0) {
-    setTimeout(() => _abrirProximaAvaliacaoVol(), 800);
-    return;
-  }
-
   setTimeout(() => abrirConviteDoacao(tipo), 400);
 }
 
 // Ajusta o valor sugerido no convite de doação pós-avaliação, em
 // incrementos de R$10, com piso de R$10 (nunca permite valor zero/negativo).
 let _valorConviteDoacao = 50;
-let _editandoValorConvite = false;
 function ajustarValorConvite(delta) {
-  if (_editandoValorConvite) return;
   _valorConviteDoacao = Math.max(10, _valorConviteDoacao + delta);
-  document.getElementById('conviteValorTexto').textContent = _valorConviteDoacao.toLocaleString('pt-BR');
+  document.getElementById('conviteValorTexto').textContent = _valorConviteDoacao;
   _valorDoacaoAtual = _valorConviteDoacao;
-}
-
-function editarValorConvite() {
-  if (_editandoValorConvite) return;
-  _editandoValorConvite = true;
-  const wrap = document.getElementById('conviteValorWrap');
-  const valorAtual = _valorConviteDoacao;
-  wrap.innerHTML = `R$ <input id="conviteValorInput" type="text" inputmode="numeric" value="${valorAtual}"
-    style="font-family:'Montserrat',sans-serif;font-weight:800;font-size:1.8rem;color:var(--azul);
-    width:100px;border:none;border-bottom:2.5px solid var(--azul);background:transparent;
-    text-align:center;outline:none;padding:0 2px;">`;
-  const inp = document.getElementById('conviteValorInput');
-  inp.focus();
-  inp.select();
-
-  function confirmar() {
-    const v = parseInt(inp.value.replace(/\D/g, ''), 10);
-    _valorConviteDoacao = (!v || v < 10) ? 10 : v;
-    _valorDoacaoAtual = _valorConviteDoacao;
-    wrap.innerHTML = `R$ <span id="conviteValorTexto">${_valorConviteDoacao.toLocaleString('pt-BR')}</span>`;
-    _editandoValorConvite = false;
-  }
-
-  inp.addEventListener('blur', confirmar);
-  inp.addEventListener('keydown', function(e) {
-    if (e.key === 'Enter') { e.preventDefault(); inp.blur(); }
-    if (e.key === 'Escape') { inp.value = valorAtual; inp.blur(); }
-  });
 }
 
 function abrirConviteDoacao(tipo) {
@@ -5282,9 +5074,7 @@ function abrirConviteDoacao(tipo) {
   // Reseta o valor sugerido para R$50 a cada nova abertura, evitando
   // carregar um valor ajustado numa convite anterior na mesma sessão
   _valorConviteDoacao = 50;
-  _editandoValorConvite = false;
-  const wrapDoacao = document.getElementById('conviteValorWrap');
-  wrapDoacao.innerHTML = `R$ <span id="conviteValorTexto">50</span>`;
+  document.getElementById('conviteValorTexto').textContent = _valorConviteDoacao;
   _valorDoacaoAtual = _valorConviteDoacao;
 
   if (tipo === 'atingido_avalia_voluntario') {
@@ -5561,7 +5351,7 @@ async function abrirEdicaoSolicitacao(solId) {
     document.getElementById('edit-descricao').value = s.descricao || '';
     document.getElementById('edit-tipos').value = (s.tipos_ajuda || []).join(', ');
     document.getElementById('edit-urgencia').value = s.urgencia || 'amarelo';
-    document.getElementById('edit-limite').value = s.limite_voluntarios || CFG_MAX_VOLUNTARIOS;
+    document.getElementById('edit-limite').value = s.limite_voluntarios || 15;
     document.getElementById('edit-foto').value = s.foto_url || '';
 
     fecharPainelVoluntario();
@@ -5581,7 +5371,7 @@ async function salvarEdicaoSolicitacao() {
   const descricao = document.getElementById('edit-descricao').value.trim();
   const tiposText = document.getElementById('edit-tipos').value.trim();
   const urgencia = document.getElementById('edit-urgencia').value;
-  const limite = parseInt(document.getElementById('edit-limite').value) || CFG_MAX_VOLUNTARIOS;
+  const limite = parseInt(document.getElementById('edit-limite').value) || 15;
   const foto_url = document.getElementById('edit-foto').value.trim() || null;
 
   if (!nome) { toast('⚠️ Preencha o nome!'); return; }
@@ -5598,13 +5388,6 @@ async function salvarEdicaoSolicitacao() {
     const geo = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1`);
     const gd = await geo.json();
     if (gd.length) { lat = parseFloat(gd[0].lat); lng = parseFloat(gd[0].lon); }
-    else {
-      // Fallback: só cidade
-      const q2 = encodeURIComponent(`${cidade}, ${estado}, Brasil`);
-      const geo2 = await fetch(`https://nominatim.openstreetmap.org/search?q=${q2}&format=json&limit=1`);
-      const gd2 = await geo2.json();
-      if (gd2.length) { lat = parseFloat(gd2[0].lat); lng = parseFloat(gd2[0].lon); }
-    }
   } catch(e) { console.warn('Geocoding falhou:', e); }
 
   try {
@@ -5686,7 +5469,7 @@ async function reativarDoPainel(solId) {
         concluida: false,
         concluida_em: null,
         voluntarios_confirmados: 0,
-        expira_em: new Date(Date.now() + CFG_DURACAO_HORAS*60*60*1000).toISOString()
+        expira_em: new Date(Date.now() + 24*60*60*1000).toISOString()
       })
     });
     toast('✅ Solicitação reativada por mais 24h!', 'ok');
@@ -6176,8 +5959,6 @@ function removerFoto(prefixo) {
   prefixo = prefixo || '';
   if (prefixo === 'ponto-') { _fotoUrlPonto = null; } else { _fotoUrl = null; }
   document.getElementById(prefixo + 'fotoInput').value = '';
-  var camInput = document.getElementById(prefixo + 'fotoCameraInput');
-  if (camInput) camInput.value = '';
   document.getElementById(prefixo + 'fotoPreviewWrap').style.display = 'none';
   document.getElementById(prefixo + 'fotoPreview').src = '';
 }
@@ -6219,131 +6000,26 @@ function gerarQRCode(solId, nome, endereco) {
     correctLevel: QRCode.CorrectLevel.M
   });
 
-  // Preenche campo de link copiável
-  const linkInput = document.getElementById('compartilhar-link-input');
-  if (linkInput) linkInput.value = url;
-
   abrirModal('modal-qr');
 }
 
-// Abre o compartilhamento a partir do modal de detalhes (visitante)
-function abrirCompartilhar() {
-  const solId = document.getElementById('btn-confirmar-presenca').dataset.solId;
-  const nome = document.getElementById('d-nome').textContent;
-  const endereco = document.getElementById('d-local').textContent.replace(/^📍\s*/, '');
-  fecharModal('modal-detalhe');
-  setTimeout(() => gerarQRCode(solId, nome, endereco), 300);
-}
-
-function _getUrlCompartilhar() {
-  return `${window.location.origin}${window.location.pathname}?sol=${_qrSolId}`;
-}
-
-function _getMsgCompartilhar() {
-  return `🆘 SOS Ajuda Aí — *${_qrNome}* precisa de ajuda!\n📍 ${_qrEnd}\n\nVeja os detalhes e confirme presença como voluntário:\n${_getUrlCompartilhar()}`;
-}
-
 function compartilharWhatsApp() {
-  const msg = _getMsgCompartilhar();
+  const url = `${window.location.origin}${window.location.pathname}?sol=${_qrSolId}`;
+  const msg = `🆘 *SOS Ajuda Aí*\n\nPreciso de ajuda! Meu nome é *${_qrNome}*.\n📍 ${_qrEnd}\n\nClique para ver os detalhes e confirmar presença:\n${url}`;
   window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
 }
 
-function compartilharFacebook() {
-  const url = _getUrlCompartilhar();
-  window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
-}
-
-function compartilharTwitter() {
-  const url = _getUrlCompartilhar();
-  const txt = `🆘 ${_qrNome} precisa de ajuda! Veja como ser voluntário no SOS Ajuda Aí:`;
-  window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(txt)}&url=${encodeURIComponent(url)}`, '_blank');
-}
-
-function compartilharInstagram() {
-  const url = _getUrlCompartilhar();
-  const txt = `🆘 SOS Ajuda Aí\n\n${_qrNome} precisa de ajuda!\n📍 ${_qrEnd}\n\n👉 Acesse: ${url}\n\n#SOSAjudaAí #Voluntário #Enchente #RS #Ajuda`;
-  navigator.clipboard.writeText(txt).then(() => {
-    toast('✅ Texto copiado! Cole nos Stories ou Direct do Instagram.', 'ok');
-  }).catch(() => {
-    // Fallback
-    const ta = document.createElement('textarea');
-    ta.value = txt;
-    document.body.appendChild(ta);
-    ta.select();
-    document.execCommand('copy');
-    document.body.removeChild(ta);
-    toast('✅ Texto copiado! Cole nos Stories ou Direct do Instagram.', 'ok');
-  });
-}
-
-function copiarLinkSol() {
-  const url = _getUrlCompartilhar();
-  navigator.clipboard.writeText(url).then(() => {
-    const btn = document.getElementById('btnCopiarLink');
-    btn.textContent = '✅ Copiado!';
-    btn.style.background = '#15803D';
-    setTimeout(() => { btn.textContent = '📋 Copiar'; btn.style.background = 'var(--azul)'; }, 2000);
-    toast('✅ Link copiado!', 'ok');
-  }).catch(() => {
-    // Fallback para navegadores antigos
-    const input = document.getElementById('compartilhar-link-input');
-    input.select();
-    document.execCommand('copy');
-    toast('✅ Link copiado!', 'ok');
-  });
-}
-
 function baixarQR() {
-  const imgEl = document.querySelector('#qrContainer img');
-  const canvasEl = document.querySelector('#qrContainer canvas');
-  if (!imgEl && !canvasEl) { toast('⚠️ QR Code não gerado ainda.'); return; }
-
-  const nomeArquivo = `qr-sos-${(_qrNome||'solicitacao').replace(/[^a-zA-Z0-9À-ÿ\s-]/g,'').replace(/\s+/g,'-').toLowerCase()}.png`;
-
-  // Cria um canvas limpo com margem branca ao redor do QR
-  const tamanho = 300;
-  const margem = 30;
-  const canvas = document.createElement('canvas');
-  canvas.width = tamanho + margem * 2;
-  canvas.height = tamanho + margem * 2 + 40;
-  const ctx = canvas.getContext('2d');
-
-  // Fundo branco
-  ctx.fillStyle = '#FFFFFF';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  // Desenha o QR no canvas
-  const fonte = imgEl || canvasEl;
-  try {
-    ctx.drawImage(fonte, margem, margem, tamanho, tamanho);
-  } catch(e) {
-    // Se der erro de CORS no img, tenta o canvas direto
-    if (canvasEl) {
-      ctx.drawImage(canvasEl, margem, margem, tamanho, tamanho);
-    } else {
-      toast('⚠️ Não foi possível gerar a imagem.'); return;
-    }
+  const img = document.querySelector('#qrContainer img') || document.querySelector('#qrContainer canvas');
+  if (!img) { toast('⚠️ QR Code não gerado ainda.'); return; }
+  const link = document.createElement('a');
+  link.download = `qr-sos-${(_qrNome||'solicitacao').replace(/\s+/g,'-').toLowerCase()}.png`;
+  if (img.tagName === 'CANVAS') {
+    link.href = img.toDataURL();
+  } else {
+    link.href = img.src;
   }
-
-  // Texto embaixo
-  ctx.fillStyle = '#1A3C8F';
-  ctx.font = 'bold 14px Inter, sans-serif';
-  ctx.textAlign = 'center';
-  ctx.fillText('SOS Ajuda Aí — sosajudaai.com.br', canvas.width / 2, tamanho + margem + 28);
-
-  // Download
-  canvas.toBlob(function(blob) {
-    if (!blob) { toast('⚠️ Erro ao gerar imagem.'); return; }
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = nomeArquivo;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-    toast('✅ QR Code salvo!', 'ok');
-  }, 'image/png');
+  link.click();
 }
 
 // Abre solicitação específica se vier com ?sol=ID na URL
@@ -6393,8 +6069,8 @@ async function verificarTermos(tipo, callback) {
     } else {
       _acaoAposTermos = callback;
       // Reset checkbox
-      const checkId = `check-${tipo}`;
-      const btnId   = `btn-aceitar-${tipo}`;
+      const checkId = tipo === 'atingido' ? 'check-atingido' : 'check-voluntario';
+      const btnId   = tipo === 'atingido' ? 'btn-aceitar-atingido' : 'btn-aceitar-voluntario';
       const check = document.getElementById(checkId);
       const btn   = document.getElementById(btnId);
       if (check) check.checked = false;
