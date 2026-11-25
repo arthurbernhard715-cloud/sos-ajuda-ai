@@ -5388,7 +5388,7 @@ async function carregarMinhasSolicitacoes() {
           </button>
           <button onclick="gerarQRCode('${s.id}','${escapeJsString(s.nome)}','${escapeJsString(s.endereco||'')}');fecharPainelVoluntario();"
             style="flex:1;padding:9px;border-radius:9px;border:1.5px solid #c7d2fe;background:#EEF2FF;color:var(--azul);font-size:0.8rem;font-weight:700;cursor:pointer;transition:all .2s;">
-            📱 QR Code
+            📤 Compartilhar
           </button>
           ${ativa ? `<button onclick="marcarSolicitacaoConcluida('${s.id}')"
             style="flex:1;padding:9px;border-radius:9px;border:1.5px solid #A7F3D0;background:#ECFDF5;color:#15803D;font-size:0.8rem;font-weight:700;cursor:pointer;">
@@ -5809,6 +5809,11 @@ function renderListaConfirmadas(confs) {
           onmouseover="this.style.background='#DCFCE7'" onmouseout="this.style.background='#F0FFF4'">
           📱 WhatsApp
         </a>` : ''}
+        <a href="#" onclick="event.preventDefault();gerarQRCode('${s.id}','${escapeJsString(s.nome||'')}','${escapeJsString(s.endereco||'')}');fecharPainelVoluntario();"
+          style="flex:1;min-width:120px;padding:8px 12px;border-radius:8px;border:1.5px solid #c7d2fe;background:#EEF2FF;color:var(--azul);text-align:center;font-size:0.75rem;font-weight:700;cursor:pointer;text-decoration:none;transition:all .2s;"
+          onmouseover="this.style.background='#DBEAFE'" onmouseout="this.style.background='#EEF2FF'">
+          📤 Compartilhar
+        </a>
       </div>
 
       <button onclick="cancelarPresencaPainel('${c.id}','${s.id || ''}')"
