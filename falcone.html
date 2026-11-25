@@ -4804,6 +4804,27 @@ function limparFormMensagens() {
       </div>
     </div>
 
+    <!-- MODAL DETALHE GENÉRICO (Solicitação / Voluntário / Confirmação) -->
+    <div id="modalDetalhe" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:9998;align-items:center;justify-content:center;padding:20px;">
+      <div style="background:#0d1117;border:1px solid #1e2535;border-radius:14px;max-width:560px;width:100%;max-height:85vh;overflow-y:auto;color:#e2e8f0;">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:18px 20px;border-bottom:1px solid #1e2535;">
+          <strong id="modalDetalheTitulo" style="font-size:1.05rem;">Detalhes</strong>
+          <button onclick="fecharModalDetalhe()" style="background:none;border:none;color:#94a3b8;font-size:1.3rem;cursor:pointer;">✕</button>
+        </div>
+        <div id="modalDetalheConteudo" style="padding:20px;"></div>
+      </div>
+    </div>
+    <style>
+      #modalDetalhe.open { display: flex !important; }
+      #modalDetalhe .detalhe-secao { margin-bottom:18px; }
+      #modalDetalhe .detalhe-secao-titulo { font-size:0.82rem;font-weight:700;color:#60a5fa;text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid #1e2535; }
+      #modalDetalhe .detalhe-linha { display:flex;justify-content:space-between;padding:5px 0;font-size:0.82rem;border-bottom:1px solid rgba(30,37,53,0.5); }
+      #modalDetalhe .detalhe-linha .detalhe-rotulo { color:#94a3b8;min-width:120px; }
+      #modalDetalhe .detalhe-linha .detalhe-valor { color:#e2e8f0;text-align:right;word-break:break-word; }
+      #modalDetalhe .detalhe-foto { width:100%;max-height:200px;object-fit:cover;border-radius:10px;margin-bottom:16px; }
+      #modalDetalhe a { color:#60a5fa; }
+    </style>
+
     <!-- MODAL VOLUNTÁRIO COMPLETO COM HISTÓRICO -->
     <div class="modal-voluntario-completo" id="modalVoluntarioCompleto">
       <div class="modal-voluntario-completo-box">
