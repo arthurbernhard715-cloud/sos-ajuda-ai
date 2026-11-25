@@ -1559,6 +1559,16 @@ document.addEventListener('DOMContentLoaded', carregarMensagensDoSite);
       <input class="form-control" id="limiteInput" type="number" value="15" min="1" max="15" oninput="validarLimiteVoluntarios(this)">
     </div>
 
+    <!-- WhatsApp para contato -->
+    <div class="form-group">
+      <label>📱 WhatsApp para contato</label>
+      <p style="font-size:0.78rem;color:var(--cinza-t);margin:0 0 8px;">Voluntários poderão entrar em contato com você pelo WhatsApp <strong>somente após confirmar presença</strong>.</p>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <span style="font-size:0.9rem;color:var(--cinza-t);white-space:nowrap;">+55</span>
+        <input class="form-control" id="whatsappContatoInput" placeholder="(51) 99999-9999" type="tel" style="flex:1;">
+      </div>
+    </div>
+
     <div class="modal-footer">
       <button class="btn-cancel" onclick="fecharModal('modal-atingido')">Cancelar</button>
       <button class="btn-submit" onclick="submeter('modal-atingido','')">📍 Publicar solicitação</button>
@@ -1965,6 +1975,13 @@ document.addEventListener('DOMContentLoaded', carregarMensagensDoSite);
       <label>URL da foto <small style="color:#94a3b8;">(opcional)</small></label>
       <input class="form-control" id="edit-foto" placeholder="https://...">
     </div>
+    <div class="form-group">
+      <label>📱 WhatsApp para contato <small style="color:#94a3b8;">(opcional)</small></label>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <span style="font-size:0.9rem;color:var(--cinza-t);white-space:nowrap;">+55</span>
+        <input class="form-control" id="edit-whatsapp" placeholder="(51) 99999-9999" type="tel" style="flex:1;">
+      </div>
+    </div>
 
     <div style="display:flex;gap:10px;margin-top:16px;">
       <button onclick="salvarEdicaoSolicitacao()" style="flex:1;padding:12px;border-radius:10px;border:none;background:var(--azul);color:#fff;font-size:0.9rem;font-weight:700;cursor:pointer;">💾 Salvar</button>
@@ -2004,6 +2021,10 @@ document.addEventListener('DOMContentLoaded', carregarMensagensDoSite);
     <div id="bloco-concluir" style="display:none;margin-bottom:8px;">
       <button class="btn-concluir" onclick="marcarConcluido()">✅ Marcar como concluído</button>
     </div>
+    <!-- Botão WhatsApp (aparece somente após confirmar presença) -->
+    <a id="btn-whatsapp-contato" href="#" target="_blank" style="display:none;width:100%;padding:12px;border-radius:12px;border:none;background:#25D366;color:#fff;font-family:'Montserrat',sans-serif;font-weight:700;font-size:0.9rem;cursor:pointer;margin-bottom:10px;transition:all .2s;text-decoration:none;text-align:center;box-sizing:border-box;">
+      📱 Entrar em contato pelo WhatsApp
+    </a>
     <!-- Botão cancelar presença (aparece quando já confirmou) -->
     <button id="btn-cancelar-presenca" style="display:none;width:100%;padding:12px;border-radius:12px;border:2px solid #D92B2B;background:transparent;color:#D92B2B;font-family:'Montserrat',sans-serif;font-weight:700;font-size:0.9rem;cursor:pointer;margin-bottom:10px;transition:all .2s;"
       onmouseover="this.style.background='#FEF2F2'" onmouseout="this.style.background='transparent'"
@@ -3018,6 +3039,10 @@ function abrirDetalheReal(s) {
 
   // Guarda ID para confirmar presença
   document.getElementById('btn-confirmar-presenca').dataset.solId = s.id;
+  // Guarda WhatsApp do solicitante (visível só após confirmar presença)
+  window._solWhatsappAtual = s.whatsapp_contato || '';
+  const btnWa = document.getElementById('btn-whatsapp-contato');
+  if (btnWa) btnWa.style.display = 'none';
 
   const reativBlock = document.getElementById('bloco-reativar');
   const confirmBtn  = document.getElementById('btn-confirmar-presenca');
@@ -3149,8 +3174,16 @@ async function confirmarPresenca(solId, btn) {
       btnCancelar.style.display = 'block';
       btnCancelar.dataset.solId = solId;
     }
+    // Mostra botão WhatsApp se o solicitante informou WhatsApp
+    const btnWaConf = document.getElementById('btn-whatsapp-contato');
+    if (btnWaConf && window._solWhatsappAtual) {
+      btnWaConf.href = `https://wa.me/${window._solWhatsappAtual}`;
+      btnWaConf.style.display = 'block';
+    }
     fecharModal('modal-detalhe');
-    toast('🎉 Presença confirmada! O solicitante foi notificado.', 'ok');
+    toast(window._solWhatsappAtual
+      ? '🎉 Presença confirmada! Agora você pode entrar em contato pelo WhatsApp.'
+      : '🎉 Presença confirmada! O solicitante foi notificado.', 'ok');
     carregarSolicitacoes();
 
   } catch(e) {
@@ -3302,6 +3335,8 @@ async function submeterCadastroReal() {
   const endereco      = [endRua, endNum, endComplemento, endBairro].filter(Boolean).join(', ');
   const descricao= document.getElementById('descricaoInput')?.value?.trim();
   const limite   = parseInt(document.getElementById('limiteInput')?.value) || 15;
+  const whatsappRaw = document.getElementById('whatsappContatoInput')?.value?.trim() || '';
+  const whatsappContato = whatsappRaw ? '55' + whatsappRaw.replace(/\D/g,'') : '';
 
   if (!nome) { toast('⚠️ Preencha seu nome!'); return; }
   if (!pais) { toast('⚠️ Selecione o país!'); return; }
@@ -3364,6 +3399,7 @@ async function submeterCadastroReal() {
         limite_voluntarios: limite,
         foto_url: _fotoUrl || null,
         email_dono: usuarioAtual?.user?.email || null,
+        whatsapp_contato: whatsappContato || null,
         ativo: true, lat, lng,
         expira_em: new Date(Date.now() + 24*60*60*1000).toISOString()
       })
@@ -4843,16 +4879,24 @@ async function verificarJaConfirmou(solId) {
     const confs = await sbFetch(`confirmacoes?solicitacao_id=eq.${solId}&voluntario_id=eq.${userId}&select=id`);
     const btn = document.getElementById('btn-confirmar-presenca');
     const btnCancelar = document.getElementById('btn-cancelar-presenca');
+    const btnWhatsapp = document.getElementById('btn-whatsapp-contato');
     if (confs.length > 0) {
-      // Já confirmou — mostra botão de cancelar
+      // Já confirmou — mostra botão de cancelar e WhatsApp
       if (btn) { btn.style.display = 'none'; }
       if (btnCancelar) {
         btnCancelar.style.display = 'block';
         btnCancelar.dataset.confId = confs[0].id;
         btnCancelar.dataset.solId = solId;
       }
+      // Mostra botão WhatsApp se a solicitação tem WhatsApp
+      if (btnWhatsapp && window._solWhatsappAtual) {
+        btnWhatsapp.href = `https://wa.me/${window._solWhatsappAtual}`;
+        btnWhatsapp.style.display = 'block';
+      } else if (btnWhatsapp) {
+        btnWhatsapp.style.display = 'none';
+      }
     } else {
-      // Não confirmou — mostra botão de confirmar
+      // Não confirmou — mostra botão de confirmar, esconde WhatsApp
       if (btn) {
         btn.textContent = '🙋 Confirmar presença';
         btn.style.background = '';
@@ -4860,6 +4904,7 @@ async function verificarJaConfirmou(solId) {
         btn.style.display = 'block';
       }
       if (btnCancelar) btnCancelar.style.display = 'none';
+      if (btnWhatsapp) btnWhatsapp.style.display = 'none';
     }
   } catch(e) { console.warn('Erro ao verificar confirmação:', e); }
 }
@@ -5353,6 +5398,9 @@ async function abrirEdicaoSolicitacao(solId) {
     document.getElementById('edit-urgencia').value = s.urgencia || 'amarelo';
     document.getElementById('edit-limite').value = s.limite_voluntarios || 15;
     document.getElementById('edit-foto').value = s.foto_url || '';
+    // WhatsApp: remove o prefixo 55 para exibir só o número local
+    const waRaw = s.whatsapp_contato || '';
+    document.getElementById('edit-whatsapp').value = waRaw.startsWith('55') ? waRaw.slice(2) : waRaw;
 
     fecharPainelVoluntario();
     abrirModal('modal-editar-sol');
@@ -5373,6 +5421,8 @@ async function salvarEdicaoSolicitacao() {
   const urgencia = document.getElementById('edit-urgencia').value;
   const limite = parseInt(document.getElementById('edit-limite').value) || 15;
   const foto_url = document.getElementById('edit-foto').value.trim() || null;
+  const editWaRaw = document.getElementById('edit-whatsapp')?.value?.trim() || '';
+  const editWhatsapp = editWaRaw ? '55' + editWaRaw.replace(/\D/g,'') : '';
 
   if (!nome) { toast('⚠️ Preencha o nome!'); return; }
   if (!estado) { toast('⚠️ Preencha o estado!'); return; }
@@ -5391,7 +5441,7 @@ async function salvarEdicaoSolicitacao() {
   } catch(e) { console.warn('Geocoding falhou:', e); }
 
   try {
-    const payload = { nome, estado, cidade, endereco, descricao, tipos_ajuda, urgencia, limite_voluntarios: limite, foto_url };
+    const payload = { nome, estado, cidade, endereco, descricao, tipos_ajuda, urgencia, limite_voluntarios: limite, foto_url, whatsapp_contato: editWhatsapp || null };
     if (lat && lng) { payload.lat = lat; payload.lng = lng; }
 
     await sbFetch(`solicitacoes?id=eq.${solId}`, {
