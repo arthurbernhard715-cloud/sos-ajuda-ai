@@ -3177,7 +3177,9 @@ async function confirmarPresenca(solId, btn) {
     // Mostra botão WhatsApp se o solicitante informou WhatsApp
     const btnWaConf = document.getElementById('btn-whatsapp-contato');
     if (btnWaConf && window._solWhatsappAtual) {
-      btnWaConf.href = `https://wa.me/${window._solWhatsappAtual}`;
+      const nomeVolConf = _volDados?.nome || usuarioAtual?.user?.user_metadata?.full_name || 'voluntário';
+      const msgWaConf = `Olá, eu sou ${nomeVolConf}. Vim através da sua solicitação no site SOS Ajuda Aí. Estou confirmado para te ajudar! Tem algo mais que posso fazer?`;
+      btnWaConf.href = `https://wa.me/${window._solWhatsappAtual}?text=${encodeURIComponent(msgWaConf)}`;
       btnWaConf.style.display = 'block';
     }
     fecharModal('modal-detalhe');
@@ -4890,7 +4892,9 @@ async function verificarJaConfirmou(solId) {
       }
       // Mostra botão WhatsApp se a solicitação tem WhatsApp
       if (btnWhatsapp && window._solWhatsappAtual) {
-        btnWhatsapp.href = `https://wa.me/${window._solWhatsappAtual}`;
+        const nomeVol = _volDados?.nome || usuarioAtual?.user?.user_metadata?.full_name || 'voluntário';
+        const msgWa = `Olá, eu sou ${nomeVol}. Vim através da sua solicitação no site SOS Ajuda Aí. Estou confirmado para te ajudar! Tem algo mais que posso fazer?`;
+        btnWhatsapp.href = `https://wa.me/${window._solWhatsappAtual}?text=${encodeURIComponent(msgWa)}`;
         btnWhatsapp.style.display = 'block';
       } else if (btnWhatsapp) {
         btnWhatsapp.style.display = 'none';
@@ -5776,7 +5780,7 @@ function renderListaConfirmadas(confs) {
           onmouseover="this.style.background='#DCFCE7'" onmouseout="this.style.background='#F0FDF4'">
           🗺️ Waze
         </a>
-        ${s.whatsapp_contato ? `<a href="https://wa.me/${escapeHtml(s.whatsapp_contato)}" target="_blank"
+        ${s.whatsapp_contato ? `<a href="https://wa.me/${escapeHtml(s.whatsapp_contato)}?text=${encodeURIComponent('Olá, eu sou ' + (_volDados?.nome || 'voluntário') + '. Vim através da sua solicitação no site SOS Ajuda Aí. Estou confirmado para te ajudar! Tem algo mais que posso fazer?')}" target="_blank"
           style="flex:1;min-width:120px;padding:8px 12px;border-radius:8px;border:1.5px solid #25D366;background:#F0FFF4;color:#128C7E;text-align:center;font-size:0.75rem;font-weight:700;cursor:pointer;text-decoration:none;transition:all .2s;"
           onmouseover="this.style.background='#DCFCE7'" onmouseout="this.style.background='#F0FFF4'">
           📱 WhatsApp
