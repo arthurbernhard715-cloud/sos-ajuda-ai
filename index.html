@@ -2021,6 +2021,11 @@ document.addEventListener('DOMContentLoaded', carregarMensagensDoSite);
     <div id="bloco-concluir" style="display:none;margin-bottom:8px;">
       <button class="btn-concluir" onclick="marcarConcluido()">✅ Marcar como concluído</button>
     </div>
+    <!-- Botão compartilhar -->
+    <button id="btn-compartilhar-sol" onclick="abrirCompartilhar()" style="width:100%;padding:12px;border-radius:12px;border:2px solid var(--azul-med);background:transparent;color:var(--azul-med);font-family:'Montserrat',sans-serif;font-weight:700;font-size:0.9rem;cursor:pointer;margin-bottom:10px;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px;"
+      onmouseover="this.style.background='#EEF2FF'" onmouseout="this.style.background='transparent'">
+      📤 Compartilhar este pedido
+    </button>
     <!-- Botão WhatsApp (aparece somente após confirmar presença) -->
     <a id="btn-whatsapp-contato" href="#" target="_blank" style="display:none;width:100%;padding:12px;border-radius:12px;border:none;background:#25D366;color:#fff;font-family:'Montserrat',sans-serif;font-weight:700;font-size:0.9rem;cursor:pointer;margin-bottom:10px;transition:all .2s;text-decoration:none;text-align:center;box-sizing:border-box;">
       📱 Entrar em contato pelo WhatsApp
