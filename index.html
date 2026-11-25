@@ -5776,8 +5776,13 @@ function renderListaConfirmadas(confs) {
           onmouseover="this.style.background='#DCFCE7'" onmouseout="this.style.background='#F0FDF4'">
           🗺️ Waze
         </a>
+        ${s.whatsapp_contato ? `<a href="https://wa.me/${escapeHtml(s.whatsapp_contato)}" target="_blank"
+          style="flex:1;min-width:120px;padding:8px 12px;border-radius:8px;border:1.5px solid #25D366;background:#F0FFF4;color:#128C7E;text-align:center;font-size:0.75rem;font-weight:700;cursor:pointer;text-decoration:none;transition:all .2s;"
+          onmouseover="this.style.background='#DCFCE7'" onmouseout="this.style.background='#F0FFF4'">
+          📱 WhatsApp
+        </a>` : ''}
       </div>
-      
+
       <button onclick="cancelarPresencaPainel('${c.id}','${s.id || ''}')"
         style="width:100%;margin-top:10px;padding:9px;border-radius:9px;
         border:1.5px solid #FECACA;background:transparent;color:#D92B2B;
